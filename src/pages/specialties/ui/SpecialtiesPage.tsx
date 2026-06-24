@@ -40,8 +40,8 @@ export default function SpecialtiesPage() {
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="РќР°Р№С‚Рё РїРѕ РєРѕРґСѓ РёР»Рё РЅР°Р·РІР°РЅРёСЋ"
-            aria-label="РџРѕРёСЃРє СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚Рё"
+            placeholder="Найти по коду или названию"
+            aria-label="Поиск специальности"
           />
         </label>
 
@@ -49,7 +49,7 @@ export default function SpecialtiesPage() {
           className="specialties-select"
           value={level}
           onChange={(event) => setLevel(event.target.value)}
-          aria-label="Р¤РёР»СЊС‚СЂ РїРѕ СѓСЂРѕРІРЅСЋ"
+          aria-label="Фильтр по уровню"
         >
           {SPECIALTY_LEVEL_OPTIONS.map((option) => (
             <option key={option} value={option}>
@@ -59,10 +59,10 @@ export default function SpecialtiesPage() {
         </select>
       </div>
 
-      <div className="specialties-summary" aria-label="РЎРІРѕРґРєР° РїРѕ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚СЏРј">
+      <div className="specialties-summary" aria-label="Сводка по специальностям">
         <span>
           <strong>{rows.length}</strong>
-          Р’СЃРµРіРѕ
+          Всего
         </span>
         {SPECIALTY_LEVEL_OPTIONS.filter((option) => option !== ALL_LEVELS_LABEL).map((option) => (
           <span key={option}>
@@ -75,15 +75,15 @@ export default function SpecialtiesPage() {
       <section className="panel specialties-panel">
         <div className="panel__header">
           <div>
-            <h2>РЎРїСЂР°РІРѕС‡РЅРёРє СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚РµР№</h2>
-            <p>РљРѕРґС‹ Рё СЂР°СЃС€РёС„СЂРѕРІРєРё РёР· С‚Р°Р±Р»РёС†С‹ 1РЎ</p>
+            <h2>Справочник специальностей</h2>
+            <p>Коды и расшифровки из таблицы 1С</p>
           </div>
         </div>
 
-        {error && <div className="table-list__empty">РћС€РёР±РєР° Р·Р°РіСЂСѓР·РєРё: {error}</div>}
+        {error && <div className="table-list__empty">Ошибка загрузки: {error}</div>}
 
         {!error && loading && (
-          <div className="table-loading" aria-label="Р—Р°РіСЂСѓР·РєР° С‚Р°Р±Р»РёС†С‹ СЃРїРµС†РёР°Р»СЊРЅРѕСЃС‚РµР№">
+          <div className="table-loading" aria-label="Загрузка таблицы специальностей">
             {Array.from({ length: 8 }).map((_, index) => (
               <div className="table-loading__row" key={index}>
                 <span className="table-loading__rank" />
@@ -102,9 +102,9 @@ export default function SpecialtiesPage() {
             <table className="specialties-table">
               <thead>
                 <tr>
-                  <th>РљРѕРґ</th>
-                  <th>РќР°РёРјРµРЅРѕРІР°РЅРёРµ</th>
-                  <th>РЈСЂРѕРІРµРЅСЊ</th>
+                  <th>Код</th>
+                  <th>Наименование</th>
+                  <th>Уровень</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,7 +119,7 @@ export default function SpecialtiesPage() {
             </table>
 
             {filteredRows.length === 0 && (
-              <div className="table-list__empty">РќРµС‚ СЃС‚СЂРѕРє РїРѕ РІС‹Р±СЂР°РЅРЅС‹Рј С„РёР»СЊС‚СЂР°Рј</div>
+              <div className="table-list__empty">Нет строк по выбранным фильтрам</div>
             )}
           </div>
         )}

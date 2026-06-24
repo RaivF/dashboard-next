@@ -290,13 +290,13 @@ function DonutComparisonLegend({
 }) {
   const currentColumn: DonutMetricColumn = {
     key: 'current',
-    label: '??????????????',
+    label: 'Текущий',
     quantityKey: 'currentQuantity',
     percentKey: 'currentPercent',
   }
   const previousColumn: DonutMetricColumn = {
     key: 'previous',
-    label: '?????????????? ??????',
+    label: 'Прошлый год',
     quantityKey: 'previousQuantity',
     percentKey: 'previousPercent',
   }
