@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { getSpecialtiesMxl } from '../api/specialtiesApi.js'
 import { parseSpecialtiesMxl } from '../lib/specialties.js'
 
 export function useSpecialties() {
@@ -14,14 +15,11 @@ export function useSpecialties() {
       setError('')
 
       try {
-        const response = await fetch('/specialties.mxl', { signal: controller.signal })
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-
-        const buffer = await response.arrayBuffer()
+        const buffer = await getSpecialtiesMxl(controller.signal)
         setRows(parseSpecialtiesMxl(buffer))
       } catch (loadError) {
-        if (loadError.name !== 'AbortError') {
-          setError(loadError.message || 'Не удалось загрузить таблицу')
+        if (loadError.name !== 'AbortError' && loadError.name !== 'CanceledError') {
+          setError(loadError.message || 'РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ С‚Р°Р±Р»РёС†Сѓ')
         }
       } finally {
         if (!controller.signal.aborted) setLoading(false)
