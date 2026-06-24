@@ -12,7 +12,15 @@ import { notFoundHandler } from './middlewares/notFound.js'
 export function createApp(env: ServerEnvironment = process.env) {
   const app = express()
 
-  app.use(helmet())
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          'upgrade-insecure-requests': null,
+        },
+      },
+    }),
+  )
   app.use(express.json({ limit: '1mb' }))
   app.use(cors(createCorsOptions(env)))
 
