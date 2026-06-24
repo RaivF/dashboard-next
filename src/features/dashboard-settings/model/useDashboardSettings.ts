@@ -1,6 +1,25 @@
 import { getCampaignYear, useDashboardSettingsStore } from './dashboardSettingsStore.js'
+import type { RangeValue } from './periodConfig.js'
 
-export function useDashboardSettings() {
+type UseDashboardSettingsResult = {
+  period: string
+  range: RangeValue
+  setRange: (range: RangeValue) => void
+  selectedDate: Date | null
+  setSelectedDate: (selectedDate: Date | null) => void
+  showPreviousYearOverlay: boolean
+  setShowPreviousYearOverlay: (showPreviousYearOverlay: boolean) => void
+  showPreviousYearFunding: boolean
+  setShowPreviousYearFunding: (showPreviousYearFunding: boolean) => void
+  showPreviousYearForm: boolean
+  setShowPreviousYearForm: (showPreviousYearForm: boolean) => void
+  showPreviousYearMethod: boolean
+  setShowPreviousYearMethod: (showPreviousYearMethod: boolean) => void
+  campaignYear: number
+  setCampaignYear: (nextYear: unknown) => void
+}
+
+export function useDashboardSettings(): UseDashboardSettingsResult {
   const period = useDashboardSettingsStore((state) => state.period)
   const range = useDashboardSettingsStore((state) => state.range)
   const setRange = useDashboardSettingsStore((state) => state.setRange)

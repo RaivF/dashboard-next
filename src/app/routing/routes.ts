@@ -4,9 +4,17 @@ export const ROUTES = {
   report: '/report-2025-2026',
   campusPlan: '/campus-plan',
   campusMap: '/campus-map',
+} as const
+
+export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]
+
+export type NavItem = {
+  path: RoutePath
+  label: string
+  title: string
 }
 
-export const NAV_ITEMS = [
+export const NAV_ITEMS: NavItem[] = [
   {
     path: ROUTES.dashboard,
     label: 'Дашборд',
@@ -34,10 +42,10 @@ export const NAV_ITEMS = [
   },
 ]
 
-export function resolveRoutePath(pathname) {
-  return NAV_ITEMS.some((item) => item.path === pathname) ? pathname : ROUTES.dashboard
+export function resolveRoutePath(pathname: string): RoutePath {
+  return NAV_ITEMS.some((item) => item.path === pathname) ? (pathname as RoutePath) : ROUTES.dashboard
 }
 
-export function getRouteTitle(pathname) {
+export function getRouteTitle(pathname: string): string {
   return NAV_ITEMS.find((item) => item.path === pathname)?.title || NAV_ITEMS[0].title
 }

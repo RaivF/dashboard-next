@@ -1,51 +1,83 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { RANGE_OPTIONS, clampCampaignYear } from './periodConfig.js'
+import type { RangeValue } from './periodConfig.js'
 
-function getStorageItem(key) {
+type DashboardSettingsState = {
+  period: string
+  range: RangeValue
+  selectedDate: Date | null
+  showPreviousYearOverlay: boolean
+  showPreviousYearFunding: boolean
+  showPreviousYearForm: boolean
+  showPreviousYearMethod: boolean
+  setRange: (range: RangeValue) => void
+  setSelectedDate: (selectedDate: Date | null) => void
+  setShowPreviousYearOverlay: (showPreviousYearOverlay: boolean) => void
+  setShowPreviousYearFunding: (showPreviousYearFunding: boolean) => void
+  setShowPreviousYearForm: (showPreviousYearForm: boolean) => void
+  setShowPreviousYearMethod: (showPreviousYearMethod: boolean) => void
+  setCampaignYear: (nextYear: unknown) => void
+}
+
+type PersistedDashboardSettingsState = Pick<
+  DashboardSettingsState,
+  | 'period'
+  | 'range'
+  | 'showPreviousYearOverlay'
+  | 'showPreviousYearFunding'
+  | 'showPreviousYearForm'
+  | 'showPreviousYearMethod'
+>
+
+function getStorageItem(key: string): string | null {
   if (typeof localStorage === 'undefined') return null
   return localStorage.getItem(key)
 }
 
-function toCampaignPeriod(year) {
+function toCampaignPeriod(year: number): string {
   return `${year}-01`
 }
 
-function getDefaultPeriod() {
+function getDefaultPeriod(): string {
   const savedPeriod = getStorageItem('dashboard-period') || '2025-01'
   const savedYear = Number.parseInt(String(savedPeriod).slice(0, 4), 10)
   return toCampaignPeriod(clampCampaignYear(savedYear))
 }
 
-function getDefaultRange() {
-  const savedRange = getStorageItem('dashboard-range')
-  return RANGE_OPTIONS.some((option) => option.value === savedRange) ? savedRange : 'actual'
+function isRangeValue(value: string | null): value is RangeValue {
+  return RANGE_OPTIONS.some((option) => option.value === value)
 }
 
-function getDefaultPreviousYearOverlay() {
+function getDefaultRange(): RangeValue {
+  const savedRange = getStorageItem('dashboard-range')
+  return isRangeValue(savedRange) ? savedRange : 'actual'
+}
+
+function getDefaultPreviousYearOverlay(): boolean {
   return getStorageItem('dashboard-previous-year-overlay') !== 'false'
 }
 
-function getDefaultPreviousYearFunding() {
+function getDefaultPreviousYearFunding(): boolean {
   return getStorageItem('dashboard-previous-year-funding') !== 'false'
 }
 
-function getDefaultPreviousYearForm() {
+function getDefaultPreviousYearForm(): boolean {
   return getStorageItem('dashboard-previous-year-form') === 'true'
 }
 
-function getDefaultPreviousYearMethod() {
+function getDefaultPreviousYearMethod(): boolean {
   return getStorageItem('dashboard-previous-year-method') === 'true'
 }
 
-export function getCampaignYear(periodValue) {
+export function getCampaignYear(periodValue: string | null | undefined): number {
   const fallbackYear = new Date().getFullYear()
   const year = Number.parseInt(String(periodValue || '').slice(0, 4), 10)
   return clampCampaignYear(Number.isFinite(year) ? year : fallbackYear)
 }
 
-export const useDashboardSettingsStore = create(
-  persist(
+export const useDashboardSettingsStore = create<DashboardSettingsState>()(
+  persist<DashboardSettingsState, [], [], PersistedDashboardSettingsState>(
     (set) => ({
       period: getDefaultPeriod(),
       range: getDefaultRange(),

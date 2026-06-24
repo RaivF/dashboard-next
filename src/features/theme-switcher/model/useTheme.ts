@@ -1,8 +1,14 @@
 import { useEffect } from 'react'
 import { THEME_VERSION } from './themeConfig.js'
 import { useThemeStore } from './themeStore.js'
+import type { ThemeValue } from './themeConfig.js'
 
-export function useTheme() {
+type UseThemeResult = {
+  theme: ThemeValue
+  setTheme: (theme: ThemeValue) => void
+}
+
+export function useTheme(): UseThemeResult {
   const theme = useThemeStore((state) => state.theme)
   const setTheme = useThemeStore((state) => state.setTheme)
 

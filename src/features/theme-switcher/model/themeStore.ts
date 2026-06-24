@@ -1,8 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { THEME_OPTIONS, THEME_VERSION } from './themeConfig.js'
+import type { ThemeValue } from './themeConfig.js'
 
-function getLegacyTheme() {
+type ThemeState = {
+  theme: ThemeValue
+  setTheme: (theme: ThemeValue) => void
+}
+
+function isThemeValue(value: string | null): value is ThemeValue {
+  return THEME_OPTIONS.some((option) => option.value === value)
+}
+
+function getLegacyTheme(): ThemeValue {
   if (typeof localStorage === 'undefined') return 'light'
 
   const savedTheme = localStorage.getItem('dashboard-theme')
@@ -13,10 +23,10 @@ function getLegacyTheme() {
   if (savedTheme === `${legacyPrefix}-dark`) return 'dark'
   if (savedTheme === 'night' && savedThemeVersion !== THEME_VERSION) return 'light'
 
-  return THEME_OPTIONS.some((option) => option.value === savedTheme) ? savedTheme : 'light'
+  return isThemeValue(savedTheme) ? savedTheme : 'light'
 }
 
-export const useThemeStore = create(
+export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
       theme: getLegacyTheme(),

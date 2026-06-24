@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react'
 import { APPLICANTS_AUTO_REFRESH_MS } from './applicantsConfig.js'
 import { useApplicantsStatisticsStore } from './applicantsStatisticsStore.js'
 
-export function useApplicantsStatistics(period) {
+export function useApplicantsStatistics(period: string) {
   const response = useApplicantsStatisticsStore((state) => state.response)
   const loading = useApplicantsStatisticsStore((state) => state.loading)
   const error = useApplicantsStatisticsStore((state) => state.error)
