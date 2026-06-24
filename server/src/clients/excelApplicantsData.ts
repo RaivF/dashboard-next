@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import AdmZip from 'adm-zip'

@@ -30,4 +30,4 @@ USER node
 
 EXPOSE 3001
 
-CMD ["node", "server/index.js"]
+CMD ["node", "--import", "tsx", "server/src/server.ts"]

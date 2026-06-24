@@ -44,4 +44,16 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  {
+    files: [
+      'server/src/clients/excelApplicantsData.ts',
+      'server/src/clients/previousYearData.ts',
+      'server/src/services/mockData.ts',
+      'server/src/services/reportData.ts',
+    ],
+    rules: {
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
 )

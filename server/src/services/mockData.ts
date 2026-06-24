@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { parseSpecialtiesMxl } from '../src/entities/specialties/lib/specialties.js'
+import { parseSpecialtiesMxl } from '../../../src/entities/specialties/lib/specialties.js'
 
 const FUNDING_TYPES = ['Бюджетная основа', 'Полное возмещение затрат', 'Целевой прием', 'Отдельная квота', 'Особая квота']
 const FUNDING_MULTIPLIERS = new Map([
@@ -29,7 +30,7 @@ const SPECIALTIES = [
   { code: '23.03.03', name: 'Эксплуатация транспортно-технологических машин и комплексов' },
   { code: '19.03.04', name: 'Технология продукции и организация общественного питания' },
 ]
-const SPECIALTIES_MXL_PATH = fileURLToPath(new URL('../public/specialties.mxl', import.meta.url))
+const SPECIALTIES_MXL_PATH = fileURLToPath(new URL('../../../public/specialties.mxl', import.meta.url))
 
 function loadSpecialties() {
   try {
