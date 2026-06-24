@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { RANGE_OPTIONS, clampCampaignYear } from './periodConfig.js'
+import { MAX_CAMPAIGN_YEAR, RANGE_OPTIONS, clampCampaignYear } from './periodConfig.js'
 import type { RangeValue } from './periodConfig.js'
 
 type DashboardSettingsState = {
@@ -40,9 +40,24 @@ function toCampaignPeriod(year: number): string {
 }
 
 function getDefaultPeriod(): string {
-  const savedPeriod = getStorageItem('dashboard-period') || '2025-01'
+  const savedPeriod = getStorageItem('dashboard-period') || toCampaignPeriod(MAX_CAMPAIGN_YEAR)
   const savedYear = Number.parseInt(String(savedPeriod).slice(0, 4), 10)
   return toCampaignPeriod(clampCampaignYear(savedYear))
+}
+
+function migrateDashboardSettings(persistedState: unknown): PersistedDashboardSettingsState {
+  const state =
+    persistedState && typeof persistedState === 'object'
+      ? (persistedState as Partial<PersistedDashboardSettingsState>)
+      : {}
+
+  return {
+    ...state,
+    period:
+      state.period === '2025-01' || !state.period
+        ? toCampaignPeriod(MAX_CAMPAIGN_YEAR)
+        : toCampaignPeriod(clampCampaignYear(Number.parseInt(String(state.period).slice(0, 4), 10))),
+  } as PersistedDashboardSettingsState
 }
 
 function isRangeValue(value: string | null): value is RangeValue {
@@ -100,6 +115,8 @@ export const useDashboardSettingsStore = create<DashboardSettingsState>()(
     }),
     {
       name: 'dashboard-settings-state',
+      version: 1,
+      migrate: migrateDashboardSettings,
       partialize: (state) => ({
         period: state.period,
         range: state.range,
