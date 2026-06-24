@@ -1,0 +1,8 @@
+node_modules
+dist
+deploy
+coverage
+previous-year-data.txt
+DATA
+public/assets
+*.log
