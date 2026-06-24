@@ -1,3 +1,9 @@
+export type SpecialtyRow = {
+  code: string
+  name: string
+  level: string
+}
+
 const SPECIALTY_LEVELS = new Map([
   ['02', 'СПО филиалы'],
   ['03', 'Бакалавриат'],
@@ -6,7 +12,7 @@ const SPECIALTY_LEVELS = new Map([
   ['06', 'Аспирантура'],
 ])
 
-function decodeMxlContent(input) {
+function decodeMxlContent(input: ArrayBuffer | Uint8Array | string): string {
   if (typeof input === 'string') return input
 
   const bytes = input instanceof Uint8Array ? input : new Uint8Array(input)
@@ -14,20 +20,20 @@ function decodeMxlContent(input) {
   return new TextDecoder('utf-8').decode(bytes.slice(contentStart))
 }
 
-function extractQuotedStrings(text) {
+function extractQuotedStrings(text: string): string[] {
   return [...text.matchAll(/"((?:[^"\\]|\\.)*)"/g)]
     .map((match) => match[1].replace(/""/g, '"').replace(/\s+/g, ' ').trim())
     .filter((value) => value && value !== '#' && value !== 'Язык по умолчанию')
 }
 
-export function getSpecialtyLevel(code) {
+export function getSpecialtyLevel(code: unknown): string {
   const levelCode = String(code || '').match(/^\d{2}\.(\d{2})\.\d{2}$/)?.[1] || ''
   return SPECIALTY_LEVELS.get(levelCode) || 'Не определено'
 }
 
-export function parseSpecialtiesMxl(input) {
+export function parseSpecialtiesMxl(input: ArrayBuffer | Uint8Array | string): SpecialtyRow[] {
   const strings = extractQuotedStrings(decodeMxlContent(input))
-  const rows = []
+  const rows: SpecialtyRow[] = []
 
   for (let index = 0; index < strings.length - 1; index += 1) {
     const code = strings[index]

@@ -15,14 +15,14 @@ import {
 } from 'recharts'
 import { formatNumber, formatPercentDecimal } from '../../../../shared/lib/formatters.js'
 import Panel from '../../../../shared/ui/Panel.js'
-import ChartLoading from './ChartLoading.jsx'
-import ChartTooltip from './ChartTooltip.jsx'
+import ChartLoading from './ChartLoading.js'
+import ChartTooltip from './ChartTooltip.js'
 import {
   ActiveDateDot,
   ActivePreviousYearDot,
   MissingDateDot,
   PreviousYearMissingDot,
-} from './ChartDots.jsx'
+} from './ChartDots.js'
 import { CHART_COLORS, chartCursorProps } from './chartConfig.js'
 import { buildBarComparisonData, buildDonutRows } from './chartData.js'
 

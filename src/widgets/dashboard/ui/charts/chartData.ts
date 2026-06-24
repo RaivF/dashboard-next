@@ -1,6 +1,11 @@
 import { CHART_COLORS } from './chartConfig.js'
 
-export function buildBarComparisonData(data, previousYearData) {
+export type NamedQuantity = {
+  name: string
+  quantity: number
+}
+
+export function buildBarComparisonData(data: NamedQuantity[], previousYearData: NamedQuantity[]) {
   const currentByName = new Map(data.map((item) => [item.name, item.quantity]))
   const previousByName = new Map(previousYearData.map((item) => [item.name, item.quantity]))
   const names = [
@@ -15,7 +20,11 @@ export function buildBarComparisonData(data, previousYearData) {
   }))
 }
 
-export function buildDonutRows(data, previousYearData, includePreviousYear) {
+export function buildDonutRows(
+  data: NamedQuantity[],
+  previousYearData: NamedQuantity[],
+  includePreviousYear: boolean,
+) {
   const currentByName = new Map(data.map((item) => [item.name, item.quantity]))
   const previousByName = new Map(previousYearData.map((item) => [item.name, item.quantity]))
   const categoryNames = [
