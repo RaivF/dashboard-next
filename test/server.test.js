@@ -153,4 +153,18 @@ describe('server', () => {
     assert.ok(statistics.applicants_statistics.length > 3000)
     assert.ok(statistics.previous_year_statistics.length > 3000)
   })
+
+  it('returns report data and a normalized api 404 response', async () => {
+    const reportResponse = await requestJson(baseUrl, '/api/report-2025-2026')
+    assert.equal(reportResponse.status, 200)
+
+    const report = await reportResponse.json()
+    assert.equal(report.admissionCampaign.year, '2025/2026')
+
+    const missingResponse = await requestJson(baseUrl, '/api/not-found')
+    assert.equal(missingResponse.status, 404)
+
+    const missing = await missingResponse.json()
+    assert.equal(missing.error.message, 'Not found')
+  })
 })

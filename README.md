@@ -1,85 +1,104 @@
-# Дашборд мониторинга приёмной кампании
+# University Dashboard Next
 
-React + Express приложение для показа статистики заявок на большом телевизоре.
+React + Express dashboard for university admissions statistics. This repository is the TypeScript/FSD refactor of the original dashboard and is intended to preserve product behavior while improving maintainability.
 
-## Что внутри
+## Stack
 
-- `React + Vite` — frontend.
-- `Express` — backend для локальных источников данных и API фронтенда.
-- `Recharts` — графики и диаграммы.
-- `react-datepicker` — календарь для выбора конкретного дня, недели, месяца или года.
-- `lucide-react` — крупные иконки для ТВ-интерфейса.
-- Демо-режим с mock-данными, чтобы интерфейс открывался даже без локального Excel.
+- React 18, Vite, TypeScript
+- React Router for application routes
+- Zustand for persisted UI/dashboard state
+- Recharts and react-datepicker for charts and period controls
+- Express 4 backend written in TypeScript
+- Axios-based typed API client
+- Node test runner, ESLint, Prettier and TypeScript quality gates
 
-## Структура
+## Routes
+
+- `/` - applicants dashboard
+- `/specialties` - specialties reference
+- `/report-2025-2026` - report page
+- `/campus-plan` - interactive campus plan
+- `/campus-map` - 3D campus map
+
+## Project Structure
 
 ```text
-university-dashboard/
-├─ server/
-│  ├─ index.js          # Express backend + локальные источники данных
-│  └─ mockData.js       # демо-данные
-├─ src/
-│  ├─ app/              # app-shell, маршруты, точка сборки frontend
-│  ├─ pages/            # страницы: дашборд, справочник специальностей, отчёт
-│  ├─ widgets/          # крупные экранные блоки: header, dashboard content, KCP, charts
-│  ├─ features/         # пользовательские сценарии: настройки дашборда, переключение темы
-│  ├─ entities/         # доменные модели/API: applicants, report, specialties
-│  ├─ shared/           # общий UI, HTTP-клиент, форматтеры, даты, стили
-│  └─ main.jsx
-├─ .env.example
-├─ vite.config.js
-└─ package.json
+server/
+  index.ts
+  src/
+    app.ts
+    server.ts
+    clients/
+    config/
+    controllers/
+    middlewares/
+    routes/
+    services/
+    types/
+    utils/
+    validators/
+src/
+  app/
+  pages/
+  widgets/
+  features/
+  entities/
+  shared/
+test/
 ```
 
-Frontend разложен по FSD: зависимости идут сверху вниз (`app -> pages -> widgets -> features -> entities -> shared`), а slices одного слоя не импортируют друг друга напрямую.
+Frontend follows Feature-Sliced Design dependency direction:
 
-
-## Выбор диапазона на дашборде
-
-В верхнем блоке можно переключить отображение: всё, день, неделя, 2 недели, месяц, год.
-Для режимов «День», «Неделя», «2 недели», «Месяц» и «Год» появляется календарь:
-
-- день — фильтрация строго по выбранной дате;
-- неделя — календарная неделя с понедельника по воскресенье;
-- 2 недели — 14 дней, включая выбранную дату;
-- месяц — выбранный календарный месяц;
-- год — выбранный календарный год.
-
-## Настройка источников данных
-
-1. Скопировать файл настроек:
-
-```bash
-cp .env.example .env
+```text
+app -> pages -> widgets -> features -> entities -> shared
 ```
 
-2. Заполнить `.env`:
+## Environment
+
+Create `.env` from `.env.example` and adjust local values:
 
 ```env
 PORT=3001
 PREVIOUS_YEAR_DATA_FILE=previous-year-data.txt
 APPLICANTS_XLSX_SOURCE=true
 # APPLICANTS_XLSX_FILE=DATA/applicants.xlsx
+CORS_ORIGIN=*
+VITE_YANDEX_MAPS_API_KEY=
 ```
 
-Для текущего года backend читает Excel из папки `DATA`. Если `APPLICANTS_XLSX_FILE` не задан, используется первый `.xlsx` файл в `DATA`, кроме временных файлов и отчётов `unique_people_*.xlsx`.
+Notes:
 
-Если Excel-источник выключен или файл не найден, backend отдаст demo/mock-данные.
+- `.env` and `.env.local` must not be committed.
+- `.env.example` contains placeholders only.
+- In production, set `CORS_ORIGIN` to the exact allowed origin or comma-separated allowed origins.
+- `VITE_YANDEX_MAPS_API_KEY` is only used by the campus map page.
 
-## Запуск разработки
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-После запуска:
+The dev command starts:
 
-- frontend: `http://localhost:5173`
 - backend: `http://localhost:3001`
-- health-check: `http://localhost:3001/api/health`
+- frontend: `http://localhost:5173`
+- health check: `http://localhost:3001/api/health`
 
-## Production-запуск
+## Quality Gate
+
+```bash
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+npm run check
+```
+
+`npm run check` runs lint, typecheck, tests and production build.
+
+## Production
 
 ```bash
 npm install
@@ -87,62 +106,48 @@ npm run build
 npm start
 ```
 
-В production Express отдаёт собранный frontend из папки `dist` и обслуживает `/api/*`.
+In production, Express serves the built frontend from `dist` and keeps the API under `/api/*`.
 
-## Как работает API данных
+Docker Compose uses:
 
-Frontend делает запрос только на свой backend:
-
-```js
-GET /api/applicants-statistics
+```bash
+docker compose build --pull dashboard
+docker compose up -d --remove-orphans dashboard
 ```
 
-Backend берёт данные из локального Excel для текущей кампании, а архив 2025 года — из `previous-year-data.txt`. Внешние запросы к 1С больше не выполняются.
+The container listens on port `3001`; `compose.yaml` maps host `80:3001`.
 
-## Что отображает дашборд
+## API
 
-- всего заявок;
-- заявки по последней дате;
-- бюджетная основа;
-- договор на платное обучение / платное обучение;
-- целевой приём;
-- веб + суперсервис;
-- динамика заявок по датам;
-- распределение по основанию обучения;
-- форма обучения;
-- способ подачи;
-- уровни образования;
-- приоритеты;
-- переключение отображения: всё, день, неделя, 2 недели, месяц, год;
-- отображение календарного периода выборки для выбранного режима;
-- топ 5 самых популярных направлений;
-- топ 5 самых невостребованных направлений.
+Current endpoints:
 
-## Подготовка к показу на телевизоре
+- `GET /api/health`
+- `GET /api/report-2025-2026`
+- `GET /api/applicants-statistics`
 
-Откройте frontend в браузере на ТВ/мини-ПК и включите полноэкранный режим:
+Applicants statistics source order:
 
-- Windows/Chrome/Yandex Browser: `F11`;
-- масштаб браузера: 100–125%;
-- лучшее разрешение: Full HD или 4K.
+1. 2025 period requests use `previous-year-data.txt` as the archive/current dataset.
+2. If `APPLICANTS_XLSX_SOURCE=true`, the backend reads the configured Excel workbook or the first eligible `.xlsx` in `DATA`.
+3. If no Excel source is available, the backend returns deterministic mock data.
 
-Дашборд автоматически обновляет данные каждые 30 минут. Также есть ручная кнопка «Обновить».
+## Testing Notes
 
+The test suite covers:
 
-## Изменения v7
+- analytics calculations and previous-year comparison
+- campaign year limits and dashboard settings store
+- specialties MXL parsing
+- HTTP error normalization
+- backend health, report, statistics, CORS and API 404 behavior
 
-- Календарь переведён на русский язык.
-- Исправлен z-index и позиционирование выпадающего календаря, чтобы он отображался поверх карточек и графиков.
+## CI and Deploy
 
+- `.github/workflows/ci.yml` runs `npm run check` on pull requests and pushes.
+- `.github/workflows/deploy.yml` deploys pushes to `main` to the VDS through Docker Compose.
 
-## Исправление v8
+Before merging behavior changes to `main`, run:
 
-- Дата выбора больше не восстанавливается из `localStorage`, чтобы старый выбранный месяц без заявок не перекрывал свежие локальные данные.
-- Если выбран режим «Месяц», «Неделя», «День» и дата не выбрана вручную, дашборд автоматически строит выборку от последней даты, которая реально есть в данных.
-
-
-## Обновление UX v10
-
-- Верхнее поле `Период` удалено из основной панели.
-- Год приёмной кампании перенесён в панель `Отображение периода`; API получает значение формата `YYYY-01`.
-- Кнопка обновления и настройки периода блокируются на время загрузки данных, чтобы пользователь не отправлял несколько запросов подряд.
+```bash
+npm run check
+```
