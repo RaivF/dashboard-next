@@ -1,1 +1,1 @@
-export { default as CampusMapPage } from './ui/CampusMapPage.jsx'
+export { default as CampusMapPage } from './ui/CampusMapPage.js'

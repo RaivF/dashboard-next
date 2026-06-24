@@ -4,7 +4,7 @@ import { useApplicantsStatistics } from '../../../entities/applicants/model/useA
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
-import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.jsx'
+import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.js'
 import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.js'
 
 type DashboardError = {

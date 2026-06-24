@@ -1,5 +1,6 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import DatePickerModule, { registerLocale } from 'react-datepicker'
+import type { MouseEventHandler } from 'react'
+import DatePicker, { registerLocale } from 'react-datepicker'
 import { ru } from 'date-fns/locale/ru'
 import { CalendarDays, ChevronDown, RotateCcw } from 'lucide-react'
 import {
@@ -10,13 +11,37 @@ import {
   RANGE_OPTIONS,
   getDatePickerFormat,
 } from '../model/periodConfig.js'
+import type { RangeValue } from '../model/periodConfig.js'
 import { isDateWithinRange, isSameCalendarDay, toPickerDate } from '../../../shared/lib/date.js'
-
-const DatePicker = DatePickerModule.default || DatePickerModule
 
 registerLocale('ru', ru)
 
-const CalendarInput = forwardRef(function CalendarInput({ value, onClick, disabled }, ref) {
+type PeriodAnalytics = {
+  rangeEnd: Date | null
+  rangeStart: Date | null
+  rangeText: string
+  latestDate: string
+}
+
+type CalendarInputProps = {
+  value?: string
+  onClick?: MouseEventHandler<HTMLButtonElement>
+  disabled?: boolean
+}
+
+type PeriodControlsProps = {
+  analytics: PeriodAnalytics
+  campaignYear: number
+  loading: boolean
+  range: RangeValue
+  selectedDate: Date | null
+  selectedRange: string
+  setCampaignYear: (nextYear: number) => void
+  setRange: (nextRange: RangeValue) => void
+  setSelectedDate: (selectedDate: Date | null) => void
+}
+
+const CalendarInput = forwardRef<HTMLButtonElement, CalendarInputProps>(function CalendarInput({ value, onClick, disabled }, ref) {
   return (
     <button className="calendar-button" type="button" onClick={onClick} ref={ref} disabled={disabled}>
       <CalendarDays size={22} />
@@ -36,16 +61,16 @@ export default function PeriodControls({
   setCampaignYear,
   setRange,
   setSelectedDate,
-}) {
-  const periodMenuRef = useRef(null)
+}: PeriodControlsProps) {
+  const periodMenuRef = useRef<HTMLDivElement | null>(null)
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false)
   const activeCalendarDate = selectedDate || toPickerDate(analytics.rangeEnd) || null
   const calendarRangeStart = useMemo(() => toPickerDate(analytics.rangeStart), [analytics.rangeStart])
   const calendarRangeEnd = useMemo(() => toPickerDate(analytics.rangeEnd), [analytics.rangeEnd])
 
-  const getCalendarDayClassName = useCallback((date) => {
-    if (!calendarRangeStart || !calendarRangeEnd) return undefined
-    if (!isDateWithinRange(date, calendarRangeStart, calendarRangeEnd)) return undefined
+  const getCalendarDayClassName = useCallback((date: Date) => {
+    if (!calendarRangeStart || !calendarRangeEnd) return ''
+    if (!isDateWithinRange(date, calendarRangeStart, calendarRangeEnd)) return ''
 
     const isStart = isSameCalendarDay(date, calendarRangeStart)
     const isEnd = isSameCalendarDay(date, calendarRangeEnd)
@@ -59,13 +84,14 @@ export default function PeriodControls({
   useEffect(() => {
     if (!periodMenuOpen) return undefined
 
-    function handlePointerDown(event) {
+    function handlePointerDown(event: MouseEvent) {
       const target = event.target
-      if (target.closest?.('.dashboard-calendar-popper')) return
+      if (!(target instanceof Element)) return
+      if (target.closest('.dashboard-calendar-popper')) return
       if (!periodMenuRef.current?.contains(target)) setPeriodMenuOpen(false)
     }
 
-    function handleKeyDown(event) {
+    function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') setPeriodMenuOpen(false)
     }
 
@@ -77,12 +103,12 @@ export default function PeriodControls({
     }
   }, [periodMenuOpen])
 
-  const handleCampaignYearChange = (nextYear) => {
+  const handleCampaignYearChange = (nextYear: number) => {
     if (loading) return
     setCampaignYear(nextYear)
   }
 
-  const handleRangeSelect = (nextRange) => {
+  const handleRangeSelect = (nextRange: RangeValue) => {
     if (loading) return
     setRange(nextRange)
     if (nextRange === 'actual') setSelectedDate(null)
@@ -207,7 +233,7 @@ export default function PeriodControls({
                     { name: 'offset', options: { offset: [0, 14] } },
                     { name: 'preventOverflow', options: { rootBoundary: 'viewport', padding: 24 } },
                     { name: 'flip', options: { fallbackPlacements: ['top-end', 'bottom-start', 'top-start'] } },
-                  ]}
+                  ] as never}
                   customInput={<CalendarInput disabled={loading} />}
                   calendarClassName="dashboard-calendar"
                   popperClassName="dashboard-calendar-popper"

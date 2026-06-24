@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from 'react'
 import {
   Download,
   Fullscreen,
@@ -25,25 +26,68 @@ const DRAW_COLORS = [
   { value: '#111827', label: 'Чёрный' },
 ]
 
-function clamp(value, min, max) {
+type MapPoint = {
+  x: number
+  y: number
+}
+
+type DrawingStroke = {
+  id: string
+  color: string
+  points: MapPoint[]
+}
+
+type DrawingMode = 'pan' | 'draw'
+
+type PendingFocus =
+  | {
+      reset: true
+    }
+  | {
+      reset?: false
+      xRatio: number
+      yRatio: number
+      viewerX: number
+      viewerY: number
+    }
+
+type DragState = {
+  x: number
+  y: number
+  scrollLeft: number
+  scrollTop: number
+}
+
+function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-function loadSessionStrokes() {
+function isMapPoint(point: unknown): point is MapPoint {
+  return (
+    typeof point === 'object'
+    && point !== null
+    && Number.isFinite((point as MapPoint).x)
+    && Number.isFinite((point as MapPoint).y)
+  )
+}
+
+function loadSessionStrokes(): DrawingStroke[] {
   try {
-    const saved = JSON.parse(sessionStorage.getItem(DRAWING_SESSION_KEY) || '[]')
+    const saved: unknown = JSON.parse(sessionStorage.getItem(DRAWING_SESSION_KEY) || '[]')
     if (!Array.isArray(saved)) return []
 
     return saved
-      .filter((stroke) => Array.isArray(stroke?.points))
+      .filter((stroke): stroke is { id: unknown; color: unknown; points: unknown[] } => (
+        typeof stroke === 'object'
+        && stroke !== null
+        && Array.isArray((stroke as { points?: unknown }).points)
+      ))
       .map((stroke) => ({
         id: String(stroke.id),
         color: DRAW_COLORS.some((color) => color.value === stroke.color)
-          ? stroke.color
+          ? String(stroke.color)
           : DRAW_COLORS[0].value,
-        points: stroke.points.filter(
-          (point) => Number.isFinite(point?.x) && Number.isFinite(point?.y),
-        ),
+        points: stroke.points.filter(isMapPoint),
       }))
       .filter((stroke) => stroke.points.length > 0)
   } catch {
@@ -51,27 +95,27 @@ function loadSessionStrokes() {
   }
 }
 
-function pointsToPath(points) {
+function pointsToPath(points: MapPoint[]): string {
   return points
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
     .join(' ')
 }
 
 export default function CampusPlanPage() {
-  const viewerRef = useRef(null)
-  const pageRef = useRef(null)
+  const viewerRef = useRef<HTMLDivElement | null>(null)
+  const pageRef = useRef<HTMLDivElement | null>(null)
   const zoomRef = useRef(1)
-  const pendingFocusRef = useRef(null)
+  const pendingFocusRef = useRef<PendingFocus | null>(null)
   const initialFitRef = useRef(false)
-  const dragRef = useRef(null)
-  const drawRef = useRef(null)
+  const dragRef = useRef<DragState | null>(null)
+  const drawRef = useRef<string | null>(null)
   const [zoom, setZoom] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
   const [imageReady, setImageReady] = useState(false)
   const [error, setError] = useState('')
-  const [interactionMode, setInteractionMode] = useState('pan')
+  const [interactionMode, setInteractionMode] = useState<DrawingMode>('pan')
   const [drawColor, setDrawColor] = useState(DRAW_COLORS[0].value)
-  const [strokes, setStrokes] = useState(loadSessionStrokes)
+  const [strokes, setStrokes] = useState<DrawingStroke[]>(loadSessionStrokes)
 
   useEffect(() => {
     try {
@@ -81,7 +125,7 @@ export default function CampusPlanPage() {
     }
   }, [strokes])
 
-  const applyZoom = useCallback((nextZoom, focusPoint) => {
+  const applyZoom = useCallback((nextZoom: number, focusPoint?: MapPoint) => {
     const normalizedZoom = clamp(nextZoom, MIN_ZOOM, MAX_ZOOM)
     if (Math.abs(normalizedZoom - zoomRef.current) < 0.001) return
 
@@ -100,7 +144,7 @@ export default function CampusPlanPage() {
     setZoom(normalizedZoom)
   }, [])
 
-  const fitPlan = useCallback((mode = 'screen') => {
+  const fitPlan = useCallback((mode: 'screen' | 'width' = 'screen') => {
     const viewer = viewerRef.current
     if (!viewer) return
 
@@ -147,7 +191,7 @@ export default function CampusPlanPage() {
     const viewer = viewerRef.current
     if (!viewer) return undefined
 
-    function handleWheel(event) {
+    function handleWheel(event: WheelEvent) {
       event.preventDefault()
       const factor = Math.exp(-event.deltaY * 0.0015)
       applyZoom(zoomRef.current * factor, { x: event.clientX, y: event.clientY })
@@ -157,7 +201,7 @@ export default function CampusPlanPage() {
     return () => viewer.removeEventListener('wheel', handleWheel)
   }, [applyZoom])
 
-  function zoomFromCenter(factor) {
+  function zoomFromCenter(factor: number) {
     const rect = viewerRef.current?.getBoundingClientRect()
     if (!rect) return
     applyZoom(zoomRef.current * factor, {
@@ -166,9 +210,10 @@ export default function CampusPlanPage() {
     })
   }
 
-  function handlePointerDown(event) {
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return
     const viewer = viewerRef.current
+    if (!viewer) return
 
     if (interactionMode === 'draw') {
       const point = getMapPoint(event)
@@ -191,7 +236,7 @@ export default function CampusPlanPage() {
     setIsDragging(true)
   }
 
-  function handlePointerMove(event) {
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
     if (interactionMode === 'draw' && drawRef.current) {
       const point = getMapPoint(event)
       if (!point) return
@@ -214,7 +259,7 @@ export default function CampusPlanPage() {
     viewer.scrollTop = drag.scrollTop - (event.clientY - drag.y)
   }
 
-  function stopDragging(event) {
+  function stopDragging(event: ReactPointerEvent<HTMLDivElement>) {
     if (viewerRef.current?.hasPointerCapture(event.pointerId)) {
       viewerRef.current.releasePointerCapture(event.pointerId)
     }
@@ -223,7 +268,7 @@ export default function CampusPlanPage() {
     setIsDragging(false)
   }
 
-  function getMapPoint(event) {
+  function getMapPoint(event: ReactPointerEvent<HTMLDivElement>): MapPoint | null {
     const pageElement = pageRef.current
     if (!pageElement) return null
     const rect = pageElement.getBoundingClientRect()
@@ -306,7 +351,7 @@ export default function CampusPlanPage() {
                   key={color.value}
                   className={drawColor === color.value ? 'campus-plan__color--active' : ''}
                   type="button"
-                  style={{ '--draw-color': color.value }}
+                  style={{ '--draw-color': color.value } as CSSProperties & Record<'--draw-color', string>}
                   onClick={() => setDrawColor(color.value)}
                   aria-label={`Цвет: ${color.label}`}
                   aria-pressed={drawColor === color.value}
@@ -350,7 +395,7 @@ export default function CampusPlanPage() {
               }}
               draggable="false"
               decoding="async"
-              fetchpriority="high"
+              fetchPriority="high"
               onLoad={() => setImageReady(true)}
               onError={() => setError('Не удалось загрузить изображение плана университета.')}
             />

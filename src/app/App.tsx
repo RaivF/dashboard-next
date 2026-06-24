@@ -10,8 +10,8 @@ import AppHeader from '../widgets/app-header/ui/AppHeader.js'
 import { NAV_ITEMS, ROUTES, getRouteTitle, resolveRoutePath } from './routing/routes.js'
 import type { RoutePath } from './routing/routes.js'
 
-const CampusPlanPage = lazy(() => import('../pages/campus-plan/ui/CampusPlanPage.jsx'))
-const CampusMapPage = lazy(() => import('../pages/campus-map/ui/CampusMapPage.jsx'))
+const CampusPlanPage = lazy(() => import('../pages/campus-plan/ui/CampusPlanPage.js'))
+const CampusMapPage = lazy(() => import('../pages/campus-map/ui/CampusMapPage.js'))
 
 type CurrentPageProps = {
   path: RoutePath

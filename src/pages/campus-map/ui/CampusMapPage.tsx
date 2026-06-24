@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import {
   Building2,
   Compass,
@@ -21,7 +22,7 @@ const INITIAL_CAMERA = {
 const INITIAL_LOCATION = {
   center: [35.37288, 46.842187],
   zoom: 16.9,
-}
+} satisfies { center: Coordinates; zoom: number }
 
 const CAMPUS_POINTS = [
   {
@@ -59,20 +60,77 @@ const CAMPUS_POINTS = [
     coordinates: [35.36965, 46.84136],
     accent: '#7c3aed',
   },
-]
+] satisfies CampusPoint[]
 
-let mapLoaderPromise = null
+type Coordinates = [number, number]
 
-function clamp(value, min, max) {
+type CameraState = {
+  azimuth: number
+  tilt: number
+}
+
+type CameraPatch = Partial<CameraState>
+
+type CampusMapStatus = 'idle' | 'missing-key' | 'loading' | 'ready' | 'error'
+
+type CampusPoint = {
+  id: string
+  title: string
+  caption: string
+  coordinates: Coordinates
+  accent: string
+}
+
+type YMapInstance = {
+  addChild: (child: unknown) => void
+  destroy?: () => void
+  setLocation: (location: { center: Coordinates; zoom: number; duration: number }) => void
+  update: (options: { camera: { azimuth: number; tilt: number; duration?: number } }) => void
+}
+
+type YMapControlsInstance = {
+  addChild: (child: unknown) => void
+}
+
+type YMaps3Api = {
+  ready: Promise<void>
+  import: (moduleName: string) => Promise<{
+    YMapZoomControl: new (options: Record<string, never>) => unknown
+  }>
+  YMap: new (
+    root: HTMLElement,
+    options: {
+      location: typeof INITIAL_LOCATION
+      camera: { azimuth: number; tilt: number }
+      showScaleInCopyrights: boolean
+      theme: 'light'
+    },
+    children: unknown[],
+  ) => YMapInstance
+  YMapControls: new (options: { position: 'right' }) => YMapControlsInstance
+  YMapDefaultFeaturesLayer: new (options: Record<string, never>) => unknown
+  YMapDefaultSchemeLayer: new (options: Record<string, never>) => unknown
+  YMapMarker: new (options: { coordinates: Coordinates }, element: HTMLElement) => unknown
+}
+
+declare global {
+  interface Window {
+    ymaps3?: YMaps3Api
+  }
+}
+
+let mapLoaderPromise: Promise<YMaps3Api> | null = null
+
+function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-function getMapLoader() {
+function getMapLoader(): Promise<YMaps3Api> {
   if (window.ymaps3) return Promise.resolve(window.ymaps3)
   if (mapLoaderPromise) return mapLoaderPromise
 
   mapLoaderPromise = new Promise((resolve, reject) => {
-    let script = document.getElementById(MAP_SCRIPT_ID)
+    let script = document.getElementById(MAP_SCRIPT_ID) as HTMLScriptElement | null
 
     if (!script) {
       script = document.createElement('script')
@@ -82,10 +140,13 @@ function getMapLoader() {
       document.head.appendChild(script)
     }
 
-    script.addEventListener('load', () => resolve(window.ymaps3), { once: true })
+    script.addEventListener('load', () => {
+      if (window.ymaps3) resolve(window.ymaps3)
+      else reject(new Error('Yandex Maps API did not initialize'))
+    }, { once: true })
     script.addEventListener('error', () => {
       mapLoaderPromise = null
-      script.remove()
+      script?.remove()
       reject(new Error('Yandex Maps API load failed'))
     }, { once: true })
   })
@@ -93,7 +154,7 @@ function getMapLoader() {
   return mapLoaderPromise
 }
 
-function createFlagElement(point) {
+function createFlagElement(point: CampusPoint): HTMLButtonElement {
   const marker = document.createElement('button')
   marker.className = 'campus-map__flag'
   marker.type = 'button'
@@ -110,17 +171,23 @@ function createFlagElement(point) {
 }
 
 export default function CampusMapPage() {
-  const rootRef = useRef(null)
-  const mapRef = useRef(null)
-  const [status, setStatus] = useState(MAP_API_KEY ? 'idle' : 'missing-key')
-  const [camera, setCamera] = useState(INITIAL_CAMERA)
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const mapRef = useRef<YMapInstance | null>(null)
+  const cameraRef = useRef<CameraState>(INITIAL_CAMERA)
+  const [status, setStatus] = useState<CampusMapStatus>(MAP_API_KEY ? 'idle' : 'missing-key')
+  const [camera, setCamera] = useState<CameraState>(INITIAL_CAMERA)
   const [loadAttempt, setLoadAttempt] = useState(0)
+
+  useEffect(() => {
+    cameraRef.current = camera
+  }, [camera])
 
   useEffect(() => {
     if (!MAP_API_KEY) return undefined
 
     let isMounted = true
-    let map = null
+    let map: YMapInstance | null = null
+    const rootElement = rootRef.current
 
     async function initMap() {
       setStatus('loading')
@@ -128,7 +195,7 @@ export default function CampusMapPage() {
       try {
         const ymaps3 = await getMapLoader()
         await ymaps3.ready
-        if (!isMounted || !rootRef.current) return
+        if (!isMounted || !rootElement) return
 
         const {
           YMap,
@@ -138,13 +205,13 @@ export default function CampusMapPage() {
           YMapMarker,
         } = ymaps3
 
-        map = new YMap(
-          rootRef.current,
+        const yMap = new YMap(
+          rootElement,
           {
             location: INITIAL_LOCATION,
             camera: {
-              azimuth: camera.azimuth * DEG_TO_RAD,
-              tilt: camera.tilt * DEG_TO_RAD,
+              azimuth: cameraRef.current.azimuth * DEG_TO_RAD,
+              tilt: cameraRef.current.tilt * DEG_TO_RAD,
             },
             showScaleInCopyrights: true,
             theme: 'light',
@@ -159,17 +226,18 @@ export default function CampusMapPage() {
           const { YMapZoomControl } = await ymaps3.import('@yandex/ymaps3-default-ui-theme')
           const zoomControls = new YMapControls({ position: 'right' })
           zoomControls.addChild(new YMapZoomControl({}))
-          map.addChild(zoomControls)
+          yMap.addChild(zoomControls)
         } catch (controlError) {
           console.warn('Не удалось загрузить стандартные элементы управления карты:', controlError)
         }
 
         CAMPUS_POINTS.forEach((point) => {
           const marker = new YMapMarker({ coordinates: point.coordinates }, createFlagElement(point))
-          map.addChild(marker)
+          yMap.addChild(marker)
         })
 
-        mapRef.current = map
+        map = yMap
+        mapRef.current = yMap
         if (isMounted) setStatus('ready')
       } catch (mapError) {
         console.error('Не удалось открыть 3D-карту:', mapError)
@@ -185,18 +253,20 @@ export default function CampusMapPage() {
 
       if (map?.destroy) {
         map.destroy()
-      } else if (rootRef.current) {
-        rootRef.current.innerHTML = ''
+      } else if (rootElement) {
+        rootElement.innerHTML = ''
       }
     }
   }, [loadAttempt])
 
-  function updateCamera(patch) {
+  function updateCamera(patch: CameraPatch) {
     setCamera((current) => {
       const next = {
         azimuth: patch.azimuth ?? current.azimuth,
         tilt: clamp(patch.tilt ?? current.tilt, 0, 65),
       }
+
+      cameraRef.current = next
 
       mapRef.current?.update({
         camera: {
@@ -210,7 +280,7 @@ export default function CampusMapPage() {
     })
   }
 
-  function focusPoint(point) {
+  function focusPoint(point: CampusPoint) {
     mapRef.current?.setLocation({
       center: point.coordinates,
       zoom: 18,
@@ -280,7 +350,10 @@ export default function CampusMapPage() {
       <aside className="campus-map__list" aria-label="Отмеченные здания">
         {CAMPUS_POINTS.map((point) => (
           <button key={point.id} type="button" onClick={() => focusPoint(point)}>
-            <span className="campus-map__list-icon" style={{ '--flag-accent': point.accent }}>
+            <span
+              className="campus-map__list-icon"
+              style={{ '--flag-accent': point.accent } as CSSProperties & Record<'--flag-accent', string>}
+            >
               <Building2 aria-hidden="true" size={18} />
             </span>
             <span>
