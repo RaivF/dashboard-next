@@ -1,1 +1,1 @@
-export { default as ReportPage } from './ui/ReportPage.jsx'
+export { default as ReportPage } from './ui/ReportPage.js'

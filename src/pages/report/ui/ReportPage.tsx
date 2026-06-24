@@ -1,9 +1,60 @@
 import { useMemo } from 'react'
 import { BookOpen, ClipboardList, GraduationCap, Users } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { useReport20252026 } from '../../../entities/report/model/useReport20252026.js'
 import { formatNumber } from '../../../shared/lib/formatters.js'
 
-function ReportMetric({ label, value, caption, tone = 'blue', icon: Icon }) {
+type ReportMetricProps = {
+  label: string
+  value: number | string
+  caption?: string
+  tone?: string
+  icon?: LucideIcon
+}
+
+type ReportNamedQuantity = {
+  name: string
+  quantity: number
+}
+
+type ReportPlanRow = {
+  total: number
+}
+
+type GraduationRow = {
+  name: string
+  summer: number
+  winter: number
+  total: number
+}
+
+type GraduationLevel = GraduationRow & {
+  rows: GraduationRow[]
+}
+
+type Report20252026 = {
+  admissionCampaign: {
+    programsTotal: number
+    enrolledTotal2025?: number
+    enrolledKcp2025: ReportNamedQuantity[]
+    plan2026: ReportPlanRow[]
+  }
+  graduation: {
+    total: number
+    summer: {
+      title: string
+      quantity: number
+    }
+    winter: {
+      title: string
+      quantity: number
+    }
+    levels: GraduationLevel[]
+  }
+}
+
+function ReportMetric({ label, value, caption, tone = 'blue', icon: Icon }: ReportMetricProps) {
   return (
     <article className={`report-metric report-metric--${tone}`}>
       {Icon && (
@@ -18,12 +69,12 @@ function ReportMetric({ label, value, caption, tone = 'blue', icon: Icon }) {
   )
 }
 
-function getPercent(value, total) {
+function getPercent(value: number, total: number): number {
   if (!total) return 0
   return Math.round((value / total) * 100)
 }
 
-function GraduationTable({ level }) {
+function GraduationTable({ level }: { level: GraduationLevel }) {
   return (
     <section className="panel report-table-panel">
       <div className="panel__header">
@@ -63,7 +114,7 @@ function GraduationTable({ level }) {
   )
 }
 
-function GraduationSection({ graduation }) {
+function GraduationSection({ graduation }: { graduation: Report20252026['graduation'] }) {
   const summerPercent = getPercent(graduation.summer.quantity, graduation.total)
   const winterPercent = 100 - summerPercent
 
@@ -81,7 +132,7 @@ function GraduationSection({ graduation }) {
         <article className="report-graduation-donut-panel">
           <div
             className="report-graduation-donut"
-            style={{ '--summer-share': `${summerPercent}%` }}
+            style={{ '--summer-share': `${summerPercent}%` } as CSSProperties}
             aria-label={`Летний выпуск ${formatNumber(graduation.summer.quantity)}, зимний выпуск ${formatNumber(graduation.winter.quantity)}`}
           >
             <div>
@@ -166,7 +217,8 @@ function ReportLoading() {
 }
 
 export default function ReportPage() {
-  const { report, loading, error } = useReport20252026()
+  const { report: reportData, loading, error } = useReport20252026()
+  const report = reportData as Report20252026 | null
 
   const reportMetrics = useMemo(() => {
     if (!report) return []
