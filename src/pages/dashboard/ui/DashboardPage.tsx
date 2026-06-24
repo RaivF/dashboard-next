@@ -5,7 +5,12 @@ import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
 import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.jsx'
-import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.jsx'
+import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.js'
+
+type DashboardError = {
+  status?: number
+  message?: string
+}
 
 export default function DashboardPage() {
   const {
@@ -33,6 +38,7 @@ export default function DashboardPage() {
   } = useApplicantsStatistics(period)
   const analytics = useMemo(() => buildAnalytics(response, range, selectedDate), [response, range, selectedDate])
   const selectedRange = getRangeLabel(range)
+  const dashboardError = error as DashboardError | null
 
   return (
     <>
@@ -55,10 +61,10 @@ export default function DashboardPage() {
         setSelectedDate={setSelectedDate}
       />
 
-      {error && (
+      {dashboardError && (
         <section className="error-box">
           <strong>Ошибка загрузки данных</strong>
-          <span>{error.status ? `HTTP ${error.status}: ` : ''}{error.message}</span>
+          <span>{dashboardError.status ? `HTTP ${dashboardError.status}: ` : ''}{dashboardError.message}</span>
         </section>
       )}
 

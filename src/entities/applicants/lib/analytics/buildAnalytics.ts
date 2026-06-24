@@ -9,7 +9,7 @@ import { groupBy, groupByDate, groupByFunding, groupByMethod, groupBySpecialty, 
 import { buildPreviousYearChartSeries, buildPreviousYearComparison, getPreviousYearWindow } from './previousYear.js'
 import { normalizeAdmissionControlNumbers } from './kcp.js'
 
-export function buildAnalytics(response, range = 'all', selectedDate = null) {
+export function buildAnalytics(response: unknown, range = 'all', selectedDate: Date | null = null): any {
   const allItems = Array.isArray(response?.applicants_statistics) ? response.applicants_statistics : []
   const rangeWindow = getRangeWindow(allItems, range, selectedDate)
   const items = filterItemsByRange(allItems, range, selectedDate)

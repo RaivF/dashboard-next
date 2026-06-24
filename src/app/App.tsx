@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import 'react-datepicker/dist/react-datepicker.css'
-import DashboardPage from '../pages/dashboard/ui/DashboardPage.jsx'
+import DashboardPage from '../pages/dashboard/ui/DashboardPage.js'
 import ReportPage from '../pages/report/ui/ReportPage.jsx'
 import SpecialtiesPage from '../pages/specialties/ui/SpecialtiesPage.jsx'
 import { useTheme } from '../features/theme-switcher/model/useTheme.js'

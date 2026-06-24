@@ -1,1 +1,1 @@
-export { default as DashboardPage } from './ui/DashboardPage.jsx'
+export { default as DashboardPage } from './ui/DashboardPage.js'

@@ -2,16 +2,44 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { formatNumber, formatPercentDecimal } from '../../../shared/lib/formatters.js'
 import { KCP_SORT_OPTIONS, buildKcpRulerTicks, sortKcpDirections } from '../lib/kcpProgress.js'
+import type { KcpSortMode } from '../lib/kcpProgress.js'
 
-export default function KcpProgress({ data, loading }) {
+type KcpProgressDirection = {
+  code?: string
+  name: string
+  plan: number
+  current: number
+  percent: number
+  fillPercent: number
+  remaining: number
+  overflow: number
+}
+
+type KcpProgressData = {
+  hasPlan?: boolean
+  fillPercent?: number
+  percent?: number
+  plan?: number
+  current?: number
+  remaining?: number
+  overflow?: number
+  directions?: KcpProgressDirection[]
+}
+
+type KcpProgressProps = {
+  data?: KcpProgressData | null
+  loading: boolean
+}
+
+export default function KcpProgress({ data, loading }: KcpProgressProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [sortMode, setSortMode] = useState('fillAsc')
+  const [sortMode, setSortMode] = useState<KcpSortMode>('fillAsc')
   const [searchValue, setSearchValue] = useState('')
-  const listRef = useRef(null)
+  const listRef = useRef<HTMLDivElement>(null)
   const hasPlan = data?.hasPlan
-  const fillPercent = hasPlan ? data.fillPercent : 0
+  const fillPercent = hasPlan ? (data?.fillPercent ?? 0) : 0
   const markerPercent = Math.min(100, Math.max(8, fillPercent))
-  const directions = data?.directions || []
+  const directions = useMemo(() => data?.directions || [], [data?.directions])
   const hasDirections = directions.length > 0
   const rulerTicks = useMemo(() => buildKcpRulerTicks(data?.plan), [data?.plan])
   const searchQuery = searchValue.trim().toLowerCase()
@@ -26,8 +54,9 @@ export default function KcpProgress({ data, loading }) {
     })
   }, [directions, searchQuery])
   const sortedDirections = useMemo(() => sortKcpDirections(filteredDirections, sortMode), [filteredDirections, sortMode])
-  const deltaLabel = data?.overflow > 0
-    ? `превышение на ${formatNumber(data.overflow)}`
+  const overflow = data?.overflow ?? 0
+  const deltaLabel = overflow > 0
+    ? `превышение на ${formatNumber(overflow)}`
     : `осталось ${formatNumber(data?.remaining || 0)}`
 
   useEffect(() => {
