@@ -1,15 +1,15 @@
-// @ts-nocheck
 import { EXCLUDED_SPECIALTY_LEVEL_CODES, FUNDING_ORDER, METHOD_ORDER, ONLINE_METHOD_LABEL } from './constants.js'
 import { applicantKey, cleanValue, containsEmptyMarker, displayValue, numberValue, readObjectValue } from './normalizers.js'
 import { dateKey } from './date.js'
 import { fullDate, shortDate } from './format.js'
+import type { ApplicantStatistic, ChartPoint, PrioritySummary, QuantityItem, SpecialtyIdentity, SpecialtySummary } from './types.js'
 
-export function sortByQuantityDesc(a, b) {
+export function sortByQuantityDesc(a: QuantityItem, b: QuantityItem): number {
   return b.quantity - a.quantity
 }
 
-export function groupBy(items, field) {
-  const map = new Map()
+export function groupBy(items: ApplicantStatistic[], field: keyof ApplicantStatistic): QuantityItem[] {
+  const map = new Map<string, number>()
 
   items.forEach((item) => {
     const key = displayValue(item[field])
@@ -22,9 +22,9 @@ export function groupBy(items, field) {
   return Array.from(map, ([name, quantity]) => ({ name, quantity })).sort(sortByQuantityDesc)
 }
 
-export function groupByFunding(items) {
-  const known = new Map(FUNDING_ORDER.map((name) => [name, 0]))
-  const extra = new Map()
+export function groupByFunding(items: ApplicantStatistic[]): QuantityItem[] {
+  const known = new Map<string, number>(FUNDING_ORDER.map((name) => [name, 0]))
+  const extra = new Map<string, number>()
 
   items.forEach((item) => {
     const name = displayValue(item.funding_type)
@@ -40,8 +40,8 @@ export function groupByFunding(items) {
   ]
 }
 
-export function groupByDate(items) {
-  const map = new Map()
+export function groupByDate(items: ApplicantStatistic[]): ChartPoint[] {
+  const map = new Map<string, number>()
 
   items.forEach((item) => {
     const key = dateKey(item.date)
@@ -58,8 +58,8 @@ export function groupByDate(items) {
   })).sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export function groupApplicantsByDate(items) {
-  const map = new Map()
+export function groupApplicantsByDate(items: ApplicantStatistic[]): ChartPoint[] {
+  const map = new Map<string, { applicants: Set<string>; fallbackQuantity: number }>()
 
   items.forEach((item) => {
     const key = dateKey(item.date)
@@ -84,7 +84,7 @@ export function groupApplicantsByDate(items) {
   })).sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export function normalizeMethod(value) {
+export function normalizeMethod(value: unknown): string | null {
   const cleaned = displayValue(value)
   if (cleaned === 'Не указано') return null
 
@@ -101,9 +101,9 @@ export function normalizeMethod(value) {
   return cleaned
 }
 
-export function groupByMethod(items) {
-  const known = new Map(METHOD_ORDER.map((method) => [method, 0]))
-  const extra = new Map()
+export function groupByMethod(items: ApplicantStatistic[]): QuantityItem[] {
+  const known = new Map<string, number>(METHOD_ORDER.map((method) => [method, 0]))
+  const extra = new Map<string, number>()
 
   items.forEach((item) => {
     const method = normalizeMethod(item.application_method)
@@ -127,14 +127,14 @@ export function groupByMethod(items) {
   ]
 }
 
-export function parsePriority(value) {
+export function parsePriority(value: unknown): number {
   const cleaned = cleanValue(value)
   const parsed = Number(cleaned)
   return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY
 }
 
-export function groupPriority(items) {
-  const map = new Map()
+export function groupPriority(items: ApplicantStatistic[]): PrioritySummary[] {
+  const map = new Map<string, number>()
 
   items.forEach((item) => {
     const cleanedPriority = cleanValue(item.priority)
@@ -153,7 +153,7 @@ export function groupPriority(items) {
     .slice(0, 5)
 }
 
-export function normalizeSpecialty(item) {
+export function normalizeSpecialty(item: ApplicantStatistic): SpecialtyIdentity {
   const specialty = item.specialty
 
   if (specialty && typeof specialty === 'object') {
@@ -189,21 +189,21 @@ export function normalizeSpecialty(item) {
   }
 }
 
-export function specialtyLevelCode(code) {
+export function specialtyLevelCode(code: unknown): string {
   const match = String(code || '').match(/^\s*\d+\.(\d{2})\./)
   return match?.[1] || ''
 }
 
-export function isRankedSpecialty(item) {
+export function isRankedSpecialty(item: SpecialtyIdentity): boolean {
   return !EXCLUDED_SPECIALTY_LEVEL_CODES.has(specialtyLevelCode(item.code))
 }
 
-export function isFirstPriority(item) {
+export function isFirstPriority(item: ApplicantStatistic): boolean {
   return parsePriority(item.priority) === 1
 }
 
-export function groupBySpecialty(items) {
-  const map = new Map()
+export function groupBySpecialty(items: ApplicantStatistic[]): SpecialtySummary[] {
+  const map = new Map<string, SpecialtyIdentity & { quantity: number }>()
 
   items.forEach((item) => {
     const { name, code } = normalizeSpecialty(item)

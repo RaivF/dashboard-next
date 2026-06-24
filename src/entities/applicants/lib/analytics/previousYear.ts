@@ -1,12 +1,13 @@
-// @ts-nocheck
 import { HALF_HOUR_CHART_RANGES } from './constants.js'
 import { numberValue } from './normalizers.js'
 import { parseDateOnly } from './date.js'
 import { fullDate, fullDateTime, formatDateRange } from './format.js'
 import { groupApplicantsByDate } from './grouping.js'
 import { groupApplicantsByHalfHour, parseDateTime, utcDateKey, utcDateTimeKey } from './chartSeries.js'
+import type { ApplicantStatistic, ChartPoint, ChartRange, PreviousYearChartPoint, PreviousYearComparison, PreviousYearWindow, RangeWindow } from './types.js'
+import { getPreviousYearStatistics } from './types.js'
 
-export function shiftUtcDateYears(date, years) {
+export function shiftUtcDateYears(date: Date | null, years: number): Date | null {
   if (!date || Number.isNaN(date.getTime?.())) return null
   return new Date(Date.UTC(
     date.getUTCFullYear() + years,
@@ -18,7 +19,11 @@ export function shiftUtcDateYears(date, years) {
   ))
 }
 
-export function filterItemsByWindow(items, startDate, endDate) {
+export function filterItemsByWindow(
+  items: ApplicantStatistic[],
+  startDate: Date | null,
+  endDate: Date | null,
+): ApplicantStatistic[] {
   if (!startDate || !endDate) return []
 
   return items.filter((item) => {
@@ -28,10 +33,8 @@ export function filterItemsByWindow(items, startDate, endDate) {
   })
 }
 
-export function getPreviousYearWindow(response, rangeWindow) {
-  const previousYearItems = Array.isArray(response?.previous_year_statistics)
-    ? response.previous_year_statistics
-    : []
+export function getPreviousYearWindow(response: unknown, rangeWindow: RangeWindow): PreviousYearWindow {
+  const previousYearItems = getPreviousYearStatistics(response)
 
   if (!rangeWindow.startDate || !rangeWindow.endDate || previousYearItems.length === 0) {
     return {
@@ -51,7 +54,7 @@ export function getPreviousYearWindow(response, rangeWindow) {
   }
 }
 
-export function buildPreviousYearComparison(response, rangeWindow) {
+export function buildPreviousYearComparison(response: unknown, rangeWindow: RangeWindow): PreviousYearComparison {
   const previousYearWindow = getPreviousYearWindow(response, rangeWindow)
 
   if (!previousYearWindow.startDate || !previousYearWindow.endDate) {
@@ -77,10 +80,12 @@ export function buildPreviousYearComparison(response, rangeWindow) {
   }
 }
 
-export function buildPreviousYearChartSeries(response, currentSeries, range) {
-  const previousYearItems = Array.isArray(response?.previous_year_statistics)
-    ? response.previous_year_statistics
-    : []
+export function buildPreviousYearChartSeries(
+  response: unknown,
+  currentSeries: ChartPoint[],
+  range: ChartRange,
+): PreviousYearChartPoint[] {
+  const previousYearItems = getPreviousYearStatistics(response)
 
   if (!currentSeries.length || previousYearItems.length === 0) return []
 
@@ -99,7 +104,7 @@ export function buildPreviousYearChartSeries(response, currentSeries, range) {
         label: point.label,
         fullLabel: point.fullLabel,
         previousFullLabel: fullDateTime(previousDate),
-        quantity: hasData ? previousBySlot.get(previousKey) : 0,
+        quantity: hasData ? previousBySlot.get(previousKey) ?? 0 : 0,
         isMissing: !hasData,
       }
     })
@@ -119,7 +124,7 @@ export function buildPreviousYearChartSeries(response, currentSeries, range) {
       label: point.label,
       fullLabel: point.fullLabel,
       previousFullLabel: fullDate(previousKey),
-      quantity: hasData ? previousByDate.get(previousKey) : 0,
+      quantity: hasData ? previousByDate.get(previousKey) ?? 0 : 0,
       isMissing: !hasData,
     }
   })

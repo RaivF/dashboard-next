@@ -1,13 +1,17 @@
-// @ts-nocheck
 import { addUtcDays, endOfUtcMonth, endOfUtcWeek, endOfUtcYear, getAnchorDate, getDateBounds, parseDateOnly, startOfAdmissionYear, startOfUtcMonth, startOfUtcWeek } from './date.js'
+import type { ApplicantStatistic, ChartRange, RangeWindow } from './types.js'
 
-export function getRangeWindow(items, range = 'all', selectedDate = null) {
+export function getRangeWindow(
+  items: ApplicantStatistic[],
+  range: ChartRange = 'all',
+  selectedDate: Date | null = null,
+): RangeWindow {
   const bounds = getDateBounds(items)
 
   if (!bounds.hasDates) return bounds
   if (range === 'all') return bounds
 
-  if (range === 'actual') {
+  if (range === 'actual' && bounds.startDate && bounds.endDate) {
     const campaignStart = startOfAdmissionYear(bounds.endDate)
     return {
       startDate: campaignStart <= bounds.endDate ? campaignStart : bounds.startDate,
@@ -46,7 +50,11 @@ export function getRangeWindow(items, range = 'all', selectedDate = null) {
   return bounds
 }
 
-export function filterItemsByRange(items, range = 'all', selectedDate = null) {
+export function filterItemsByRange(
+  items: ApplicantStatistic[],
+  range: ChartRange = 'all',
+  selectedDate: Date | null = null,
+): ApplicantStatistic[] {
   if (range === 'all') return items
 
   const window = getRangeWindow(items, range, selectedDate)
@@ -55,6 +63,7 @@ export function filterItemsByRange(items, range = 'all', selectedDate = null) {
   return items.filter((item) => {
     const itemDate = parseDateOnly(item.date)
     if (!itemDate) return false
+    if (!window.startDate || !window.endDate) return false
     return itemDate >= window.startDate && itemDate <= window.endDate
   })
 }

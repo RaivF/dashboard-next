@@ -1,5 +1,4 @@
-// @ts-nocheck
-export function shortDate(value) {
+export function shortDate(value: string): string {
   if (!value || value === 'Без даты') return value
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
@@ -11,7 +10,7 @@ export function shortDate(value) {
   })
 }
 
-export function fullDate(value) {
+export function fullDate(value: string): string {
   if (!value || value === 'Без даты') return value
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
@@ -24,7 +23,7 @@ export function fullDate(value) {
   })
 }
 
-export function formatRangeDate(value) {
+export function formatRangeDate(value: Date | null | undefined): string {
   if (!value) return ''
 
   return value.toLocaleDateString('ru-RU', {
@@ -35,7 +34,7 @@ export function formatRangeDate(value) {
   })
 }
 
-export function formatDateRange(startDate, endDate) {
+export function formatDateRange(startDate: Date | null, endDate: Date | null): string {
   if (!startDate || !endDate) return 'Нет данных за выбранный период'
 
   if (startDate.getTime() === endDate.getTime()) {
@@ -45,7 +44,7 @@ export function formatDateRange(startDate, endDate) {
   return `${formatRangeDate(startDate)} — ${formatRangeDate(endDate)}`
 }
 
-export function shortDateTime(value, showDate = false) {
+export function shortDateTime(value: string | Date, showDate = false): string {
   if (!value) return ''
   const parsed = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(parsed.getTime())) return ''
@@ -67,7 +66,7 @@ export function shortDateTime(value, showDate = false) {
   return `${date} ${time}`
 }
 
-export function fullDateTime(value) {
+export function fullDateTime(value: string | Date | null): string {
   if (!value) return ''
   const parsed = value instanceof Date ? value : new Date(value)
   if (Number.isNaN(parsed.getTime())) return ''

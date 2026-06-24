@@ -1,17 +1,18 @@
-// @ts-nocheck
 import { EMPTY_MARKERS, ONLINE_METHOD_LABEL } from './constants.js'
+import type { ApplicantStatistic, AnalyticsRecord } from './types.js'
+import { isAnalyticsRecord } from './types.js'
 
-export function normalizeText(value) {
+export function normalizeText(value: unknown): string {
   return String(value).replace(/\u00a0/g, ' ').trim()
 }
 
-export function containsEmptyMarker(value) {
+export function containsEmptyMarker(value: unknown): boolean {
   const normalized = normalizeText(value).toLowerCase()
   return EMPTY_MARKERS.some((marker) => normalized === marker || normalized.includes(marker))
 }
 
-export function readObjectValue(value, keys) {
-  if (!value || typeof value !== 'object') return undefined
+export function readObjectValue(value: unknown, keys: string[]): unknown {
+  if (!isAnalyticsRecord(value)) return undefined
 
   for (const key of keys) {
     if (value[key] !== null && value[key] !== undefined && value[key] !== '') {
@@ -22,14 +23,14 @@ export function readObjectValue(value, keys) {
   return undefined
 }
 
-function flattenObjectText(value) {
-  if (!value || typeof value !== 'object') return ''
+function flattenObjectText(value: unknown): string {
+  if (!isAnalyticsRecord(value)) return ''
 
   try {
     return Object.values(value)
       .flatMap((item) => {
         if (item === null || item === undefined) return []
-        if (typeof item === 'object') return Object.values(item).filter((nested) => typeof nested !== 'object')
+        if (isAnalyticsRecord(item)) return Object.values(item).filter((nested) => !isAnalyticsRecord(nested))
         return [item]
       })
       .map((item) => normalizeText(item))
@@ -40,10 +41,10 @@ function flattenObjectText(value) {
   }
 }
 
-export function cleanValue(value) {
+export function cleanValue(value: unknown): string {
   if (value === null || value === undefined || value === '') return 'Не указано'
 
-  if (typeof value === 'object') {
+  if (isAnalyticsRecord(value)) {
     const objectValue = readObjectValue(value, [
       'name',
       'title',
@@ -80,17 +81,17 @@ const DISPLAY_VALUE_MAP = new Map([
   ['Суперсервис «Поступление в вуз онлайн»', ONLINE_METHOD_LABEL],
 ])
 
-export function displayValue(value) {
+export function displayValue(value: unknown): string {
   const cleaned = cleanValue(value)
   return DISPLAY_VALUE_MAP.get(cleaned) || cleaned
 }
 
-export function numberValue(value) {
+export function numberValue(value: unknown): number {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function directApplicantKey(item) {
+function directApplicantKey(item: AnalyticsRecord): string | null {
   const directKey = readObjectValue(item, [
     'applicant_id',
     'applicantId',
@@ -107,7 +108,7 @@ function directApplicantKey(item) {
   return directKey === undefined ? null : `id:${cleanValue(directKey).toLowerCase()}`
 }
 
-export function applicantKey(item) {
+export function applicantKey(item: ApplicantStatistic): string | null {
   const directKey = directApplicantKey(item)
 
   if (directKey) return directKey
@@ -122,8 +123,8 @@ export function applicantKey(item) {
   return null
 }
 
-export function countUniqueApplicants(items) {
-  const keys = new Set()
+export function countUniqueApplicants(items: ApplicantStatistic[]): number {
+  const keys = new Set<string>()
 
   items.forEach((item) => {
     const key = applicantKey(item)

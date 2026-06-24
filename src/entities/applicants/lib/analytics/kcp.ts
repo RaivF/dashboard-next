@@ -1,9 +1,27 @@
-// @ts-nocheck
 import { displayValue, numberValue, readObjectValue } from './normalizers.js'
 import { normalizeSpecialty } from './grouping.js'
+import type { AdmissionControlNumbers, AdmissionDirectionPlan, AdmissionDirectionStats, AnalyticsRecord, ApplicantStatistic, QuantityItem } from './types.js'
+import { isAnalyticsRecord } from './types.js'
 
-export function normalizeAdmissionDirectionPlans(source) {
-  const directions = source?.directions || source?.specialties || source?.programs || source?.items || []
+function readArray(source: AnalyticsRecord, keys: string[]): unknown[] {
+  for (const key of keys) {
+    const value = source[key]
+    if (Array.isArray(value)) return value
+  }
+
+  return []
+}
+
+function getAdmissionSource(response: unknown): AnalyticsRecord {
+  if (!isAnalyticsRecord(response)) return {}
+
+  const source = response.admission_control_numbers || response.kcp || response.control_admission_numbers
+  return isAnalyticsRecord(source) ? source : {}
+}
+
+export function normalizeAdmissionDirectionPlans(source: unknown): AdmissionDirectionPlan[] {
+  const normalizedSource = isAnalyticsRecord(source) ? source : {}
+  const directions = readArray(normalizedSource, ['directions', 'specialties', 'programs', 'items'])
 
   return Array.isArray(directions)
     ? directions.map((item) => ({
@@ -14,14 +32,17 @@ export function normalizeAdmissionDirectionPlans(source) {
     : []
 }
 
-export function buildAdmissionDirectionStats(directionPlans, allItems) {
+export function buildAdmissionDirectionStats(
+  directionPlans: AdmissionDirectionPlan[],
+  allItems: ApplicantStatistic[],
+): AdmissionDirectionStats[] {
   if (!directionPlans.length) return []
 
-  const actualBySpecialty = new Map()
-  const actualByCode = new Map()
-  const actualByName = new Map()
-  const directionCodeCounts = new Map()
-  const directionNameCounts = new Map()
+  const actualBySpecialty = new Map<string, number>()
+  const actualByCode = new Map<string, number>()
+  const actualByName = new Map<string, number>()
+  const directionCodeCounts = new Map<string, number>()
+  const directionNameCounts = new Map<string, number>()
 
   directionPlans.forEach((item) => {
     if (item.code) directionCodeCounts.set(item.code, (directionCodeCounts.get(item.code) || 0) + 1)
@@ -62,8 +83,12 @@ export function buildAdmissionDirectionStats(directionPlans, allItems) {
   }).sort((a, b) => b.current - a.current || a.name.localeCompare(b.name, 'ru'))
 }
 
-export function normalizeAdmissionControlNumbers(response, current, allItems = []) {
-  const source = response?.admission_control_numbers || response?.kcp || response?.control_admission_numbers || {}
+export function normalizeAdmissionControlNumbers(
+  response: unknown,
+  current: number,
+  allItems: ApplicantStatistic[] = [],
+): AdmissionControlNumbers {
+  const source = getAdmissionSource(response)
   const total = numberValue(readObjectValue(source, [
     'total',
     'quantity',
@@ -72,7 +97,7 @@ export function normalizeAdmissionControlNumbers(response, current, allItems = [
     'КЦП',
     'КонтрольныеЦифрыПриема',
   ]))
-  const categories = Array.isArray(source?.categories)
+  const categories: QuantityItem[] = Array.isArray(source.categories)
     ? source.categories.map((item) => ({
       name: displayValue(readObjectValue(item, ['name', 'title', 'funding_type', 'Наименование'])),
       quantity: numberValue(readObjectValue(item, ['quantity', 'total', 'plan', 'value', 'Количество'])),
