@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import type { CSSProperties } from 'react'
 import { formatNumber, formatPercentDecimal } from '../../../../shared/lib/formatters.js'
 import Panel from '../../../../shared/ui/Panel.js'
 import ChartLoading from './ChartLoading.js'
@@ -25,6 +26,57 @@ import {
 } from './ChartDots.js'
 import { CHART_COLORS, chartCursorProps } from './chartConfig.js'
 import { buildBarComparisonData, buildDonutRows } from './chartData.js'
+import type { NamedQuantity } from './chartData.js'
+
+type ChartPoint = {
+  date?: string
+  label?: string
+  fullLabel?: string
+  previousFullLabel?: string
+  quantity: number
+  isMissing?: boolean
+}
+
+type DateAreaChartProps = {
+  data: ChartPoint[]
+  loading?: boolean
+  previousYearData?: ChartPoint[]
+  showPreviousYear?: boolean
+  onTogglePreviousYear?: (value: boolean) => void
+}
+
+type BarYearLabelProps = {
+  x?: number | string
+  y?: number | string
+  width?: number | string
+  height?: number | string
+  label?: string
+  tone?: string
+}
+
+type CategoryChartProps = {
+  title: string
+  subtitle: string
+  data: NamedQuantity[]
+  loading?: boolean
+  previousYearData?: NamedQuantity[]
+  showPreviousYear?: boolean
+  onTogglePreviousYear?: (value: boolean) => void
+  currentYear?: string
+  previousYear?: string
+  comparisonOrder?: 'current-first' | 'previous-first'
+}
+
+type DonutRow = ReturnType<typeof buildDonutRows>[number]
+type DonutSlice = NamedQuantity & {
+  color: string
+}
+type DonutMetricColumn = {
+  key: string
+  label: string
+  quantityKey: 'currentQuantity' | 'previousQuantity'
+  percentKey: 'currentPercent' | 'previousPercent'
+}
 
 export function DateAreaChart({
   data,
@@ -32,7 +84,7 @@ export function DateAreaChart({
   previousYearData = [],
   showPreviousYear = true,
   onTogglePreviousYear,
-}) {
+}: DateAreaChartProps) {
   const hasPreviousYearData = previousYearData.some((item) => !item.isMissing)
   const previousYearEnabled = showPreviousYear && hasPreviousYearData
   const chartData = data.map((item, index) => {
@@ -110,7 +162,7 @@ export function DateAreaChart({
   )
 }
 
-function BarYearLabel({ x, y, width, height, label, tone }) {
+function BarYearLabel({ x, y, width, height, label, tone }: BarYearLabelProps) {
   const boxX = Number(x)
   const boxY = Number(y)
   const boxWidth = Number(width)
@@ -149,7 +201,7 @@ export function VerticalBarChart({
   onTogglePreviousYear,
   currentYear = '',
   previousYear = '',
-}) {
+}: CategoryChartProps) {
   const hasPreviousYearData = previousYearData.some((item) => item.quantity > 0)
   const previousYearEnabled = showPreviousYear && hasPreviousYearData
   const chartData = previousYearEnabled ? buildBarComparisonData(data, previousYearData) : data
@@ -182,7 +234,7 @@ export function VerticalBarChart({
               <Bar dataKey="quantity" name={previousYearEnabled ? 'Текущий период' : 'Заявок'} fill={previousYearEnabled ? 'var(--green)' : undefined} radius={[12, 12, 0, 0]}>
                 <LabelList dataKey="quantity" position="top" formatter={formatNumber} className="bar-value-label" />
                 {previousYearEnabled && (
-                  <LabelList content={(props) => <BarYearLabel {...props} label={currentYear} tone="current" />} />
+                  <LabelList content={(props) => <BarYearLabel {...(props as BarYearLabelProps)} label={currentYear} tone="current" />} />
                 )}
                 {!previousYearEnabled && chartData.map((entry, index) => (
                   <Cell key={entry.name} fill={CHART_COLORS[index % CHART_COLORS.length]} />
@@ -191,7 +243,7 @@ export function VerticalBarChart({
               {previousYearEnabled && (
                 <Bar dataKey="previousYearQuantity" name="Прошлый год" fill="var(--chart-previous-year)" radius={[12, 12, 0, 0]}>
                   <LabelList dataKey="previousYearQuantity" position="top" formatter={formatNumber} className="bar-value-label bar-value-label--previous" />
-                  <LabelList content={(props) => <BarYearLabel {...props} label={previousYear} tone="previous" />} />
+                  <LabelList content={(props) => <BarYearLabel {...(props as BarYearLabelProps)} label={previousYear} tone="previous" />} />
                 </Bar>
               )}
             </BarChart>
@@ -202,7 +254,7 @@ export function VerticalBarChart({
   )
 }
 
-function DonutSection({ data, label = '', year = '' }) {
+function DonutSection({ data, label = '', year = '' }: { data: DonutSlice[]; label?: string; year?: string }) {
   return (
     <div className="donut-section">
       {label && <div className="donut-section__label">{label}</div>}
@@ -227,18 +279,31 @@ function DonutSection({ data, label = '', year = '' }) {
   )
 }
 
-function DonutComparisonLegend({ rows, showPreviousYear, comparisonOrder = 'current-first' }) {
-  const metricColumns = showPreviousYear && comparisonOrder === 'previous-first'
-    ? [
-      { key: 'previous', label: 'Прошлый год', quantityKey: 'previousQuantity', percentKey: 'previousPercent' },
-      { key: 'current', label: 'Текущий', quantityKey: 'currentQuantity', percentKey: 'currentPercent' },
-    ]
-    : [
-      { key: 'current', label: 'Текущий', quantityKey: 'currentQuantity', percentKey: 'currentPercent' },
-      ...(showPreviousYear
-        ? [{ key: 'previous', label: 'Прошлый год', quantityKey: 'previousQuantity', percentKey: 'previousPercent' }]
-        : []),
-    ]
+function DonutComparisonLegend({
+  rows,
+  showPreviousYear,
+  comparisonOrder = 'current-first',
+}: {
+  rows: DonutRow[]
+  showPreviousYear: boolean
+  comparisonOrder?: 'current-first' | 'previous-first'
+}) {
+  const currentColumn: DonutMetricColumn = {
+    key: 'current',
+    label: '??????????????',
+    quantityKey: 'currentQuantity',
+    percentKey: 'currentPercent',
+  }
+  const previousColumn: DonutMetricColumn = {
+    key: 'previous',
+    label: '?????????????? ??????',
+    quantityKey: 'previousQuantity',
+    percentKey: 'previousPercent',
+  }
+  const metricColumns: DonutMetricColumn[] =
+    showPreviousYear && comparisonOrder === 'previous-first'
+      ? [previousColumn, currentColumn]
+      : [currentColumn, ...(showPreviousYear ? [previousColumn] : [])]
 
   return (
     <div className={`donut-legend${showPreviousYear ? ' donut-legend--compare' : ''}`} aria-label="Расшифровка диаграммы">
@@ -247,7 +312,7 @@ function DonutComparisonLegend({ rows, showPreviousYear, comparisonOrder = 'curr
         {metricColumns.map((column) => <span key={column.key}>{column.label}</span>)}
       </div>
       {rows.map((item) => (
-        <div className="donut-legend__row" key={item.name} style={{ '--donut-color': item.color }}>
+        <div className="donut-legend__row" key={item.name} style={{ '--donut-color': item.color } as CSSProperties}>
           <div className="donut-legend__name">
             <span className="legend-list__dot" style={{ background: item.color }} />
             <span>{item.name}</span>
@@ -275,7 +340,7 @@ export function DonutChart({
   currentYear = '',
   previousYear = '',
   comparisonOrder = 'current-first',
-}) {
+}: CategoryChartProps) {
   const hasPreviousYearData = previousYearData.some((item) => item.quantity > 0)
   const previousYearEnabled = showPreviousYear && hasPreviousYearData
   const rows = buildDonutRows(data, previousYearData, previousYearEnabled)

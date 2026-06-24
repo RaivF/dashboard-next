@@ -14,7 +14,7 @@ import {
   DateAreaChart as RawDateAreaChart,
   DonutChart as RawDonutChart,
   VerticalBarChart as RawVerticalBarChart,
-} from './charts/ChartCard.jsx'
+} from './charts/ChartCard.js'
 import KcpProgress from './KcpProgress.js'
 
 // Temporarily hidden until admission control numbers become available in source data.
