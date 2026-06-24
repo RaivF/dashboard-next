@@ -1,8 +1,36 @@
-// @ts-nocheck
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import AdmZip from 'adm-zip'
 import { XMLParser } from 'fast-xml-parser'
+import type { ServerEnvironment } from '../types/environment.js'
+
+type XmlRecord = Record<string, unknown>
+type WorksheetRow = string[]
+type HeaderRow = string[]
+type NormalizedRow = Record<string, string>
+type Specialty = {
+  code: string
+  name: string
+}
+type ApplicantStatistic = {
+  applicant_code: string
+  applicant_id: string
+  applicant_name: string
+  application_id: string
+  application_method: string
+  competition_group_id: string
+  competition_id: string
+  date: string
+  degree_type: string
+  education_program: string
+  form_of_education: string
+  funding_type: string
+  priority: string
+  quantity: number
+  source: string
+  specialty: Specialty
+  status: string
+}
 
 const XLSX_REL_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 const DATE_COLUMNS = new Set([
@@ -15,7 +43,7 @@ const DATE_COLUMNS = new Set([
   'Время отказа от зачисления',
 ])
 
-const DEGREE_BY_CODE = new Map([
+const DEGREE_BY_CODE = new Map<string | undefined, string>([
   ['02', 'Среднее профессиональное образование'],
   ['03', 'Бакалавриат'],
   ['04', 'Магистратура'],
@@ -44,37 +72,48 @@ const parser = new XMLParser({
   textNodeName: '#text',
 })
 
-function asArray(value) {
+function isXmlRecord(value: unknown): value is XmlRecord {
+  return typeof value === 'object' && value !== null
+}
+
+function asArray<T = unknown>(value: T | T[] | null | undefined): T[] {
   if (value === undefined || value === null) return []
   return Array.isArray(value) ? value : [value]
 }
 
-function getZipText(zip, entryName) {
+function getZipText(zip: AdmZip, entryName: string): string {
   const entry = zip.getEntry(entryName)
   if (!entry) return ''
   return zip.readAsText(entry)
 }
 
-function normalizeXmlText(value) {
+function normalizeXmlText(value: unknown): string {
   if (value === null || value === undefined) return ''
   if (typeof value !== 'object') return String(value)
+
+  if (!isXmlRecord(value)) return String(value)
 
   return Object.values(value)
     .map((item) => normalizeXmlText(item))
     .join('')
 }
 
-function getSharedStrings(zip) {
+function getSharedStrings(zip: AdmZip): string[] {
   const sharedStringsXml = getZipText(zip, 'xl/sharedStrings.xml')
   if (!sharedStringsXml) return []
 
   const parsed = parser.parse(sharedStringsXml)
-  const strings = asArray(parsed?.sst?.si)
+  const root = isXmlRecord(parsed) ? parsed : {}
+  const sst = isXmlRecord(root.sst) ? root.sst : {}
+  const strings = asArray(sst.si)
 
-  return strings.map((item) => normalizeXmlText(item?.t ?? item?.r ?? item))
+  return strings.map((item) => {
+    const record = isXmlRecord(item) ? item : {}
+    return normalizeXmlText(record.t ?? record.r ?? item)
+  })
 }
 
-function columnIndex(cellRef = '') {
+function columnIndex(cellRef = ''): number {
   const letters = String(cellRef).match(/[A-Z]+/i)?.[0] || ''
 
   return [...letters.toUpperCase()].reduce((sum, letter) => (
@@ -82,25 +121,31 @@ function columnIndex(cellRef = '') {
   ), 0) - 1
 }
 
-function normalizeTargetPath(target) {
+function normalizeTargetPath(target: unknown): string {
   const value = String(target || '').replace(/\\/g, '/')
   if (value.startsWith('/')) return value.slice(1)
   if (value.startsWith('xl/')) return value
   return `xl/${value}`
 }
 
-function getFirstWorksheetPath(zip) {
+function getFirstWorksheetPath(zip: AdmZip): string {
   const workbook = parser.parse(getZipText(zip, 'xl/workbook.xml'))
   const workbookRels = parser.parse(getZipText(zip, 'xl/_rels/workbook.xml.rels'))
-  const sheet = asArray(workbook?.workbook?.sheets?.sheet)[0]
+  const workbookRoot = isXmlRecord(workbook) ? workbook : {}
+  const workbookNode = isXmlRecord(workbookRoot.workbook) ? workbookRoot.workbook : {}
+  const sheetsNode = isXmlRecord(workbookNode.sheets) ? workbookNode.sheets : {}
+  const sheet = asArray(sheetsNode.sheet).find(isXmlRecord)
   const relId = sheet?.[`@_${XLSX_REL_NS}:id`] || sheet?.['@_r:id']
-  const relationship = asArray(workbookRels?.Relationships?.Relationship)
-    .find((item) => item?.['@_Id'] === relId)
+  const relsRoot = isXmlRecord(workbookRels) ? workbookRels : {}
+  const relationshipsNode = isXmlRecord(relsRoot.Relationships) ? relsRoot.Relationships : {}
+  const relationship = asArray(relationshipsNode.Relationship)
+    .filter(isXmlRecord)
+    .find((item) => item['@_Id'] === relId)
 
   return normalizeTargetPath(relationship?.['@_Target'] || 'worksheets/sheet1.xml')
 }
 
-function getCellValue(cell, sharedStrings) {
+function getCellValue(cell: XmlRecord, sharedStrings: string[]): string {
   const type = cell?.['@_t']
 
   if (type === 's') {
@@ -108,24 +153,29 @@ function getCellValue(cell, sharedStrings) {
   }
 
   if (type === 'inlineStr') {
-    return normalizeXmlText(cell?.is?.t ?? cell?.is)
+    const inlineString = isXmlRecord(cell.is) ? cell.is : {}
+    return normalizeXmlText(inlineString.t ?? cell.is)
   }
 
   return cell?.v === undefined || cell?.v === null ? '' : String(cell.v)
 }
 
-function readWorksheetRows(filePath) {
+function readWorksheetRows(filePath: string): WorksheetRow[] {
   const zip = new AdmZip(filePath)
   const sharedStrings = getSharedStrings(zip)
   const worksheetPath = getFirstWorksheetPath(zip)
   const worksheet = parser.parse(getZipText(zip, worksheetPath))
-  const rows = asArray(worksheet?.worksheet?.sheetData?.row)
+  const worksheetRoot = isXmlRecord(worksheet) ? worksheet : {}
+  const worksheetNode = isXmlRecord(worksheetRoot.worksheet) ? worksheetRoot.worksheet : {}
+  const sheetData = isXmlRecord(worksheetNode.sheetData) ? worksheetNode.sheetData : {}
+  const rows = asArray(sheetData.row)
 
   return rows.map((row) => {
-    const values = []
+    const rowRecord = isXmlRecord(row) ? row : {}
+    const values: string[] = []
 
-    asArray(row?.c).forEach((cell) => {
-      const index = columnIndex(cell?.['@_r'])
+    asArray(rowRecord.c).filter(isXmlRecord).forEach((cell) => {
+      const index = columnIndex(String(cell['@_r'] || ''))
       if (index < 0) return
       values[index] = getCellValue(cell, sharedStrings)
     })
@@ -134,7 +184,7 @@ function readWorksheetRows(filePath) {
   })
 }
 
-function excelSerialToDate(value) {
+function excelSerialToDate(value: unknown): string {
   const serial = Number(value)
   if (!Number.isFinite(serial)) return ''
 
@@ -146,21 +196,21 @@ function excelSerialToDate(value) {
   return date.toISOString().replace('.000Z', '')
 }
 
-function cleanCell(value) {
+function cleanCell(value: unknown): string {
   return String(value ?? '').replace(/\u00a0/g, ' ').trim()
 }
 
-function readRowValue(row, headers, name) {
+function readRowValue(row: WorksheetRow, headers: HeaderRow, name: string): string {
   const index = headers.indexOf(name)
   if (index < 0) return ''
   return cleanCell(row[index])
 }
 
-function normalizeHeaderRow(headerRow) {
+function normalizeHeaderRow(headerRow: WorksheetRow): HeaderRow {
   return headerRow.map((value) => cleanCell(value))
 }
 
-function normalizeDataRow(row, headers) {
+function normalizeDataRow(row: WorksheetRow, headers: HeaderRow): NormalizedRow {
   return Object.fromEntries(headers.map((header, index) => {
     const raw = cleanCell(row[index])
     const value = DATE_COLUMNS.has(header) && raw ? excelSerialToDate(raw) : raw
@@ -169,7 +219,7 @@ function normalizeDataRow(row, headers) {
   }))
 }
 
-function normalizeSpecialty(value) {
+function normalizeSpecialty(value: unknown): Specialty {
   const cleaned = cleanCell(value)
   const match = cleaned.match(/^(?:\d+\.)?(\d{2}\.\d{2}\.\d{2})\s+(.+)$/)
   const code = match?.[1] || ''
@@ -181,12 +231,12 @@ function normalizeSpecialty(value) {
   }
 }
 
-function degreeFromSpecialtyCode(code) {
+function degreeFromSpecialtyCode(code: string): string {
   const levelCode = String(code || '').match(/^\d{2}\.(\d{2})\.\d{2}$/)?.[1]
   return DEGREE_BY_CODE.get(levelCode) || 'Не указано'
 }
 
-function normalizeFunding(row, headers) {
+function normalizeFunding(row: WorksheetRow, headers: HeaderRow): string {
   const placeKind = readRowValue(row, headers, 'Вид мест')
   const applicationKind = readRowValue(row, headers, 'Вид заявления')
 
@@ -197,11 +247,11 @@ function normalizeFunding(row, headers) {
     applicationKind
 }
 
-function normalizeApplicationMethod(source) {
+function normalizeApplicationMethod(source: string): string {
   return APPLICATION_METHOD_BY_SOURCE.get(source) || source
 }
 
-function rowToApplicantStatistic(row, headers) {
+function rowToApplicantStatistic(row: WorksheetRow, headers: HeaderRow): ApplicantStatistic {
   const raw = normalizeDataRow(row, headers)
   const specialty = normalizeSpecialty(raw['НПС/УГСН'])
 
@@ -226,7 +276,7 @@ function rowToApplicantStatistic(row, headers) {
   }
 }
 
-function findWorkbookPath(dataDir) {
+function findWorkbookPath(dataDir: string): string | null {
   if (!existsSync(dataDir)) return null
 
   const candidates = readdirSync(dataDir, { withFileTypes: true })
@@ -241,11 +291,11 @@ function findWorkbookPath(dataDir) {
   return path.join(dataDir, candidates[0])
 }
 
-export function isExcelApplicantsSourceEnabled(env = process.env) {
+export function isExcelApplicantsSourceEnabled(env: ServerEnvironment = process.env): boolean {
   return env.APPLICANTS_XLSX_SOURCE === 'true'
 }
 
-export function loadExcelApplicantsData(rootDir, env = process.env) {
+export function loadExcelApplicantsData(rootDir: string, env: ServerEnvironment = process.env) {
   if (!isExcelApplicantsSourceEnabled(env)) return null
 
   const dataDir = path.join(rootDir, 'DATA')

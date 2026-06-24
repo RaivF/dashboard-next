@@ -1,7 +1,26 @@
-// @ts-nocheck
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { parseSpecialtiesMxl } from '../../../src/entities/specialties/lib/specialties.js'
+
+type Specialty = {
+  code: string
+  name: string
+}
+
+type AdmissionDirectionPlan = Specialty & {
+  quantity: number
+}
+
+type MockApplicantStatistic = {
+  application_method: string
+  date: string
+  degree_type: string
+  form_of_education: string
+  funding_type: string
+  priority: number
+  quantity: number
+  specialty: Specialty
+}
 
 const FUNDING_TYPES = ['Бюджетная основа', 'Полное возмещение затрат', 'Целевой прием', 'Отдельная квота', 'Особая квота']
 const FUNDING_MULTIPLIERS = new Map([
@@ -32,7 +51,7 @@ const SPECIALTIES = [
 ]
 const SPECIALTIES_MXL_PATH = fileURLToPath(new URL('../../../public/specialties.mxl', import.meta.url))
 
-function loadSpecialties() {
+function loadSpecialties(): Specialty[] {
   try {
     const rows = parseSpecialtiesMxl(readFileSync(SPECIALTIES_MXL_PATH))
     return rows.length ? rows.map(({ code, name }) => ({ code, name })) : SPECIALTIES
@@ -43,7 +62,7 @@ function loadSpecialties() {
 
 const MOCK_SPECIALTIES = loadSpecialties()
 
-function buildAdmissionDirectionPlans(total, year) {
+function buildAdmissionDirectionPlans(total: number, year: number): AdmissionDirectionPlan[] {
   const weights = MOCK_SPECIALTIES.map((specialty, index) => ({
     ...specialty,
     weight: 0.82 + seededRandom(year, index, 419) * 0.74,
@@ -65,7 +84,7 @@ function buildAdmissionDirectionPlans(total, year) {
   })
 }
 
-function buildAdmissionControlNumbers(year) {
+function buildAdmissionControlNumbers(year: number) {
   const yearShift = Math.round(seededRandom(year, 311) * 420)
   const total = 32000 + yearShift
 
@@ -82,17 +101,17 @@ function buildAdmissionControlNumbers(year) {
   }
 }
 
-function getDaysInYear(year) {
+function getDaysInYear(year: number): number {
   return new Date(Date.UTC(Number(year), 1, 29)).getUTCMonth() === 1 ? 366 : 365
 }
 
-function getDateByDayOffset(year, dayOffset) {
+function getDateByDayOffset(year: number, dayOffset: number): Date {
   const date = new Date(Date.UTC(Number(year), 0, 1))
   date.setUTCDate(date.getUTCDate() + dayOffset)
   return date
 }
 
-function makeDate(year, dayOffset, itemIndex = 0) {
+function makeDate(year: number, dayOffset: number, itemIndex = 0): string {
   const date = getDateByDayOffset(year, dayOffset)
   const hour = 8 + ((dayOffset * 3 + itemIndex * 5) % 11)
   const minute = ((dayOffset + itemIndex) % 2) * 30
@@ -100,13 +119,13 @@ function makeDate(year, dayOffset, itemIndex = 0) {
   return date.toISOString().replace('.000Z', '')
 }
 
-function seededRandom(...parts) {
+function seededRandom(...parts: number[]): number {
   const seed = parts.reduce((acc, value, index) => acc + Number(value) * (9973 + index * 7919), 0)
   const raw = Math.sin(seed) * 10000
   return raw - Math.floor(raw)
 }
 
-function getSeasonFactor(year, dayOffset) {
+function getSeasonFactor(year: number, dayOffset: number): number {
   const date = getDateByDayOffset(year, dayOffset)
   const month = date.getUTCMonth()
   const dayOfYear = dayOffset + 1
@@ -119,8 +138,8 @@ function getSeasonFactor(year, dayOffset) {
   return Math.max(0.03, (monthBase + mainPeak * 0.80 + augustPeak * 0.35) * weeklyWave)
 }
 
-function buildMockItems(year, previousYearMode = false) {
-  const items = []
+function buildMockItems(year: number, previousYearMode = false): MockApplicantStatistic[] {
+  const items: MockApplicantStatistic[] = []
   const daysInYear = getDaysInYear(year)
   const numericYear = Number(year)
   const yearFactor = 0.88 + seededRandom(numericYear, 41) * 0.34
