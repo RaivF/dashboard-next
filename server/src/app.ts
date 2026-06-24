@@ -16,6 +16,22 @@ export function createApp(env: ServerEnvironment = process.env) {
     helmet({
       contentSecurityPolicy: {
         directives: {
+          'script-src': ["'self'", 'https://api-maps.yandex.ru'],
+          'connect-src': [
+            "'self'",
+            'https://api-maps.yandex.ru',
+            'https://*.maps.yandex.net',
+            'https://*.yandex.ru',
+            'https://*.yandex.net',
+          ],
+          'img-src': [
+            "'self'",
+            'data:',
+            'https://*.maps.yandex.net',
+            'https://*.yandex.ru',
+            'https://*.yandex.net',
+          ],
+          'worker-src': ["'self'", 'blob:'],
           'upgrade-insecure-requests': null,
         },
       },
