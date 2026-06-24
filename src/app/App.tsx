@@ -8,11 +8,16 @@ import { useTheme } from '../features/theme-switcher/model/useTheme.js'
 import ThemeSwitcher from '../features/theme-switcher/ui/ThemeSwitcher.js'
 import AppHeader from '../widgets/app-header/ui/AppHeader.js'
 import { NAV_ITEMS, ROUTES, getRouteTitle, resolveRoutePath } from './routing/routes.js'
+import type { RoutePath } from './routing/routes.js'
 
 const CampusPlanPage = lazy(() => import('../pages/campus-plan/ui/CampusPlanPage.jsx'))
 const CampusMapPage = lazy(() => import('../pages/campus-map/ui/CampusMapPage.jsx'))
 
-function CurrentPage({ path }) {
+type CurrentPageProps = {
+  path: RoutePath
+}
+
+function CurrentPage({ path }: CurrentPageProps) {
   if (path === ROUTES.specialties) return <SpecialtiesPage />
   if (path === ROUTES.report) return <ReportPage />
   if (path === ROUTES.campusPlan) {
@@ -38,7 +43,7 @@ export default function App() {
   const pagePath = resolveRoutePath(location.pathname)
   const { theme, setTheme } = useTheme()
 
-  function handleNavigate(path) {
+  function handleNavigate(path: RoutePath) {
     if (path !== location.pathname) {
       navigate(path)
     }
