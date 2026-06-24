@@ -24,6 +24,7 @@ COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/server ./server
 COPY --from=build --chown=node:node /app/src ./src
 COPY --from=build --chown=node:node /app/public ./public
+COPY --from=build --chown=node:node /app/DATA ./DATA
 COPY --from=build --chown=node:node /app/previous-year-data.txt ./previous-year-data.txt
 
 USER node
