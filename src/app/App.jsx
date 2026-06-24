@@ -5,8 +5,8 @@ import DashboardPage from '../pages/dashboard/ui/DashboardPage.jsx'
 import ReportPage from '../pages/report/ui/ReportPage.jsx'
 import SpecialtiesPage from '../pages/specialties/ui/SpecialtiesPage.jsx'
 import { useTheme } from '../features/theme-switcher/model/useTheme.js'
-import ThemeSwitcher from '../features/theme-switcher/ui/ThemeSwitcher.jsx'
-import AppHeader from '../widgets/app-header/ui/AppHeader.jsx'
+import ThemeSwitcher from '../features/theme-switcher/ui/ThemeSwitcher.js'
+import AppHeader from '../widgets/app-header/ui/AppHeader.js'
 import { NAV_ITEMS, ROUTES, getRouteTitle, resolveRoutePath } from './routing/routes.js'
 
 const CampusPlanPage = lazy(() => import('../pages/campus-plan/ui/CampusPlanPage.jsx'))

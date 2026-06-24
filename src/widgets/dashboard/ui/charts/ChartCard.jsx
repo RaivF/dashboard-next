@@ -14,7 +14,7 @@ import {
   YAxis,
 } from 'recharts'
 import { formatNumber, formatPercentDecimal } from '../../../../shared/lib/formatters.js'
-import Panel from '../../../../shared/ui/Panel.jsx'
+import Panel from '../../../../shared/ui/Panel.js'
 import ChartLoading from './ChartLoading.jsx'
 import ChartTooltip from './ChartTooltip.jsx'
 import {

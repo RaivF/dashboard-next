@@ -1,4 +1,14 @@
-export default function Panel({ title, subtitle, children, className = '', action }) {
+import type { ReactNode } from 'react'
+
+type PanelProps = {
+  title?: ReactNode
+  subtitle?: ReactNode
+  children: ReactNode
+  className?: string
+  action?: ReactNode
+}
+
+export default function Panel({ title, subtitle, children, className = '', action }: PanelProps) {
   return (
     <section className={`panel ${className}`}>
       {(title || subtitle || action) && (

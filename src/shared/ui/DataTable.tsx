@@ -1,9 +1,22 @@
 import { formatNumber } from '../lib/formatters.js'
-import Panel from './Panel.jsx'
+import Panel from './Panel.js'
+
+type DataTableRow = {
+  name: string
+  caption?: string
+  quantity: unknown
+}
+
+type DataTableProps = {
+  title: string
+  subtitle?: string
+  data?: DataTableRow[] | null
+  loading?: boolean
+}
 
 function TableSkeleton() {
   return (
-    <div className="table-loading" aria-label="Загрузка таблицы">
+    <div className="table-loading" aria-label="Р—Р°РіСЂСѓР·РєР° С‚Р°Р±Р»РёС†С‹">
       {Array.from({ length: 5 }).map((_, index) => (
         <div className="table-loading__row" key={index}>
           <span className="table-loading__rank" />
@@ -18,7 +31,7 @@ function TableSkeleton() {
   )
 }
 
-export default function DataTable({ title, subtitle, data, loading = false }) {
+export default function DataTable({ title, subtitle, data, loading = false }: DataTableProps) {
   const rows = Array.isArray(data) ? data : []
 
   return (
@@ -27,7 +40,11 @@ export default function DataTable({ title, subtitle, data, loading = false }) {
         <TableSkeleton />
       ) : (
         <div className="table-list">
-          {rows.length === 0 && <div className="table-list__empty">Нет данных для отображения</div>}
+          {rows.length === 0 && (
+            <div className="table-list__empty">
+              РќРµС‚ РґР°РЅРЅС‹С… РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
+            </div>
+          )}
 
           {rows.map((item, index) => (
             <div className="table-list__row" key={`${item.name}-${item.caption || ''}`}>

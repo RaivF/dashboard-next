@@ -6,8 +6,8 @@ import {
   Target,
   Users,
 } from 'lucide-react'
-import DataTable from '../../../shared/ui/DataTable.jsx'
-import StatCard from '../../../shared/ui/StatCard.jsx'
+import DataTable from '../../../shared/ui/DataTable.js'
+import StatCard from '../../../shared/ui/StatCard.js'
 import { DateAreaChart, DonutChart, VerticalBarChart } from './charts/ChartCard.jsx'
 import KcpProgress from './KcpProgress.jsx'
 
