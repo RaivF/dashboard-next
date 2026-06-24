@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import 'react-datepicker/dist/react-datepicker.css'
 import DashboardPage from '../pages/dashboard/ui/DashboardPage.jsx'
 import ReportPage from '../pages/report/ui/ReportPage.jsx'
@@ -32,21 +33,15 @@ function CurrentPage({ path }) {
 }
 
 export default function App() {
-  const [pagePath, setPagePath] = useState(() => resolveRoutePath(window.location.pathname))
+  const location = useLocation()
+  const navigate = useNavigate()
+  const pagePath = resolveRoutePath(location.pathname)
   const { theme, setTheme } = useTheme()
 
-  useEffect(() => {
-    const handlePopState = () => setPagePath(resolveRoutePath(window.location.pathname))
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
-
-  function navigate(path) {
-    if (path !== window.location.pathname) {
-      window.history.pushState({}, '', path)
+  function handleNavigate(path) {
+    if (path !== location.pathname) {
+      navigate(path)
     }
-
-    setPagePath(resolveRoutePath(path))
   }
 
   return (
@@ -55,7 +50,7 @@ export default function App() {
         activePath={pagePath}
         navItems={NAV_ITEMS}
         title={getRouteTitle(pagePath)}
-        onNavigate={navigate}
+        onNavigate={handleNavigate}
       />
 
       <CurrentPage path={pagePath} />
