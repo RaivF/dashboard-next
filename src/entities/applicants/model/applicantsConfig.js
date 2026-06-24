@@ -1,0 +1,1 @@
+export const APPLICANTS_AUTO_REFRESH_MS = 30 * 60 * 1000

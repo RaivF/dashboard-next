@@ -1,0 +1,63 @@
+name: Deploy to VDS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and restart container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy over SSH
+        env:
+          VDS_HOST: ${{ secrets.VDS_HOST }}
+          VDS_PORT: ${{ secrets.VDS_PORT }}
+          VDS_USER: ${{ secrets.VDS_USER }}
+          VDS_SSH_KEY: ${{ secrets.VDS_SSH_KEY }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+
+          printf '%s\n' "$VDS_SSH_KEY" > ~/.ssh/vds_deploy_key
+          chmod 600 ~/.ssh/vds_deploy_key
+
+          SSH_PORT="${VDS_PORT:-22}"
+          ssh-keyscan -p "$SSH_PORT" "$VDS_HOST" >> ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/vds_deploy_key -p "$SSH_PORT" "$VDS_USER@$VDS_HOST" 'bash -s' <<'REMOTE_DEPLOY'
+          set -euo pipefail
+
+          cd /opt/dashboard
+
+          git fetch origin main
+          git reset --hard origin/main
+          git clean -fd -e .env -e '.env.*'
+
+          docker compose build --pull dashboard
+          docker compose up -d --remove-orphans dashboard
+          docker image prune -f
+
+          for attempt in $(seq 1 30); do
+            health="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' university-dashboard 2>/dev/null || true)"
+
+            if [ "$health" = "healthy" ] || [ "$health" = "running" ]; then
+              docker ps --filter name=university-dashboard --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+              exit 0
+            fi
+
+            sleep 2
+          done
+
+          docker logs --tail 120 university-dashboard
+          exit 1
+          REMOTE_DEPLOY
