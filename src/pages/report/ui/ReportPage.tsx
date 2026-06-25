@@ -217,7 +217,7 @@ function ReportLoading() {
 }
 
 export default function ReportPage() {
-  const { report: reportData, loading, error } = useReport20252026()
+  const { report: reportData, loading } = useReport20252026()
   const report = reportData as Report20252026 | null
 
   const reportMetrics = useMemo(() => {
@@ -258,17 +258,6 @@ export default function ReportPage() {
   }, [report])
 
   if (loading && !report) return <ReportLoading />
-
-  if (error) {
-    return (
-      <section className="report-page">
-        <div className="error-box">
-          <strong>Ошибка загрузки отчёта</strong>
-          <span>{error}</span>
-        </div>
-      </section>
-    )
-  }
 
   if (!report) return null
 

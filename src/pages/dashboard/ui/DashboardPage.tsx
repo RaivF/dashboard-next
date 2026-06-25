@@ -1,16 +1,12 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useApplicantsStatistics } from '../../../entities/applicants/model/useApplicantsStatistics.js'
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
+import { warmOfflineResources } from '../../../shared/offline/offlineResources.js'
 import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.js'
 import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.js'
-
-type DashboardError = {
-  status?: number
-  message?: string
-}
 
 export default function DashboardPage() {
   const {
@@ -31,12 +27,16 @@ export default function DashboardPage() {
   const {
     response,
     loading,
-    error,
     refresh,
   } = useApplicantsStatistics(period)
   const analytics = useMemo(() => buildAnalytics(response, range, selectedDate), [response, range, selectedDate])
   const selectedRange = getRangeLabel(range)
-  const dashboardError = error as DashboardError | null
+
+  useEffect(() => {
+    warmOfflineResources().catch((warmupError: unknown) => {
+      console.warn('Offline resources warmup failed:', warmupError)
+    })
+  }, [])
 
   return (
     <>
@@ -54,13 +54,6 @@ export default function DashboardPage() {
         selectedRange={selectedRange}
         setCampaignYear={setCampaignYear}
       />
-
-      {dashboardError && (
-        <section className="error-box">
-          <strong>Ошибка загрузки данных</strong>
-          <span>{dashboardError.status ? `HTTP ${dashboardError.status}: ` : ''}{dashboardError.message}</span>
-        </section>
-      )}
 
       <DashboardContent
         analytics={analytics}

@@ -1,19 +1,4 @@
-const OFFLINE_CACHE_URLS = [
-  '/api/report-2025-2026',
-  '/api/applicants-statistics',
-  '/api/applicants-statistics?period=2025-01',
-  '/api/applicants-statistics?period=2026-01',
-  '/specialties.mxl',
-  '/assets/plan_melgu.webp',
-  '/assets/plan_melgu.pdf',
-]
-
-async function warmLazyBundles() {
-  await Promise.allSettled([
-    import('../../pages/campus-plan/ui/CampusPlanPage.js'),
-    import('../../pages/campus-map/ui/CampusMapPage.js'),
-  ])
-}
+import { OFFLINE_CACHE_URLS, warmOfflineResources } from './offlineResources.js'
 
 function postWarmCacheMessage(registration: ServiceWorkerRegistration) {
   const worker = registration.active || registration.waiting || registration.installing
@@ -33,7 +18,7 @@ export function registerOfflineSupport() {
         postWarmCacheMessage(registration)
         await navigator.serviceWorker.ready
         postWarmCacheMessage(registration)
-        await warmLazyBundles()
+        await warmOfflineResources()
       })
       .catch((error: unknown) => {
         console.warn('Offline cache registration failed:', error)

@@ -6,7 +6,7 @@ import { useSpecialties } from '../../../entities/specialties/model/useSpecialti
 const ALL_LEVELS_LABEL = SPECIALTY_LEVEL_OPTIONS[0]
 
 export default function SpecialtiesPage() {
-  const { rows, loading, error } = useSpecialties()
+  const { rows, loading } = useSpecialties()
   const [query, setQuery] = useState('')
   const [level, setLevel] = useState(ALL_LEVELS_LABEL)
 
@@ -80,9 +80,7 @@ export default function SpecialtiesPage() {
           </div>
         </div>
 
-        {error && <div className="table-list__empty">Ошибка загрузки: {error}</div>}
-
-        {!error && loading && (
+        {loading && (
           <div className="table-loading" aria-label="Загрузка таблицы специальностей">
             {Array.from({ length: 8 }).map((_, index) => (
               <div className="table-loading__row" key={index}>
@@ -97,7 +95,7 @@ export default function SpecialtiesPage() {
           </div>
         )}
 
-        {!error && !loading && (
+        {!loading && (
           <div className="specialties-table-wrap">
             <table className="specialties-table">
               <thead>

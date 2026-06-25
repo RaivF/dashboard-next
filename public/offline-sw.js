@@ -1,11 +1,14 @@
 const CACHE_PREFIX = 'university-dashboard'
-const APP_CACHE = `${CACHE_PREFIX}-app-v1`
-const DATA_CACHE = `${CACHE_PREFIX}-data-v1`
-const STATIC_CACHE = `${CACHE_PREFIX}-static-v1`
+const APP_CACHE = `${CACHE_PREFIX}-app-v2`
+const DATA_CACHE = `${CACHE_PREFIX}-data-v2`
+const STATIC_CACHE = `${CACHE_PREFIX}-static-v2`
 
 const APP_SHELL_URLS = [
   '/',
   '/index.html',
+  '/specialties',
+  '/report-2025-2026',
+  '/campus-plan',
   '/specialties.mxl',
   '/assets/plan_melgu.webp',
   '/assets/plan_melgu.pdf',
