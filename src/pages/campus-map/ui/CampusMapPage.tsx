@@ -87,7 +87,7 @@ type YMapInstance = {
   addChild: (child: unknown) => void
   destroy?: () => void
   setLocation: (location: { center: Coordinates; zoom: number; duration: number }) => void
-  update: (options: { camera: { azimuth: number; tilt: number; duration?: number } }) => void
+  update: (options: { camera: { azimuth?: number; tilt?: number; duration?: number } }) => void
 }
 
 type YMapControlsInstance = {
@@ -135,6 +135,10 @@ function normalizeAzimuth(value: number): number {
 function getCameraAnimationDuration(current: CameraState, next: CameraState): number {
   const crossesAzimuthBoundary = Math.abs(next.azimuth - current.azimuth) > 180
   return crossesAzimuthBoundary ? 0 : CAMERA_ANIMATION_MS
+}
+
+function hasCameraPatchValue(patch: CameraPatch, key: keyof CameraState): boolean {
+  return Object.prototype.hasOwnProperty.call(patch, key)
 }
 
 function getMapLoader(): Promise<YMaps3Api> {
@@ -278,15 +282,22 @@ export default function CampusMapPage() {
         tilt: clamp(patch.tilt ?? current.tilt, 0, MAX_CAMERA_TILT),
       }
       const duration = getCameraAnimationDuration(current, next)
+      const cameraUpdate: { azimuth?: number; tilt?: number; duration?: number } = {
+        duration,
+      }
+
+      if (hasCameraPatchValue(patch, 'azimuth')) {
+        cameraUpdate.azimuth = next.azimuth * DEG_TO_RAD
+      }
+
+      if (hasCameraPatchValue(patch, 'tilt')) {
+        cameraUpdate.tilt = next.tilt * DEG_TO_RAD
+      }
 
       cameraRef.current = next
 
       mapRef.current?.update({
-        camera: {
-          azimuth: next.azimuth * DEG_TO_RAD,
-          tilt: next.tilt * DEG_TO_RAD,
-          duration,
-        },
+        camera: cameraUpdate,
       })
 
       return next
