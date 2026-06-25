@@ -19,7 +19,7 @@ export function createApp(env: ServerEnvironment = process.env) {
       },
       contentSecurityPolicy: {
         directives: {
-          'script-src': ["'self'", 'https://api-maps.yandex.ru', 'https://yastatic.net'],
+          'script-src': ["'self'", "'wasm-unsafe-eval'", 'https://api-maps.yandex.ru', 'https://yastatic.net'],
           'script-src-elem': ["'self'", 'https://api-maps.yandex.ru', 'https://yastatic.net'],
           'connect-src': [
             "'self'",

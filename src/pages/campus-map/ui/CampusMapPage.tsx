@@ -15,13 +15,13 @@ const MAP_SCRIPT_ID = 'yandex-maps-v3-script'
 const DEG_TO_RAD = Math.PI / 180
 
 const INITIAL_CAMERA = {
-  azimuth: 105,
-  tilt: 50,
+  azimuth: 118,
+  tilt: 65,
 }
 
 const INITIAL_LOCATION = {
-  center: [35.37288, 46.842187],
-  zoom: 16.9,
+  center: [35.37318, 46.84212],
+  zoom: 18.15,
 } satisfies { center: Coordinates; zoom: number }
 
 const CAMPUS_POINTS = [
@@ -283,7 +283,7 @@ export default function CampusMapPage() {
   function focusPoint(point: CampusPoint) {
     mapRef.current?.setLocation({
       center: point.coordinates,
-      zoom: 18,
+      zoom: 18.65,
       duration: 380,
     })
   }
