@@ -36,6 +36,15 @@ async function hasValidCache(sourceHash) {
   }
 }
 
+async function hasGeneratedImage() {
+  try {
+    const outputStats = await stat(outputPath)
+    return outputStats.size > 0
+  } catch {
+    return false
+  }
+}
+
 async function renderCampusPlan() {
   const source = await readFile(sourcePath)
   const sourceHash = createHash('sha256').update(source).digest('hex')
@@ -43,6 +52,14 @@ async function renderCampusPlan() {
   if (await hasValidCache(sourceHash)) {
     await syncProductionAssets()
     console.log('Кеш плана актуален — повторная обработка не требуется.')
+    return
+  }
+
+  if (await hasGeneratedImage()) {
+    await mkdir(cacheDirectory, { recursive: true })
+    await writeFile(hashPath, sourceHash, 'utf8')
+    await syncProductionAssets()
+    console.log('План уже собран — используем готовый WebP без рендера PDF.')
     return
   }
 
