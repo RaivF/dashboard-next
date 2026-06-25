@@ -1,0 +1,8 @@
+dragon-server.ru {
+	encode zstd gzip
+	reverse_proxy dashboard:3001
+}
+
+www.dragon-server.ru {
+	redir https://dragon-server.ru{uri} permanent
+}
