@@ -132,6 +132,11 @@ function normalizeAzimuth(value: number): number {
   return normalized === -180 ? 180 : normalized
 }
 
+function getCameraAnimationDuration(current: CameraState, next: CameraState): number {
+  const crossesAzimuthBoundary = Math.abs(next.azimuth - current.azimuth) > 180
+  return crossesAzimuthBoundary ? 0 : CAMERA_ANIMATION_MS
+}
+
 function getMapLoader(): Promise<YMaps3Api> {
   if (window.ymaps3) return Promise.resolve(window.ymaps3)
   if (mapLoaderPromise) return mapLoaderPromise
@@ -272,6 +277,7 @@ export default function CampusMapPage() {
         azimuth: normalizeAzimuth(patch.azimuth ?? current.azimuth),
         tilt: clamp(patch.tilt ?? current.tilt, 0, MAX_CAMERA_TILT),
       }
+      const duration = getCameraAnimationDuration(current, next)
 
       cameraRef.current = next
 
@@ -279,7 +285,7 @@ export default function CampusMapPage() {
         camera: {
           azimuth: next.azimuth * DEG_TO_RAD,
           tilt: next.tilt * DEG_TO_RAD,
-          duration: CAMERA_ANIMATION_MS,
+          duration,
         },
       })
 
