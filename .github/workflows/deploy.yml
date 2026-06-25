@@ -44,7 +44,7 @@ jobs:
           git clean -fd -e .env -e '.env.*'
 
           docker compose build --pull dashboard
-          docker compose up -d --remove-orphans dashboard
+          docker compose up -d --remove-orphans dashboard caddy
           docker image prune -f
 
           for attempt in $(seq 1 30); do
@@ -52,6 +52,7 @@ jobs:
 
             if [ "$health" = "healthy" ] || [ "$health" = "running" ]; then
               docker ps --filter name=university-dashboard --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
+              docker ps --filter name=university-dashboard-caddy --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
               exit 0
             fi
 
