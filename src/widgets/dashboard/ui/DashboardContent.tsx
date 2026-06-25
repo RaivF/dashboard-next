@@ -1,7 +1,6 @@
 import {
   Award,
   CalendarDays,
-  FileText,
   MousePointerClick,
   Target,
   Users,
@@ -19,11 +18,6 @@ import KcpProgress from './KcpProgress.js'
 
 // Temporarily hidden until admission control numbers become available in source data.
 const KCP_ENABLED = false
-const ratioFormatter = new Intl.NumberFormat('ru-RU', {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 1,
-})
-
 type NamedQuantity = {
   name: string
   quantity: number
@@ -42,7 +36,6 @@ type ChartPoint = {
 type DashboardAnalytics = {
   total: number
   uniqueApplicants: number
-  applicationsPerApplicant: number
   previousYearComparison: {
     value: string
     caption: string
@@ -104,22 +97,11 @@ const VerticalBarChart = RawVerticalBarChart as ComponentType<CategoryChartProps
 
 const STAT_CARDS: StatCardDefinition[] = [
   {
-    title: 'Всего заявлений',
-    getValue: (analytics) => analytics.total,
-    getCaption: (_analytics, selectedRange) => `Суммарное количество · ${selectedRange.toLowerCase()}`,
-    icon: FileText,
-    tone: 'blue',
-  },
-  {
     title: 'Поступающих',
-    getValue: (analytics) => analytics.uniqueApplicants,
-    getCaption: (analytics) => (
-      analytics.uniqueApplicants
-        ? `${ratioFormatter.format(analytics.applicationsPerApplicant)} заявления на человека`
-        : 'Нет данных для дедупликации'
-    ),
+    getValue: (analytics) => analytics.total,
+    getCaption: (_analytics, selectedRange) => `Уникальные люди · ${selectedRange.toLowerCase()}`,
     icon: Users,
-    tone: 'indigo',
+    tone: 'blue',
   },
   {
     title: 'К прошлому году',
@@ -131,21 +113,21 @@ const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Бюджетная основа',
     getValue: (analytics) => analytics.budget,
-    getCaption: () => 'Заявки на бюджет',
+    getCaption: () => 'Поступающие на бюджет',
     icon: Award,
     tone: 'green',
   },
   {
     title: 'Целевой приём',
     getValue: (analytics) => analytics.target,
-    getCaption: () => 'Заявки по целевой квоте',
+    getCaption: () => 'Поступающие по целевой квоте',
     icon: Target,
     tone: 'pink',
   },
   {
     title: 'Онлайн-каналы',
     getValue: (analytics) => analytics.web + analytics.online,
-    getCaption: () => 'СУПЕРСЕРВИС',
+    getCaption: () => 'Поступающие через онлайн-каналы',
     icon: MousePointerClick,
     tone: 'cyan',
   },
@@ -260,11 +242,11 @@ export default function DashboardContent({
       </section>
 
       <section className="dashboard-grid dashboard-grid--bottom">
-        <DataTable title="Топ 5 самых популярных направлений" subtitle="Специальности с наибольшим количеством заявок" data={analytics.topSpecialties} loading={loading} />
-        <DataTable title="Топ 5 самых невостребованных направлений" subtitle="Специальности с наименьшим количеством заявок" data={analytics.bottomSpecialties} loading={loading} />
-        <DataTable title="Уровни образования" subtitle="Количество заявок по уровням" data={analytics.byDegree.slice(0, 7)} loading={loading} />
+        <DataTable title="Топ 5 самых популярных направлений" subtitle="Специальности с наибольшим количеством поступающих" data={analytics.topSpecialties} loading={loading} />
+        <DataTable title="Топ 5 самых невостребованных направлений" subtitle="Специальности с наименьшим количеством поступающих" data={analytics.bottomSpecialties} loading={loading} />
+        <DataTable title="Уровни образования" subtitle="Количество поступающих по уровням" data={analytics.byDegree.slice(0, 7)} loading={loading} />
         <DataTable title="Приоритеты" subtitle="Первые 5 приоритетов по порядку" data={analytics.byPriority} loading={loading} />
-        <DataTable title="Первый приоритет по направлениям" subtitle="Количество заявлений на специальность" data={analytics.firstPrioritySpecialties} loading={loading} />
+        <DataTable title="Первый приоритет по направлениям" subtitle="Количество поступающих на специальность" data={analytics.firstPrioritySpecialties} loading={loading} />
       </section>
     </>
   )

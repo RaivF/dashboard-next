@@ -1,5 +1,5 @@
 import { HALF_HOUR_CHART_RANGES } from './constants.js'
-import { numberValue } from './normalizers.js'
+import { countUniqueApplicants } from './normalizers.js'
 import { parseDateOnly } from './date.js'
 import { fullDate, fullDateTime, formatDateRange } from './format.js'
 import { groupApplicantsByDate } from './grouping.js'
@@ -67,7 +67,7 @@ export function buildPreviousYearComparison(response: unknown, rangeWindow: Rang
     }
   }
 
-  const previous = previousYearWindow.items.reduce((sum, item) => sum + numberValue(item.quantity), 0)
+  const previous = countUniqueApplicants(previousYearWindow.items)
 
   return {
     current: 0,

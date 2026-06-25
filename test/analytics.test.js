@@ -42,7 +42,7 @@ describe('analytics', () => {
     assert.equal(analytics.byDate.at(-1).date, '2025-07-15T23:30')
   })
 
-  it('counts unique applicants separately from applications', () => {
+  it('uses unique applicants as the displayed total', () => {
     const response = {
       applicants_statistics: [
         { date: '2026-06-20T10:00:00', applicant_id: '101', quantity: 1 },
@@ -56,7 +56,7 @@ describe('analytics', () => {
 
     const analytics = buildAnalytics(response, 'day', new Date(2026, 5, 20))
 
-    assert.equal(analytics.total, 3)
+    assert.equal(analytics.total, 2)
     assert.equal(analytics.uniqueApplicants, 2)
     assert.equal(analytics.applicationsPerApplicant, 1.5)
     assert.equal(analytics.byDate.find((item) => item.date === '2026-06-20T10:00').quantity, 2)

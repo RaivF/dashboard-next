@@ -1,4 +1,4 @@
-import { displayValue, numberValue, readObjectValue } from './normalizers.js'
+import { applicantKey, displayValue, numberValue, readObjectValue } from './normalizers.js'
 import { normalizeSpecialty } from './grouping.js'
 import type { AdmissionControlNumbers, AdmissionDirectionPlan, AdmissionDirectionStats, AnalyticsRecord, ApplicantStatistic, QuantityItem } from './types.js'
 import { isAnalyticsRecord } from './types.js'
@@ -38,9 +38,12 @@ export function buildAdmissionDirectionStats(
 ): AdmissionDirectionStats[] {
   if (!directionPlans.length) return []
 
-  const actualBySpecialty = new Map<string, number>()
-  const actualByCode = new Map<string, number>()
-  const actualByName = new Map<string, number>()
+  const actualBySpecialty = new Map<string, Set<string>>()
+  const actualByCode = new Map<string, Set<string>>()
+  const actualByName = new Map<string, Set<string>>()
+  const fallbackBySpecialty = new Map<string, number>()
+  const fallbackByCode = new Map<string, number>()
+  const fallbackByName = new Map<string, number>()
   const directionCodeCounts = new Map<string, number>()
   const directionNameCounts = new Map<string, number>()
 
@@ -56,18 +59,42 @@ export function buildAdmissionDirectionStats(
     if (!specialty.name || quantity <= 0) return
 
     const key = `${specialty.code}::${specialty.name}`
-    actualBySpecialty.set(key, (actualBySpecialty.get(key) || 0) + quantity)
-    actualByCode.set(specialty.code, (actualByCode.get(specialty.code) || 0) + quantity)
-    actualByName.set(specialty.name, (actualByName.get(specialty.name) || 0) + quantity)
+    const applicant = applicantKey(item)
+
+    if (applicant) {
+      const specialtySet = actualBySpecialty.get(key) || new Set<string>()
+      const codeSet = actualByCode.get(specialty.code) || new Set<string>()
+      const nameSet = actualByName.get(specialty.name) || new Set<string>()
+
+      specialtySet.add(applicant)
+      codeSet.add(applicant)
+      nameSet.add(applicant)
+      actualBySpecialty.set(key, specialtySet)
+      actualByCode.set(specialty.code, codeSet)
+      actualByName.set(specialty.name, nameSet)
+      return
+    }
+
+    fallbackBySpecialty.set(key, (fallbackBySpecialty.get(key) || 0) + quantity)
+    fallbackByCode.set(specialty.code, (fallbackByCode.get(specialty.code) || 0) + quantity)
+    fallbackByName.set(specialty.name, (fallbackByName.get(specialty.name) || 0) + quantity)
   })
 
+  const hasCurrent = (sets: Map<string, Set<string>>, fallbacks: Map<string, number>, key: string) =>
+    sets.has(key) || fallbacks.has(key)
+  const readCurrent = (sets: Map<string, Set<string>>, fallbacks: Map<string, number>, key: string) =>
+    hasCurrent(sets, fallbacks, key)
+      ? (sets.get(key)?.size || 0) + (fallbacks.get(key) || 0)
+      : undefined
+
   return directionPlans.map((item) => {
-    const exactCurrent = actualBySpecialty.get(`${item.code}::${item.name}`)
+    const exactKey = `${item.code}::${item.name}`
+    const exactCurrent = readCurrent(actualBySpecialty, fallbackBySpecialty, exactKey)
     const codeCurrent = item.code && directionCodeCounts.get(item.code) === 1
-      ? actualByCode.get(item.code)
+      ? readCurrent(actualByCode, fallbackByCode, item.code)
       : undefined
     const nameCurrent = item.name && directionNameCounts.get(item.name) === 1
-      ? actualByName.get(item.name)
+      ? readCurrent(actualByName, fallbackByName, item.name)
       : undefined
     const current = exactCurrent ?? codeCurrent ?? nameCurrent ?? 0
     const percent = item.plan ? (current / item.plan) * 100 : 0

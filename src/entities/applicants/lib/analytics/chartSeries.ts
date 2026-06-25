@@ -88,7 +88,8 @@ export function groupByHalfHour(items: ApplicantStatistic[]): ChartPoint[] {
 }
 
 export function groupApplicantsByHalfHour(items: ApplicantStatistic[]): ChartPoint[] {
-  const map = new Map<string, { applicants: Set<string>; fallbackQuantity: number }>()
+  const applicantSlots = new Map<string, string>()
+  const fallbackBySlot = new Map<string, number>()
 
   items.forEach((item) => {
     const parsed = parseDateTime(item.date)
@@ -97,22 +98,30 @@ export function groupApplicantsByHalfHour(items: ApplicantStatistic[]): ChartPoi
     const slot = floorUtcToInterval(parsed)
     const key = utcDateTimeKey(slot)
     const applicant = applicantKey(item)
-    const current = map.get(key) || { applicants: new Set(), fallbackQuantity: 0 }
 
     if (applicant) {
-      current.applicants.add(applicant)
+      const currentSlot = applicantSlots.get(applicant)
+      if (!currentSlot || key < currentSlot) applicantSlots.set(applicant, key)
     } else {
-      current.fallbackQuantity += numberValue(item.quantity)
+      fallbackBySlot.set(key, (fallbackBySlot.get(key) || 0) + numberValue(item.quantity))
     }
-
-    map.set(key, current)
   })
 
-  return Array.from(map, ([key, value]) => ({
+  const map = new Map<string, number>()
+
+  applicantSlots.forEach((slot) => {
+    map.set(slot, (map.get(slot) || 0) + 1)
+  })
+
+  fallbackBySlot.forEach((quantity, slot) => {
+    map.set(slot, (map.get(slot) || 0) + quantity)
+  })
+
+  return Array.from(map, ([key, quantity]) => ({
     date: key,
     label: shortDateTime(`${key}:00Z`),
     fullLabel: fullDateTime(`${key}:00Z`),
-    quantity: value.applicants.size + value.fallbackQuantity,
+    quantity,
     isMissing: false,
   })).sort((a, b) => a.date.localeCompare(b.date))
 }

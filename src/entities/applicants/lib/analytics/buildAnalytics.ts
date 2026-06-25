@@ -4,7 +4,7 @@ import { countUniqueApplicants, numberValue } from './normalizers.js'
 import { formatDateRange, fullDate } from './format.js'
 import { filterItemsByRange, getRangeWindow } from './range.js'
 import { buildChartSeries } from './chartSeries.js'
-import { groupBy, groupByDate, groupByFunding, groupByMethod, groupBySpecialty, groupPriority, isFirstPriority, isRankedSpecialty, sortByQuantityDesc } from './grouping.js'
+import { groupApplicantsByDate, groupBy, groupByFunding, groupByMethod, groupBySpecialty, groupPriority, isFirstPriority, isRankedSpecialty, sortByQuantityDesc } from './grouping.js'
 import { buildPreviousYearChartSeries, buildPreviousYearComparison, getPreviousYearWindow } from './previousYear.js'
 import { normalizeAdmissionControlNumbers } from './kcp.js'
 import type { AnalyticsResult, ChartRange } from './types.js'
@@ -19,10 +19,11 @@ export function buildAnalytics(
   const responseRecord = isAnalyticsRecord(response) ? response : {}
   const rangeWindow = getRangeWindow(allItems, range, selectedDate)
   const items = filterItemsByRange(allItems, range, selectedDate)
-  const total = items.reduce((sum, item) => sum + numberValue(item.quantity), 0)
+  const applicationTotal = items.reduce((sum, item) => sum + numberValue(item.quantity), 0)
   const uniqueApplicants = countUniqueApplicants(items) || (range === 'all' ? numberValue(responseRecord.applicants_quantity) : 0)
-  const applicationsPerApplicant = uniqueApplicants ? total / uniqueApplicants : 0
-  const admissionCampaignTotal = allItems.reduce((sum, item) => sum + numberValue(item.quantity), 0)
+  const total = uniqueApplicants
+  const applicationsPerApplicant = uniqueApplicants ? applicationTotal / uniqueApplicants : 0
+  const admissionCampaignTotal = countUniqueApplicants(allItems)
   // КЦП относится ко всей приёмной кампании, поэтому этот блок не должен зависеть от выбранного периода.
   const kcp = normalizeAdmissionControlNumbers(response, admissionCampaignTotal, allItems)
   const previousYearComparison = buildPreviousYearComparison(response, rangeWindow)
@@ -35,13 +36,13 @@ export function buildAnalytics(
     ? `${previousYearComparison.deltaPercent > 0 ? '+' : ''}${formatPercent(previousYearComparison.deltaPercent)}`
     : 'Нет данных'
   previousYearComparison.caption = previousYearComparison.previous
-    ? `${previousYearComparison.delta > 0 ? 'на ' + formatNumber(previousYearComparison.delta) + ' заявок больше' : previousYearComparison.delta < 0 ? 'на ' + formatNumber(Math.abs(previousYearComparison.delta)) + ' заявок меньше' : 'столько же заявок'}, чем за тот же период за прошлый год`
+    ? `${previousYearComparison.delta > 0 ? 'на ' + formatNumber(previousYearComparison.delta) + ' поступающих больше' : previousYearComparison.delta < 0 ? 'на ' + formatNumber(Math.abs(previousYearComparison.delta)) + ' поступающих меньше' : 'столько же поступающих'}, чем за тот же период за прошлый год`
     : 'Нет данных за прошлый год'
   const analyticsPreviousYearComparison = {
     ...previousYearComparison,
     value: previousYearComparison.value,
   }
-  const actualByDate = groupByDate(items)
+  const actualByDate = groupApplicantsByDate(items)
   const byDate = buildChartSeries(items, rangeWindow.startDate, rangeWindow.endDate, range)
   const previousYearByDate = buildPreviousYearChartSeries(response, byDate, range)
   const previousYearWindowItems = getPreviousYearWindow(response, rangeWindow).items

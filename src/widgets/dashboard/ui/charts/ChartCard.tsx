@@ -231,7 +231,7 @@ export function VerticalBarChart({
               <XAxis dataKey="name" tick={{ fill: 'var(--chart-tick)', fontSize: 17, fontWeight: 750 }} tickLine={false} axisLine={false} interval={0} />
               <YAxis tick={{ fill: 'var(--chart-tick)', fontSize: 14 }} tickLine={false} axisLine={false} />
               <Tooltip content={<ChartTooltip />} cursor={chartCursorProps} />
-              <Bar dataKey="quantity" name={previousYearEnabled ? 'Текущий период' : 'Заявок'} fill={previousYearEnabled ? 'var(--green)' : undefined} radius={[12, 12, 0, 0]}>
+              <Bar dataKey="quantity" name={previousYearEnabled ? 'Текущий период' : 'Поступающих'} fill={previousYearEnabled ? 'var(--green)' : undefined} radius={[12, 12, 0, 0]}>
                 <LabelList dataKey="quantity" position="top" formatter={formatNumber} className="bar-value-label" />
                 {previousYearEnabled && (
                   <LabelList content={(props) => <BarYearLabel {...(props as BarYearLabelProps)} label={currentYear} tone="current" />} />

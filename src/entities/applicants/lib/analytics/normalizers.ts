@@ -125,11 +125,16 @@ export function applicantKey(item: ApplicantStatistic): string | null {
 
 export function countUniqueApplicants(items: ApplicantStatistic[]): number {
   const keys = new Set<string>()
+  let fallbackQuantity = 0
 
   items.forEach((item) => {
     const key = applicantKey(item)
-    if (key) keys.add(key)
+    if (key) {
+      keys.add(key)
+    } else {
+      fallbackQuantity += numberValue(item.quantity)
+    }
   })
 
-  return keys.size
+  return keys.size + fallbackQuantity
 }
