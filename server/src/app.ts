@@ -14,9 +14,13 @@ export function createApp(env: ServerEnvironment = process.env) {
 
   app.use(
     helmet({
+      referrerPolicy: {
+        policy: 'strict-origin-when-cross-origin',
+      },
       contentSecurityPolicy: {
         directives: {
           'script-src': ["'self'", 'https://api-maps.yandex.ru'],
+          'script-src-elem': ["'self'", 'https://api-maps.yandex.ru'],
           'connect-src': [
             "'self'",
             'https://api-maps.yandex.ru',
