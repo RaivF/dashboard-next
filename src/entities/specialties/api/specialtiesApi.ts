@@ -1,5 +1,5 @@
-import { apiGetArrayBuffer } from '../../../shared/api/httpClient.js'
+import { cachedApiGetArrayBuffer } from '../../../shared/api/offlineCache.js'
 
 export function getSpecialtiesMxl(signal?: AbortSignal): Promise<ArrayBuffer> {
-  return apiGetArrayBuffer('/specialties.mxl', { signal })
+  return cachedApiGetArrayBuffer('/specialties.mxl', { signal })
 }

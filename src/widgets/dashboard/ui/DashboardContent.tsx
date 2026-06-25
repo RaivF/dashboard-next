@@ -1,14 +1,15 @@
 import {
   Award,
-  CalendarDays,
   FileText,
   MousePointerClick,
   Target,
   Users,
+  X,
 } from 'lucide-react'
-import type { ComponentType } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import DataTable from '../../../shared/ui/DataTable.js'
+import { formatNumber } from '../../../shared/lib/formatters.js'
 import StatCard from '../../../shared/ui/StatCard.js'
 import {
   DateAreaChart as RawDateAreaChart,
@@ -65,12 +66,19 @@ type DashboardAnalytics = {
   firstPrioritySpecialties: NamedQuantity[]
 }
 
+type StatDialog = 'applications' | 'admissionPlaces'
+
 type StatCardDefinition = {
   title: string
   getValue: (analytics: DashboardAnalytics) => number | string
   getCaption: (analytics: DashboardAnalytics, selectedRange: string) => string
   icon: LucideIcon
   tone: string
+  dialog?: {
+    id: StatDialog
+    ariaLabel: string
+    title: string
+  }
 }
 
 type DateAreaChartProps = {
@@ -98,6 +106,8 @@ const DateAreaChart = RawDateAreaChart as ComponentType<DateAreaChartProps>
 const DonutChart = RawDonutChart as ComponentType<CategoryChartProps>
 const VerticalBarChart = RawVerticalBarChart as ComponentType<CategoryChartProps>
 
+const ADMISSION_PARTNERS = Array.from({ length: 7 }, (_item, index) => `Партнёр ${index + 1}`)
+
 const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Всего заявлений',
@@ -105,24 +115,29 @@ const STAT_CARDS: StatCardDefinition[] = [
     getCaption: (_analytics, selectedRange) => `Суммарное количество · ${selectedRange.toLowerCase()}`,
     icon: FileText,
     tone: 'blue',
+    dialog: {
+      id: 'applications',
+      ariaLabel: 'Открыть подробную информацию по всем заявлениям',
+      title: 'Подробная информация по всем заявлениям',
+    },
   },
   {
-    title: 'Поступающих',
+    title: 'Физических лиц',
     getValue: (analytics) => analytics.total,
     getCaption: (analytics, selectedRange) => (
       analytics.uniqueApplicants
-        ? `${selectedRange.toLowerCase()} · ${analytics.applicationsPerApplicant.toFixed(1).replace('.', ',')} заявления на человека`
+        ? `В среднем ${Math.round(analytics.applicationsPerApplicant)} заявления на человека`
         : `Уникальные люди · ${selectedRange.toLowerCase()}`
     ),
     icon: Users,
     tone: 'indigo',
   },
   {
-    title: 'К прошлому году',
-    getValue: (analytics) => analytics.previousYearComparison.value,
-    getCaption: (analytics) => analytics.previousYearComparison.caption,
-    icon: CalendarDays,
-    tone: 'purple',
+    title: 'Онлайн-каналы',
+    getValue: (analytics) => analytics.web + analytics.online,
+    getCaption: () => 'СУПЕРСЕРВИС',
+    icon: MousePointerClick,
+    tone: 'cyan',
   },
   {
     title: 'Бюджетная основа',
@@ -132,24 +147,85 @@ const STAT_CARDS: StatCardDefinition[] = [
     tone: 'green',
   },
   {
-    title: 'Целевой приём',
-    getValue: (analytics) => analytics.target,
-    getCaption: () => 'Поступающие по целевой квоте',
+    title: 'Места для приёма',
+    getValue: () => 7,
+    getCaption: () => 'Доступные места для приёма',
     icon: Target,
     tone: 'pink',
-  },
-  {
-    title: 'Онлайн-каналы',
-    getValue: (analytics) => analytics.web + analytics.online,
-    getCaption: () => 'Поступающие через онлайн-каналы',
-    icon: MousePointerClick,
-    tone: 'cyan',
+    dialog: {
+      id: 'admissionPlaces',
+      ariaLabel: 'Открыть подробную информацию по местам для приёма',
+      title: 'Подробная информация по местам для приёма',
+    },
   },
 ]
 
 function formatAcademicYear(year: unknown): string {
   const numericYear = Number(year)
   return Number.isFinite(numericYear) ? `${numericYear}-${numericYear + 1}` : ''
+}
+
+function formatDialogValue(value: number | string) {
+  return typeof value === 'number' ? formatNumber(value) : value
+}
+
+function DialogMetric({ label, value, caption }: { label: string; value: number | string; caption?: string }) {
+  return (
+    <div className="dashboard-dialog-metric">
+      <span>{label}</span>
+      <strong>{formatDialogValue(value)}</strong>
+      {caption && <small>{caption}</small>}
+    </div>
+  )
+}
+
+function DialogRows({ title, rows }: { title: string; rows: NamedQuantity[] }) {
+  const visibleRows = rows.filter((row) => row.quantity > 0)
+
+  return (
+    <section className="dashboard-dialog-section">
+      <h3>{title}</h3>
+      <div className="dashboard-dialog-rows">
+        {visibleRows.length === 0 && <div className="dashboard-dialog-empty">Нет данных</div>}
+        {visibleRows.map((row) => (
+          <div className="dashboard-dialog-row" key={`${title}-${row.name}-${row.caption || ''}`}>
+            <span>
+              {row.name}
+              {row.caption && <small>{row.caption}</small>}
+            </span>
+            <strong>{formatNumber(row.quantity)}</strong>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytics }) {
+  return (
+    <div className="dashboard-dialog-report">
+      <div className="dashboard-dialog-metrics">
+        <DialogMetric label="Всего заявлений" value={analytics.applicationsTotal} />
+        <DialogMetric label="Физических лиц" value={analytics.total} />
+        <DialogMetric
+          label="В среднем"
+          value={Math.round(analytics.applicationsPerApplicant)}
+          caption="заявления на человека"
+        />
+      </div>
+
+      <div className="dashboard-dialog-grid">
+        <DialogRows title="Основание обучения" rows={analytics.byFunding} />
+        <DialogRows title="Форма обучения" rows={analytics.byForm} />
+        <DialogRows title="Уровни образования" rows={analytics.byDegree} />
+        <DialogRows title="Способ подачи" rows={analytics.byMethod} />
+        <DialogRows title="Приоритеты" rows={analytics.byPriority} />
+        <DialogRows title="Топ направлений" rows={analytics.topSpecialties} />
+        <DialogRows title="Первый приоритет" rows={analytics.firstPrioritySpecialties} />
+        <DialogRows title="Наименее востребованные" rows={analytics.bottomSpecialties} />
+      </div>
+    </div>
+  )
 }
 
 type DashboardContentProps = {
@@ -181,6 +257,7 @@ export default function DashboardContent({
   showPreviousYearMethod,
   setShowPreviousYearMethod,
 }: DashboardContentProps) {
+  const [activeStatDialog, setActiveStatDialog] = useState<StatDialog | null>(null)
   const currentAcademicYear = formatAcademicYear(campaignYear)
   const previousAcademicYear = formatAcademicYear(Number(campaignYear) - 1)
   const currentCalendarYearValue = analytics.rangeEnd?.getUTCFullYear?.()
@@ -189,6 +266,22 @@ export default function DashboardContent({
     analytics.previousYearComparison.previousYear ||
       (currentCalendarYearValue ? currentCalendarYearValue - 1 : ''),
   )
+  const activeDialogTitle = STAT_CARDS.find((card) => card.dialog?.id === activeStatDialog)?.dialog?.title
+
+  useEffect(() => {
+    if (!activeStatDialog) {
+      return undefined
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActiveStatDialog(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [activeStatDialog])
 
   return (
     <>
@@ -196,17 +289,60 @@ export default function DashboardContent({
       {KCP_ENABLED && <KcpProgress data={analytics.kcp} loading={loading} />}
 
       <section className="stats-grid">
-        {STAT_CARDS.map((card) => (
-          <StatCard
-            key={card.title}
-            title={card.title}
-            value={card.getValue(analytics)}
-            caption={card.getCaption(analytics, selectedRange)}
-            icon={card.icon}
-            tone={card.tone}
-          />
-        ))}
+        {STAT_CARDS.map((card) => {
+          const dialog = card.dialog
+
+          return (
+            <StatCard
+              key={card.title}
+              title={card.title}
+              value={card.getValue(analytics)}
+              caption={card.getCaption(analytics, selectedRange)}
+              icon={card.icon}
+              tone={card.tone}
+              onClick={dialog ? () => setActiveStatDialog(dialog.id) : undefined}
+              ariaLabel={dialog?.ariaLabel}
+            />
+          )
+        })}
       </section>
+
+      {activeDialogTitle && (
+        <div
+          className="dashboard-dialog-backdrop"
+          role="presentation"
+          onClick={() => setActiveStatDialog(null)}
+        >
+          <section
+            className="dashboard-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={activeDialogTitle}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              className="dashboard-dialog__close"
+              type="button"
+              aria-label="Закрыть"
+              onClick={() => setActiveStatDialog(null)}
+            >
+              <X size={24} strokeWidth={2.4} />
+            </button>
+            <div className="dashboard-dialog__content">
+              {activeStatDialog === 'applications' && <ApplicationsDialogContent analytics={analytics} />}
+              {activeStatDialog === 'admissionPlaces' && (
+                <div className="dashboard-dialog__list" aria-label="Список партнёров">
+                  {ADMISSION_PARTNERS.map((partner) => (
+                    <div className="dashboard-dialog__list-item" key={partner}>
+                      {partner}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
 
       <section className="dashboard-grid dashboard-grid--top">
         <DateAreaChart

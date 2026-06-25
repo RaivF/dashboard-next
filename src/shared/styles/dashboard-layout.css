@@ -31,6 +31,19 @@
   pointer-events: none;
 }
 
+.stat-card--interactive {
+  cursor: pointer;
+}
+
+.stat-card--interactive:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 72%, #ffffff);
+  outline-offset: 4px;
+}
+
+.stat-card--interactive:hover {
+  transform: translateY(-2px);
+}
+
 .stat-card--blue {
   --accent: var(--blue);
   --card-from: rgba(13, 52, 82, 0.70);
@@ -121,6 +134,181 @@
   color: var(--muted);
   font-size: clamp(13px, 0.9vw, 17px);
   line-height: 1.32;
+}
+
+.dashboard-dialog-backdrop {
+  position: fixed;
+  z-index: 100000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(10px);
+}
+
+.dashboard-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, 100%);
+  max-height: calc(100vh - 48px);
+  min-height: min(420px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: 30px;
+  background: var(--card);
+  box-shadow: 0 34px 90px rgba(2, 6, 23, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.dashboard-dialog__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--card-border));
+  border-radius: 16px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  cursor: pointer;
+}
+
+.dashboard-dialog__close:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--blue) 70%, #ffffff);
+  outline-offset: 3px;
+}
+
+.dashboard-dialog__close:hover {
+  color: #ffffff;
+  background: color-mix(in srgb, var(--blue) 34%, var(--card));
+}
+
+.dashboard-dialog__content {
+  min-height: inherit;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  padding: 72px 26px 26px;
+}
+
+.dashboard-dialog-report {
+  display: grid;
+  gap: 18px;
+}
+
+.dashboard-dialog-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-dialog-metric,
+.dashboard-dialog-section,
+.dashboard-dialog__list-item {
+  border: 1px solid color-mix(in srgb, var(--blue) 18%, var(--card-border));
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 72%, transparent);
+}
+
+.dashboard-dialog-metric {
+  display: grid;
+  gap: 5px;
+  min-height: 104px;
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.dashboard-dialog-metric span,
+.dashboard-dialog-section h3,
+.dashboard-dialog-row span,
+.dashboard-dialog__list-item {
+  color: var(--muted-strong);
+  font-weight: 850;
+}
+
+.dashboard-dialog-metric span,
+.dashboard-dialog-section h3 {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dashboard-dialog-metric strong {
+  color: var(--theme-text, #f8fafc);
+  font-size: clamp(30px, 2.4vw, 48px);
+  font-weight: 950;
+  line-height: 0.96;
+}
+
+.dashboard-dialog-metric small,
+.dashboard-dialog-row small,
+.dashboard-dialog-empty {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.dashboard-dialog-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dashboard-dialog-section {
+  min-width: 0;
+  padding: 16px;
+  border-radius: 22px;
+}
+
+.dashboard-dialog-section h3 {
+  margin: 0 0 10px;
+}
+
+.dashboard-dialog-rows,
+.dashboard-dialog__list {
+  display: grid;
+  gap: 8px;
+}
+
+.dashboard-dialog-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 0;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.dashboard-dialog-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.dashboard-dialog-row span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  line-height: 1.22;
+}
+
+.dashboard-dialog-row strong {
+  color: var(--theme-text, #f8fafc);
+  font-size: 18px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.dashboard-dialog__list {
+  max-width: 560px;
+}
+
+.dashboard-dialog__list-item {
+  padding: 14px 16px;
+  border-radius: 18px;
+  font-size: 18px;
 }
 
 .kcp-panel {
@@ -969,7 +1157,16 @@
 
 .report-page {
   display: grid;
+  gap: 22px;
+  width: min(100%, 1880px);
+  margin: 0 auto;
+}
+
+.report-hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.55fr);
   gap: 18px;
+  align-items: stretch;
 }
 
 .report-cover {
@@ -977,6 +1174,14 @@
   grid-template-columns: auto minmax(0, 1fr);
   gap: 18px;
   align-items: center;
+  min-height: 260px;
+  padding: 30px;
+  border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--card-border));
+  border-radius: 32px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 45%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--blue) 12%, transparent), transparent 62%),
+    color-mix(in srgb, var(--theme-surface-strong, rgba(15, 23, 42, 0.86)) 58%, transparent);
 }
 
 .report-cover__icon {
@@ -1005,10 +1210,15 @@
 }
 
 .report-cover h2,
+.report-cover p {
+  grid-column: 2;
+}
+
+.report-cover h2,
 .report-section__heading h2 {
   margin: 0;
   color: var(--theme-text, #f8fafc);
-  font-size: clamp(28px, 2.5vw, 48px);
+  font-size: clamp(28px, 2.35vw, 52px);
   font-weight: 950;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -1025,8 +1235,21 @@
 
 .report-metrics {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
+}
+
+.report-metrics--summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.report-metrics--hero {
+  grid-template-columns: 1fr;
+  height: 100%;
+}
+
+.report-metrics--admission {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .report-metric,
@@ -1052,6 +1275,20 @@
     linear-gradient(90deg, color-mix(in srgb, var(--report-accent, var(--blue)) 18%, transparent), transparent 36%),
     radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--report-accent, var(--blue)) 18%, transparent), transparent 62%),
     linear-gradient(145deg, var(--metric-base), color-mix(in srgb, var(--theme-surface-strong, rgba(15, 23, 42, 0.86)) 78%, transparent));
+}
+
+.report-metrics--hero .report-metric {
+  align-content: end;
+  min-height: 260px;
+  padding: 30px;
+}
+
+.report-metrics--hero .report-metric strong {
+  font-size: clamp(54px, 4.5vw, 92px);
+}
+
+.report-metrics--hero .report-metric p {
+  font-size: clamp(16px, 1vw, 20px);
 }
 
 .report-metric::before {
@@ -1124,13 +1361,34 @@
   line-height: 1.25;
 }
 
+.report-clickable {
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.report-clickable:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--blue) 34%, var(--card-border));
+  box-shadow: 0 22px 58px rgba(2, 6, 23, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+
+.report-clickable:focus-visible,
+.report-panel-action:focus-visible,
+.report-table-total:focus-visible,
+.report-graduation-legend__item:focus-visible,
+.report-detail-popover__close:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--blue) 70%, #ffffff);
+  outline-offset: 3px;
+}
+
 .report-section {
   display: grid;
   gap: 18px;
 }
 
 .report-section--primary {
-  padding: 18px;
+  gap: 22px;
+  padding: 24px;
   border: 1px solid color-mix(in srgb, var(--blue) 22%, var(--card-border));
   border-radius: 32px;
   background:
@@ -1155,6 +1413,161 @@
   background: color-mix(in srgb, var(--blue) 12%, transparent);
 }
 
+.report-section--compact {
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 18%, var(--card-border));
+  border-radius: 32px;
+  background: color-mix(in srgb, var(--theme-surface-strong, rgba(15, 23, 42, 0.86)) 48%, transparent);
+}
+
+.report-admission-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.report-admission-panel,
+.report-plan-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.report-panel-action,
+.report-table-total {
+  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--card-border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--blue) 12%, transparent);
+  color: var(--theme-text, #f8fafc);
+  cursor: pointer;
+}
+
+.report-panel-action {
+  min-width: 112px;
+  padding: 10px 16px;
+  font-size: 28px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.report-mini-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.report-mini-bar {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 16%, var(--card-border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 62%, transparent);
+}
+
+.report-mini-bar__header,
+.report-plan-summary,
+.report-plan-card span,
+.report-context-card span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-mini-bar__header span,
+.report-plan-card span,
+.report-context-card span,
+.report-placeholder-card span {
+  color: var(--muted-strong);
+  font-weight: 850;
+}
+
+.report-mini-bar__header strong,
+.report-plan-summary strong,
+.report-plan-card strong,
+.report-context-card strong {
+  color: var(--theme-text, #f8fafc);
+  font-weight: 950;
+}
+
+.report-mini-bar__track,
+.report-plan-card__track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 78%, transparent);
+}
+
+.report-mini-bar__track span,
+.report-plan-card__track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+}
+
+.report-mini-bar small,
+.report-plan-card small,
+.report-context-card p {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.report-plan-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-plan-card,
+.report-context-card,
+.report-placeholder-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--green) 18%, var(--card-border));
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--green) 10%, transparent), transparent 60%),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 66%, transparent);
+}
+
+.report-plan-card strong,
+.report-context-card strong {
+  font-size: clamp(28px, 2.2vw, 42px);
+  line-height: 1;
+}
+
+.report-plan-summary {
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--green) 20%, var(--card-border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--green) 8%, transparent);
+  color: var(--muted-strong);
+  font-weight: 850;
+}
+
+.report-context-grid,
+.report-placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-placeholder-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.report-placeholder-card {
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  border-color: color-mix(in srgb, var(--purple) 20%, var(--card-border));
+  background: color-mix(in srgb, var(--purple) 8%, transparent);
+  color: var(--purple);
+}
+
 .report-graduation__card strong,
 .report-table-total strong {
   color: var(--theme-text, #f8fafc);
@@ -1175,6 +1588,7 @@
   display: grid;
   justify-items: end;
   gap: 3px;
+  padding: 10px 14px;
 }
 
 .report-table-total strong {
@@ -1211,6 +1625,18 @@
   text-align: left;
 }
 
+.report-table td:first-child span,
+.report-table td:first-child small {
+  display: block;
+}
+
+.report-table td:first-child small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+}
+
 .report-table td {
   padding: 12px 10px;
   border-top: 1px solid rgba(148, 163, 184, 0.14);
@@ -1237,11 +1663,73 @@
   font-weight: 950;
 }
 
+.report-table__clickable-row {
+  cursor: pointer;
+}
+
+.report-table__clickable-row:hover td,
+.report-table__clickable-row:focus-visible td {
+  border-color: color-mix(in srgb, var(--blue) 28%, var(--card-border));
+  background: color-mix(in srgb, var(--blue) 10%, var(--theme-soft, rgba(8, 20, 39, 0.24)));
+}
+
 .report-graduation-chart {
   display: grid;
-  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
-  gap: 16px;
+  grid-template-columns: minmax(420px, 0.86fr) minmax(0, 1.14fr);
+  gap: 18px;
   align-items: stretch;
+}
+
+.report-graduation-guide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-graduation-guide__item {
+  --guide-color: var(--green);
+  position: relative;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 16px 18px 16px 22px;
+  border: 1px solid color-mix(in srgb, var(--guide-color) 30%, var(--card-border));
+  border-radius: 20px;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--guide-color) 14%, transparent), transparent 78%),
+    color-mix(in srgb, var(--theme-surface-strong, rgba(15, 23, 42, 0.86)) 68%, transparent);
+}
+
+.report-graduation-guide__item::before {
+  content: '';
+  position: absolute;
+  inset: 14px auto 14px 0;
+  width: 5px;
+  border-radius: 0 999px 999px 0;
+  background: var(--guide-color);
+}
+
+.report-graduation-guide__item--summer {
+  --guide-color: var(--green);
+}
+
+.report-graduation-guide__item--winter {
+  --guide-color: var(--purple);
+}
+
+.report-graduation-guide__item span,
+.report-graduation-guide__item small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.report-graduation-guide__item strong {
+  color: var(--theme-text, #f8fafc);
+  font-size: clamp(18px, 1.35vw, 24px);
+  font-weight: 950;
+  line-height: 1.12;
 }
 
 .report-graduation-donut-panel,
@@ -1257,16 +1745,16 @@
 
 .report-graduation-donut-panel {
   display: grid;
-  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 24px;
   align-items: center;
-  padding: 22px;
+  padding: 26px;
 }
 
 .report-graduation-donut {
   position: relative;
   aspect-ratio: 1;
-  width: min(240px, 100%);
+  width: min(320px, 100%);
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1304,7 +1792,7 @@
 
 .report-graduation-donut strong {
   color: var(--theme-text, #f8fafc);
-  font-size: clamp(34px, 3vw, 50px);
+  font-size: clamp(44px, 3.6vw, 70px);
   font-weight: 950;
   line-height: 0.95;
 }
@@ -1324,6 +1812,9 @@
   border: 1px solid color-mix(in srgb, var(--legend-color) 24%, var(--card-border));
   border-radius: 18px;
   background: color-mix(in srgb, var(--legend-color) 10%, transparent);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 
 .report-graduation-legend__item::before {
@@ -1360,7 +1851,7 @@
 .report-graduation-levels {
   display: grid;
   gap: 18px;
-  padding: 22px;
+  padding: 26px;
 }
 
 .report-graduation-levels header {
@@ -1375,6 +1866,15 @@
   line-height: 1.05;
 }
 
+.report-graduation-levels header p {
+  margin: 2px 0 0;
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
 .report-graduation-levels__list {
   display: grid;
   gap: 16px;
@@ -1382,11 +1882,10 @@
 
 .report-graduation-level {
   display: grid;
-  gap: 9px;
+  gap: 11px;
 }
 
-.report-graduation-level__header,
-.report-graduation-level__meta {
+.report-graduation-level__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -1428,10 +1927,80 @@
   background: linear-gradient(90deg, var(--purple), color-mix(in srgb, var(--purple) 72%, var(--cyan)));
 }
 
-.report-graduation-level__meta {
+.report-graduation-level__season-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.report-graduation-level__season {
+  --season-color: var(--green);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 8px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--season-color) 26%, var(--card-border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--season-color) 10%, transparent);
+}
+
+.report-graduation-level__season--summer {
+  --season-color: var(--green);
+}
+
+.report-graduation-level__season--winter {
+  --season-color: var(--purple);
+}
+
+.report-graduation-level__season small,
+.report-graduation-level__season em,
+.report-graduation-level__plan-row span {
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.report-graduation-level__season small {
+  text-transform: uppercase;
+}
+
+.report-graduation-level__season strong {
+  color: var(--theme-text, #f8fafc);
+  font-size: 18px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.report-graduation-level__season em {
+  grid-column: 1 / -1;
+  color: color-mix(in srgb, var(--season-color) 42%, var(--muted-strong));
+}
+
+.report-graduation-level__plan-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 72%, transparent);
+}
+
+.report-graduation-level__plan-row span {
+  margin-right: auto;
+}
+
+.report-graduation-level__plan-row strong {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.10);
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
 .report-loading {
@@ -1444,6 +2013,141 @@
   height: 30px;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.18);
+}
+
+.report-detail-popover {
+  position: fixed;
+  z-index: 45;
+  top: 98px;
+  right: 24px;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 124px);
+  display: grid;
+  gap: 16px;
+  overflow: auto;
+  padding: 22px;
+  border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--card-border));
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--blue) 12%, transparent), transparent 62%),
+    color-mix(in srgb, var(--theme-surface-strong, rgba(15, 23, 42, 0.96)) 96%, transparent);
+  box-shadow: 0 30px 82px rgba(2, 6, 23, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(18px);
+}
+
+.report-detail-popover__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--card-border));
+  border-radius: 14px;
+  color: var(--theme-text, #f8fafc);
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 76%, transparent);
+  cursor: pointer;
+}
+
+.report-detail-popover header {
+  display: grid;
+  gap: 7px;
+  padding-right: 42px;
+}
+
+.report-detail-popover header span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.report-detail-popover h2 {
+  margin: 0;
+  color: var(--theme-text, #f8fafc);
+  font-size: clamp(22px, 1.8vw, 32px);
+  font-weight: 950;
+  line-height: 1.08;
+}
+
+.report-detail-popover header strong {
+  color: var(--blue);
+  font-size: clamp(34px, 3vw, 52px);
+  font-weight: 950;
+  line-height: 0.94;
+}
+
+.report-detail-popover header p {
+  margin: 0;
+  color: var(--muted-strong);
+  font-size: 14px;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.report-detail-list {
+  display: grid;
+  gap: 8px;
+}
+
+.report-detail-list__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 72%, transparent);
+}
+
+.report-detail-list__row--clickable {
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.report-detail-list__row--clickable:hover,
+.report-detail-list__row--clickable:focus-visible {
+  border-color: color-mix(in srgb, var(--blue) 52%, var(--card-border));
+  background: color-mix(in srgb, var(--blue-soft) 58%, var(--theme-soft, rgba(8, 20, 39, 0.24)));
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.report-detail-list__row span {
+  display: block;
+  color: var(--muted-strong);
+  font-weight: 850;
+  line-height: 1.24;
+}
+
+.report-detail-list__row small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.3;
+}
+
+.report-detail-list__row strong {
+  color: var(--theme-text, #f8fafc);
+  font-size: 18px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.report-detail-empty {
+  padding: 18px;
+  border: 1px dashed color-mix(in srgb, var(--blue) 24%, var(--card-border));
+  border-radius: 18px;
+  color: var(--muted-strong);
+  font-weight: 760;
+  line-height: 1.35;
 }
 
 .specialties-toolbar {
@@ -1696,6 +2400,19 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .report-hero-panel,
+  .report-graduation-chart {
+    grid-template-columns: 1fr;
+  }
+
+  .report-context-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .report-metrics--summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .dashboard-grid--top,
   .dashboard-grid--middle {
     grid-template-columns: 1fr;
@@ -1717,6 +2434,27 @@
 @media (max-width: 1100px) {
   .dashboard-grid--bottom {
     grid-template-columns: 1fr;
+  }
+
+  .report-admission-grid,
+  .report-graduation-guide,
+  .report-metrics--admission,
+  .report-metrics--summary,
+  .report-plan-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .report-graduation-level__season-row {
+    grid-template-columns: 1fr;
+  }
+
+  .report-detail-popover {
+    top: auto;
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    width: auto;
+    max-height: min(560px, calc(100vh - 32px));
   }
 }
 
@@ -1780,9 +2518,35 @@
     grid-template-columns: 1fr;
   }
 
+  .report-cover {
+    min-height: 0;
+    padding: 24px;
+  }
+
+  .report-cover h2,
+  .report-cover p {
+    grid-column: 1;
+  }
+
+  .report-metrics--hero .report-metric {
+    min-height: 180px;
+    padding: 24px;
+  }
+
   .report-metrics,
   .report-tables-grid,
-  .report-graduation-chart {
+  .report-graduation-chart,
+  .report-context-grid,
+  .report-placeholder-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-dialog {
+    width: 100%;
+  }
+
+  .dashboard-dialog-metrics,
+  .dashboard-dialog-grid {
     grid-template-columns: 1fr;
   }
 
