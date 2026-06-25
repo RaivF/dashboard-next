@@ -19,11 +19,12 @@ export function createApp(env: ServerEnvironment = process.env) {
       },
       contentSecurityPolicy: {
         directives: {
-          'script-src': ["'self'", 'https://api-maps.yandex.ru'],
-          'script-src-elem': ["'self'", 'https://api-maps.yandex.ru'],
+          'script-src': ["'self'", 'https://api-maps.yandex.ru', 'https://yastatic.net'],
+          'script-src-elem': ["'self'", 'https://api-maps.yandex.ru', 'https://yastatic.net'],
           'connect-src': [
             "'self'",
             'https://api-maps.yandex.ru',
+            'https://yastatic.net',
             'https://*.maps.yandex.net',
             'https://*.yandex.ru',
             'https://*.yandex.net',
@@ -31,6 +32,7 @@ export function createApp(env: ServerEnvironment = process.env) {
           'img-src': [
             "'self'",
             'data:',
+            'https://yastatic.net',
             'https://*.maps.yandex.net',
             'https://*.yandex.ru',
             'https://*.yandex.net',
