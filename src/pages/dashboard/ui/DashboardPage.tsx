@@ -16,9 +16,7 @@ export default function DashboardPage() {
   const {
     period,
     range,
-    setRange,
     selectedDate,
-    setSelectedDate,
     showPreviousYearOverlay,
     setShowPreviousYearOverlay,
     showPreviousYearFunding,
@@ -53,12 +51,8 @@ export default function DashboardPage() {
         analytics={analytics}
         campaignYear={campaignYear}
         loading={loading}
-        range={range}
-        selectedDate={selectedDate}
         selectedRange={selectedRange}
         setCampaignYear={setCampaignYear}
-        setRange={setRange}
-        setSelectedDate={setSelectedDate}
       />
 
       {dashboardError && (

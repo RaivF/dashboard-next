@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { MAX_CAMPAIGN_YEAR, RANGE_OPTIONS, clampCampaignYear } from './periodConfig.js'
+import { MAX_CAMPAIGN_YEAR, clampCampaignYear } from './periodConfig.js'
 import type { RangeValue } from './periodConfig.js'
 
 type DashboardSettingsState = {
@@ -57,16 +57,12 @@ function migrateDashboardSettings(persistedState: unknown): PersistedDashboardSe
       state.period === '2025-01' || !state.period
         ? toCampaignPeriod(MAX_CAMPAIGN_YEAR)
         : toCampaignPeriod(clampCampaignYear(Number.parseInt(String(state.period).slice(0, 4), 10))),
+    range: 'actual',
   } as PersistedDashboardSettingsState
 }
 
-function isRangeValue(value: string | null): value is RangeValue {
-  return RANGE_OPTIONS.some((option) => option.value === value)
-}
-
 function getDefaultRange(): RangeValue {
-  const savedRange = getStorageItem('dashboard-range')
-  return isRangeValue(savedRange) ? savedRange : 'actual'
+  return 'actual'
 }
 
 function getDefaultPreviousYearOverlay(): boolean {
@@ -101,7 +97,7 @@ export const useDashboardSettingsStore = create<DashboardSettingsState>()(
       showPreviousYearFunding: getDefaultPreviousYearFunding(),
       showPreviousYearForm: getDefaultPreviousYearForm(),
       showPreviousYearMethod: getDefaultPreviousYearMethod(),
-      setRange: (range) => set({ range }),
+      setRange: () => set({ range: 'actual' }),
       setSelectedDate: (selectedDate) => set({ selectedDate }),
       setShowPreviousYearOverlay: (showPreviousYearOverlay) => set({ showPreviousYearOverlay }),
       setShowPreviousYearFunding: (showPreviousYearFunding) => set({ showPreviousYearFunding }),
@@ -115,11 +111,11 @@ export const useDashboardSettingsStore = create<DashboardSettingsState>()(
     }),
     {
       name: 'dashboard-settings-state',
-      version: 1,
+      version: 2,
       migrate: migrateDashboardSettings,
       partialize: (state) => ({
         period: state.period,
-        range: state.range,
+        range: 'actual',
         showPreviousYearOverlay: state.showPreviousYearOverlay,
         showPreviousYearFunding: state.showPreviousYearFunding,
         showPreviousYearForm: state.showPreviousYearForm,

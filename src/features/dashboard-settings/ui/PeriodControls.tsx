@@ -1,20 +1,11 @@
-import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { MouseEventHandler } from 'react'
-import DatePicker, { registerLocale } from 'react-datepicker'
-import { ru } from 'date-fns/locale/ru'
-import { CalendarDays, ChevronDown, RotateCcw } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { CalendarDays, ChevronDown } from 'lucide-react'
 import {
   CALENDAR_HINTS,
   CALENDAR_LABELS,
   MAX_CAMPAIGN_YEAR,
   MIN_CAMPAIGN_YEAR,
-  RANGE_OPTIONS,
-  getDatePickerFormat,
 } from '../model/periodConfig.js'
-import type { RangeValue } from '../model/periodConfig.js'
-import { isDateWithinRange, isSameCalendarDay, toPickerDate } from '../../../shared/lib/date.js'
-
-registerLocale('ru', ru)
 
 type PeriodAnalytics = {
   rangeEnd: Date | null
@@ -23,63 +14,23 @@ type PeriodAnalytics = {
   latestDate: string
 }
 
-type CalendarInputProps = {
-  value?: string
-  onClick?: MouseEventHandler<HTMLButtonElement>
-  disabled?: boolean
-}
-
 type PeriodControlsProps = {
   analytics: PeriodAnalytics
   campaignYear: number
   loading: boolean
-  range: RangeValue
-  selectedDate: Date | null
   selectedRange: string
   setCampaignYear: (nextYear: number) => void
-  setRange: (nextRange: RangeValue) => void
-  setSelectedDate: (selectedDate: Date | null) => void
 }
-
-const CalendarInput = forwardRef<HTMLButtonElement, CalendarInputProps>(function CalendarInput({ value, onClick, disabled }, ref) {
-  return (
-    <button className="calendar-button" type="button" onClick={onClick} ref={ref} disabled={disabled}>
-      <CalendarDays size={22} />
-      <span>{value || 'Выберите дату'}</span>
-      <ChevronDown size={20} />
-    </button>
-  )
-})
 
 export default function PeriodControls({
   analytics,
   campaignYear,
   loading,
-  range,
-  selectedDate,
   selectedRange,
   setCampaignYear,
-  setRange,
-  setSelectedDate,
 }: PeriodControlsProps) {
   const periodMenuRef = useRef<HTMLDivElement | null>(null)
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false)
-  const activeCalendarDate = selectedDate || toPickerDate(analytics.rangeEnd) || null
-  const calendarRangeStart = useMemo(() => toPickerDate(analytics.rangeStart), [analytics.rangeStart])
-  const calendarRangeEnd = useMemo(() => toPickerDate(analytics.rangeEnd), [analytics.rangeEnd])
-
-  const getCalendarDayClassName = useCallback((date: Date) => {
-    if (!calendarRangeStart || !calendarRangeEnd) return ''
-    if (!isDateWithinRange(date, calendarRangeStart, calendarRangeEnd)) return ''
-
-    const isStart = isSameCalendarDay(date, calendarRangeStart)
-    const isEnd = isSameCalendarDay(date, calendarRangeEnd)
-
-    if (isStart && isEnd) return 'dashboard-calendar__day--range-single'
-    if (isStart) return 'dashboard-calendar__day--range-start'
-    if (isEnd) return 'dashboard-calendar__day--range-end'
-    return 'dashboard-calendar__day--in-range'
-  }, [calendarRangeStart, calendarRangeEnd])
 
   useEffect(() => {
     if (!periodMenuOpen) return undefined
@@ -87,7 +38,6 @@ export default function PeriodControls({
     function handlePointerDown(event: MouseEvent) {
       const target = event.target
       if (!(target instanceof Element)) return
-      if (target.closest('.dashboard-calendar-popper')) return
       if (!periodMenuRef.current?.contains(target)) setPeriodMenuOpen(false)
     }
 
@@ -106,12 +56,6 @@ export default function PeriodControls({
   const handleCampaignYearChange = (nextYear: number) => {
     if (loading) return
     setCampaignYear(nextYear)
-  }
-
-  const handleRangeSelect = (nextRange: RangeValue) => {
-    if (loading) return
-    setRange(nextRange)
-    if (nextRange === 'actual') setSelectedDate(null)
   }
 
   return (
@@ -180,69 +124,18 @@ export default function PeriodControls({
               </div>
             </div>
 
-            <div className="range-tabs range-tabs--in-menu">
-              {RANGE_OPTIONS.map((option) => (
-                <button
-                  className={option.value === range ? 'range-tab range-tab--active' : 'range-tab'}
-                  key={option.value}
-                  type="button"
-                  disabled={loading}
-                  onClick={() => handleRangeSelect(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
             <div className="period-menu__current">
               <span>Период выборки</span>
               <strong>{analytics.rangeText}</strong>
             </div>
 
-            {range === 'actual' ? (
-              <div className="calendar-control calendar-control--static">
-                <div className="calendar-control__topline">
-                  <span>{CALENDAR_LABELS.actual}</span>
-                </div>
-                <strong>{analytics.latestDate}</strong>
-                <small>{CALENDAR_HINTS.actual}</small>
+            <div className="calendar-control calendar-control--static">
+              <div className="calendar-control__topline">
+                <span>{CALENDAR_LABELS.actual}</span>
               </div>
-            ) : (
-              <div className="calendar-control">
-                <div className="calendar-control__topline">
-                  <span>{CALENDAR_LABELS[range] || 'Выбрать дату'}</span>
-                  <button className="calendar-reset" type="button" onClick={() => setSelectedDate(null)} disabled={loading}>
-                    <RotateCcw size={16} />
-                    к последней дате
-                  </button>
-                </div>
-                <DatePicker
-                  selected={activeCalendarDate}
-                  onChange={(date) => setSelectedDate(date)}
-                  dateFormat={getDatePickerFormat(range)}
-                  showMonthYearPicker={range === 'month'}
-                  showYearPicker={range === 'year'}
-                  showWeekNumbers={range === 'week'}
-                  locale="ru"
-                  calendarStartDay={1}
-                  weekLabel="№"
-                  dayClassName={getCalendarDayClassName}
-                  showPopperArrow={false}
-                  popperPlacement="bottom-end"
-                  popperModifiers={[
-                    { name: 'offset', options: { offset: [0, 14] } },
-                    { name: 'preventOverflow', options: { rootBoundary: 'viewport', padding: 24 } },
-                    { name: 'flip', options: { fallbackPlacements: ['top-end', 'bottom-start', 'top-start'] } },
-                  ] as never}
-                  customInput={<CalendarInput disabled={loading} />}
-                  calendarClassName="dashboard-calendar"
-                  popperClassName="dashboard-calendar-popper"
-                  wrapperClassName="dashboard-calendar-wrapper"
-                  disabled={loading}
-                />
-                <small>{CALENDAR_HINTS[range]}</small>
-              </div>
-            )}
+              <strong>{analytics.latestDate}</strong>
+              <small>{CALENDAR_HINTS.actual}</small>
+            </div>
           </div>
         )}
       </div>

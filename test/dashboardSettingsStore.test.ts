@@ -38,7 +38,7 @@ describe('dashboard settings store', () => {
   it('clamps campaign year and resets selected date when campaign changes', () => {
     useDashboardSettingsStore.setState({
       period: '2025-01',
-      range: 'month',
+      range: 'actual',
       selectedDate: new Date(2025, 6, 1),
     })
 
@@ -50,9 +50,9 @@ describe('dashboard settings store', () => {
     assert.equal(getCampaignYear(state.period), 2026)
   })
 
-  it('keeps display range local to the typed range options', () => {
-    useDashboardSettingsStore.getState().setRange('twoWeeks')
+  it('keeps display range locked to actual', () => {
+    useDashboardSettingsStore.getState().setRange('actual')
 
-    assert.equal(useDashboardSettingsStore.getState().range, 'twoWeeks')
+    assert.equal(useDashboardSettingsStore.getState().range, 'actual')
   })
 })
