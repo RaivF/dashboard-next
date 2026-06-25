@@ -110,6 +110,7 @@ export type AnalyticsPreviousYearComparison = PreviousYearComparison & {
 export type AnalyticsResult = {
   allItems: ApplicantStatistic[]
   applicationsPerApplicant: number
+  applicationsTotal: number
   bottomSpecialties: SpecialtySummary[]
   budget: number
   byDate: ChartPoint[]

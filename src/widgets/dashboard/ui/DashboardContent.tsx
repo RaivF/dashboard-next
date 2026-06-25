@@ -1,6 +1,7 @@
 import {
   Award,
   CalendarDays,
+  FileText,
   MousePointerClick,
   Target,
   Users,
@@ -35,7 +36,9 @@ type ChartPoint = {
 
 type DashboardAnalytics = {
   total: number
+  applicationsTotal: number
   uniqueApplicants: number
+  applicationsPerApplicant: number
   previousYearComparison: {
     value: string
     caption: string
@@ -97,11 +100,22 @@ const VerticalBarChart = RawVerticalBarChart as ComponentType<CategoryChartProps
 
 const STAT_CARDS: StatCardDefinition[] = [
   {
+    title: 'Всего заявлений',
+    getValue: (analytics) => analytics.applicationsTotal,
+    getCaption: (_analytics, selectedRange) => `Суммарное количество · ${selectedRange.toLowerCase()}`,
+    icon: FileText,
+    tone: 'blue',
+  },
+  {
     title: 'Поступающих',
     getValue: (analytics) => analytics.total,
-    getCaption: (_analytics, selectedRange) => `Уникальные люди · ${selectedRange.toLowerCase()}`,
+    getCaption: (analytics, selectedRange) => (
+      analytics.uniqueApplicants
+        ? `${selectedRange.toLowerCase()} · ${analytics.applicationsPerApplicant.toFixed(1).replace('.', ',')} заявления на человека`
+        : `Уникальные люди · ${selectedRange.toLowerCase()}`
+    ),
     icon: Users,
-    tone: 'blue',
+    tone: 'indigo',
   },
   {
     title: 'К прошлому году',

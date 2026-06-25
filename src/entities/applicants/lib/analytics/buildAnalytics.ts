@@ -80,6 +80,7 @@ export function buildAnalytics(
   return {
     items,
     allItems,
+    applicationsTotal: applicationTotal,
     rangeStart: rangeWindow.startDate,
     rangeEnd: rangeWindow.endDate,
     rangeText: formatDateRange(rangeWindow.startDate, rangeWindow.endDate),
