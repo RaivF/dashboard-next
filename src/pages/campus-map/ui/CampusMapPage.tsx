@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import '@yandex/ymaps3-default-ui-theme/dist/esm/index.css'
 import {
   Building2,
   Compass,
@@ -14,17 +13,15 @@ import {
 const MAP_API_KEY = import.meta.env.VITE_YANDEX_MAPS_API_KEY || ''
 const MAP_SCRIPT_ID = 'yandex-maps-v3-script'
 const DEG_TO_RAD = Math.PI / 180
-const MAX_CAMERA_TILT = 50
-const CAMERA_ANIMATION_MS = 220
 
 const INITIAL_CAMERA = {
   azimuth: 118,
-  tilt: 50,
+  tilt: 65,
 }
 
 const INITIAL_LOCATION = {
   center: [35.37318, 46.84212],
-  zoom: 18.35,
+  zoom: 18.15,
 } satisfies { center: Coordinates; zoom: number }
 
 const CAMPUS_POINTS = [
@@ -34,8 +31,6 @@ const CAMPUS_POINTS = [
     caption: 'центр кампуса',
     coordinates: [35.37288, 46.842187],
     accent: '#ef4444',
-    markerColor: 'red',
-    iconName: 'university',
   },
   {
     id: 'admission',
@@ -43,8 +38,6 @@ const CAMPUS_POINTS = [
     caption: 'входная группа',
     coordinates: [35.37082, 46.84264],
     accent: '#2563eb',
-    markerColor: 'brightblue',
-    iconName: 'administration',
   },
   {
     id: 'library',
@@ -52,8 +45,6 @@ const CAMPUS_POINTS = [
     caption: 'учебный корпус',
     coordinates: [35.37464, 46.84274],
     accent: '#16a34a',
-    markerColor: 'green',
-    iconName: 'library',
   },
   {
     id: 'sport',
@@ -61,8 +52,6 @@ const CAMPUS_POINTS = [
     caption: 'площадка',
     coordinates: [35.37576, 46.84143],
     accent: '#f59e0b',
-    markerColor: 'orange',
-    iconName: 'sport',
   },
   {
     id: 'dormitory',
@@ -70,8 +59,6 @@ const CAMPUS_POINTS = [
     caption: 'студенческий блок',
     coordinates: [35.36965, 46.84136],
     accent: '#7c3aed',
-    markerColor: 'lavender',
-    iconName: 'hostels',
   },
 ] satisfies CampusPoint[]
 
@@ -82,9 +69,7 @@ type CameraState = {
   tilt: number
 }
 
-type CameraUpdater = (current: CameraState) => CameraState
 type CameraPatch = Partial<CameraState>
-type CameraUpdate = CameraPatch | CameraUpdater
 
 type CampusMapStatus = 'idle' | 'missing-key' | 'loading' | 'ready' | 'error'
 
@@ -94,8 +79,6 @@ type CampusPoint = {
   caption: string
   coordinates: Coordinates
   accent: string
-  markerColor: 'red' | 'brightblue' | 'green' | 'orange' | 'lavender'
-  iconName: 'university' | 'administration' | 'library' | 'sport' | 'hostels'
 }
 
 type YMapInstance = {
@@ -111,6 +94,9 @@ type YMapControlsInstance = {
 
 type YMaps3Api = {
   ready: Promise<void>
+  import: (moduleName: string) => Promise<{
+    YMapZoomControl: new (options: Record<string, never>) => unknown
+  }>
   YMap: new (
     root: HTMLElement,
     options: {
@@ -124,6 +110,7 @@ type YMaps3Api = {
   YMapControls: new (options: { position: 'right' }) => YMapControlsInstance
   YMapDefaultFeaturesLayer: new (options: Record<string, never>) => unknown
   YMapDefaultSchemeLayer: new (options: Record<string, never>) => unknown
+  YMapMarker: new (options: { coordinates: Coordinates }, element: HTMLElement) => unknown
 }
 
 declare global {
@@ -133,29 +120,9 @@ declare global {
 }
 
 let mapLoaderPromise: Promise<YMaps3Api> | null = null
-let defaultUiThemePromise: Promise<typeof import('@yandex/ymaps3-default-ui-theme')> | null = null
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
-}
-
-function normalizeAzimuth(value: number): number {
-  const normalized = ((value + 180) % 360 + 360) % 360 - 180
-  return normalized === -180 ? 180 : normalized
-}
-
-function normalizeCamera(camera: CameraState): CameraState {
-  return {
-    azimuth: normalizeAzimuth(camera.azimuth),
-    tilt: clamp(camera.tilt, 0, MAX_CAMERA_TILT),
-  }
-}
-
-function toCameraRadians(camera: CameraState) {
-  return {
-    azimuth: camera.azimuth * DEG_TO_RAD,
-    tilt: camera.tilt * DEG_TO_RAD,
-  }
 }
 
 function getMapLoader(): Promise<YMaps3Api> {
@@ -187,9 +154,20 @@ function getMapLoader(): Promise<YMaps3Api> {
   return mapLoaderPromise
 }
 
-function getDefaultUiTheme() {
-  defaultUiThemePromise ??= import('@yandex/ymaps3-default-ui-theme')
-  return defaultUiThemePromise
+function createFlagElement(point: CampusPoint): HTMLButtonElement {
+  const marker = document.createElement('button')
+  marker.className = 'campus-map__flag'
+  marker.type = 'button'
+  marker.style.setProperty('--flag-accent', point.accent)
+  marker.innerHTML = `
+    <span class="campus-map__flag-pin" aria-hidden="true"></span>
+    <span class="campus-map__flag-label">
+      <strong>${point.title}</strong>
+      <small>${point.caption}</small>
+    </span>
+  `
+  marker.setAttribute('aria-label', point.title)
+  return marker
 }
 
 export default function CampusMapPage() {
@@ -224,14 +202,17 @@ export default function CampusMapPage() {
           YMapControls,
           YMapDefaultFeaturesLayer,
           YMapDefaultSchemeLayer,
+          YMapMarker,
         } = ymaps3
-        const { YMapDefaultMarker, YMapZoomControl } = await getDefaultUiTheme()
 
         const yMap = new YMap(
           rootElement,
           {
             location: INITIAL_LOCATION,
-            camera: toCameraRadians(cameraRef.current),
+            camera: {
+              azimuth: cameraRef.current.azimuth * DEG_TO_RAD,
+              tilt: cameraRef.current.tilt * DEG_TO_RAD,
+            },
             showScaleInCopyrights: true,
             theme: 'light',
           },
@@ -242,30 +223,16 @@ export default function CampusMapPage() {
         )
 
         try {
+          const { YMapZoomControl } = await ymaps3.import('@yandex/ymaps3-default-ui-theme')
           const zoomControls = new YMapControls({ position: 'right' })
-          zoomControls.addChild(new YMapZoomControl())
+          zoomControls.addChild(new YMapZoomControl({}))
           yMap.addChild(zoomControls)
         } catch (controlError) {
           console.warn('Не удалось загрузить стандартные элементы управления карты:', controlError)
         }
 
         CAMPUS_POINTS.forEach((point) => {
-          const marker = new YMapDefaultMarker({
-            coordinates: point.coordinates,
-            title: point.title,
-            subtitle: point.caption,
-            color: point.markerColor,
-            iconName: point.iconName,
-            size: 'normal',
-            staticHint: true,
-            onClick: () => {
-              yMap.setLocation({
-                center: point.coordinates,
-                zoom: 18.65,
-                duration: 380,
-              })
-            },
-          })
+          const marker = new YMapMarker({ coordinates: point.coordinates }, createFlagElement(point))
           yMap.addChild(marker)
         })
 
@@ -292,10 +259,12 @@ export default function CampusMapPage() {
     }
   }, [loadAttempt])
 
-  function updateCamera(update: CameraUpdate) {
+  function updateCamera(patch: CameraPatch) {
     setCamera((current) => {
-      const nextInput = typeof update === 'function' ? update(current) : { ...current, ...update }
-      const next = normalizeCamera(nextInput)
+      const next = {
+        azimuth: patch.azimuth ?? current.azimuth,
+        tilt: clamp(patch.tilt ?? current.tilt, 0, 65),
+      }
 
       cameraRef.current = next
 
@@ -303,7 +272,7 @@ export default function CampusMapPage() {
         camera: {
           azimuth: next.azimuth * DEG_TO_RAD,
           tilt: next.tilt * DEG_TO_RAD,
-          duration: CAMERA_ANIMATION_MS,
+          duration: 260,
         },
       })
 
