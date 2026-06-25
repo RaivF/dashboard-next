@@ -13,15 +13,17 @@ import {
 const MAP_API_KEY = import.meta.env.VITE_YANDEX_MAPS_API_KEY || ''
 const MAP_SCRIPT_ID = 'yandex-maps-v3-script'
 const DEG_TO_RAD = Math.PI / 180
+const MAX_CAMERA_TILT = 50
+const CAMERA_ANIMATION_MS = 220
 
 const INITIAL_CAMERA = {
   azimuth: 118,
-  tilt: 65,
+  tilt: MAX_CAMERA_TILT,
 }
 
 const INITIAL_LOCATION = {
   center: [35.37318, 46.84212],
-  zoom: 18.15,
+  zoom: 18.35,
 } satisfies { center: Coordinates; zoom: number }
 
 const CAMPUS_POINTS = [
@@ -123,6 +125,11 @@ let mapLoaderPromise: Promise<YMaps3Api> | null = null
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
+}
+
+function normalizeAzimuth(value: number): number {
+  const normalized = ((value + 180) % 360 + 360) % 360 - 180
+  return normalized === -180 ? 180 : normalized
 }
 
 function getMapLoader(): Promise<YMaps3Api> {
@@ -262,8 +269,8 @@ export default function CampusMapPage() {
   function updateCamera(patch: CameraPatch) {
     setCamera((current) => {
       const next = {
-        azimuth: patch.azimuth ?? current.azimuth,
-        tilt: clamp(patch.tilt ?? current.tilt, 0, 65),
+        azimuth: normalizeAzimuth(patch.azimuth ?? current.azimuth),
+        tilt: clamp(patch.tilt ?? current.tilt, 0, MAX_CAMERA_TILT),
       }
 
       cameraRef.current = next
@@ -272,7 +279,7 @@ export default function CampusMapPage() {
         camera: {
           azimuth: next.azimuth * DEG_TO_RAD,
           tilt: next.tilt * DEG_TO_RAD,
-          duration: 260,
+          duration: CAMERA_ANIMATION_MS,
         },
       })
 

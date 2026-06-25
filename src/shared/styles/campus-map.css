@@ -135,9 +135,9 @@
 .campus-map__flag {
   position: relative;
   display: grid;
-  grid-template-columns: 18px auto;
-  gap: 6px;
-  align-items: end;
+  grid-template-columns: 40px auto;
+  gap: 8px;
+  align-items: center;
   min-width: 160px;
   padding: 0;
   border: 0;
@@ -145,40 +145,33 @@
   color: #142033;
   cursor: pointer;
   filter: drop-shadow(0 12px 18px rgba(15, 23, 42, 0.24));
-  transform: translate(-18px, -100%);
+  transform: translate(-20px, -100%);
 }
 
 .campus-map__flag-pin {
   position: relative;
-  width: 18px;
-  height: 54px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, var(--flag-accent), color-mix(in srgb, var(--flag-accent) 58%, #111827));
+  width: 34px;
+  height: 34px;
+  border: 4px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50% 50% 50% 0;
+  background: var(--flag-accent);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--flag-accent) 34%, transparent);
+  transform: rotate(-45deg);
 }
 
 .campus-map__flag-pin::before {
   position: absolute;
-  top: -7px;
-  left: -6px;
-  width: 30px;
-  height: 30px;
-  border: 4px solid rgba(255, 255, 255, 0.88);
+  top: 8px;
+  left: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--flag-accent);
+  background: #fff;
   content: '';
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--flag-accent) 36%, transparent);
 }
 
 .campus-map__flag-pin::after {
-  position: absolute;
-  bottom: -5px;
-  left: 50%;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--flag-accent);
-  content: '';
-  transform: translateX(-50%);
+  content: none;
 }
 
 .campus-map__flag-label {
@@ -186,12 +179,12 @@
   display: grid;
   gap: 2px;
   max-width: 190px;
-  margin-bottom: 18px;
+  margin-bottom: 0;
   padding: 9px 11px;
   border: 1px solid rgba(255, 255, 255, 0.82);
-  border-left: 5px solid var(--flag-accent);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
   text-align: left;
 }
 
