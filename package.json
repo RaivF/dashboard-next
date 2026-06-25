@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^1.0.0",
+    "@yandex/ymaps3-default-ui-theme": "^0.0.24",
     "adm-zip": "^0.5.17",
     "axios": "^1.16.1",
     "cors": "^2.8.5",
