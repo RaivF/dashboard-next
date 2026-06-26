@@ -200,7 +200,7 @@ const STAT_CARDS: StatCardDefinition[] = [
     dialog: {
       id: 'admissionPlaces',
       ariaLabel: 'Открыть партнёров целевого обучения',
-      title: 'Партнёры целевого обучения',
+      title: 'Партнёры МелГУ',
     },
   },
 ]
@@ -275,7 +275,7 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
         <DialogMetric label="Физических лиц" value={analytics.total} />
         <DialogMetric
           label="В среднем"
-          value={Math.round(analytics.applicationsPerApplicant)}
+          value="3.2"
           caption="заявления на человека"
         />
       </div>
@@ -283,12 +283,6 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
       <div className="dashboard-dialog-grid">
         <DialogRows title="Основание обучения" rows={analytics.byFunding} />
         <DialogRows title="Форма обучения" rows={MANUAL_FORM_DATA} />
-        <DialogRows title="Уровни образования" rows={analytics.byDegree} />
-        <DialogRows title="Способ подачи" rows={analytics.byMethod} />
-        <DialogRows title="Приоритеты" rows={analytics.byPriority} />
-        <DialogRows title="Топ направлений" rows={analytics.topSpecialties} />
-        <DialogRows title="Первый приоритет" rows={analytics.firstPrioritySpecialties} />
-        <DialogRows title="Наименее востребованные" rows={analytics.bottomSpecialties} />
       </div>
     </div>
   )
@@ -388,14 +382,17 @@ export default function DashboardContent({
             <div className="dashboard-dialog__content">
               {activeStatDialog === 'applications' && <ApplicationsDialogContent analytics={analytics} />}
               {activeStatDialog === 'admissionPlaces' && (
-                <div className="dashboard-dialog__list" aria-label="Партнёры целевого обучения">
-                  {TARGET_ADMISSION_PARTNERS.map((partner) => (
-                    <div className="dashboard-dialog__list-item" key={partner.name}>
-                      <span>{partner.name}</span>
-                      <strong>{formatNumber(partner.quantity)}</strong>
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <h2 className="dashboard-dialog__title">Партнёры МелГУ</h2>
+                  <div className="dashboard-dialog__list" aria-label="Партнёры МелГУ">
+                    {TARGET_ADMISSION_PARTNERS.map((partner) => (
+                      <div className="dashboard-dialog__list-item" key={partner.name}>
+                        <span>{partner.name}</span>
+                        <strong>{formatNumber(partner.quantity)}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </section>
