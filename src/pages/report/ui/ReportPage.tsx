@@ -629,6 +629,7 @@ function KcpComparisonModal({
             <thead>
               <tr>
                 <th rowSpan={2}>Уровень</th>
+                <th rowSpan={2}>Итого</th>
                 <th colSpan={4}>2025</th>
                 <th colSpan={4}>2026</th>
               </tr>
@@ -643,6 +644,7 @@ function KcpComparisonModal({
               {rows.map((row) => (
                 <tr key={row.level}>
                   <th scope="row">{row.level}</th>
+                  <td className="report-kcp-table__row-total">{formatNumber(getKcpRowTotal(row.actual2025))}</td>
                   {columns.map((column) => (
                     <td key={`${row.level}-2025-${column.key}`}>{formatKcpCell(row.actual2025[column.key])}</td>
                   ))}
@@ -657,6 +659,7 @@ function KcpComparisonModal({
             <tfoot>
               <tr>
                 <th scope="row">Итого</th>
+                <td>{formatNumber(total2025)}</td>
                 {columns.map((column) => (
                   <td key={`total-2025-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'actual2025', column.key))}</td>
                 ))}
