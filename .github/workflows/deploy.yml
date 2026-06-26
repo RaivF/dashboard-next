@@ -43,6 +43,11 @@ jobs:
           git reset --hard origin/main
           git clean -fd -e .env -e '.env.*'
 
+          mkdir -p DATA/manual-edits
+          touch DATA/manual-edits/page-overrides.json
+          chmod 777 DATA/manual-edits
+          chmod 666 DATA/manual-edits/page-overrides.json
+
           docker compose build --pull dashboard
           docker compose up -d --remove-orphans dashboard caddy
           docker image prune -f
