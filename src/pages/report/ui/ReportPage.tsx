@@ -1144,7 +1144,6 @@ export default function ReportPage() {
         <ReportMetric
           label="КЦП 2026"
           value={kcp2026Total}
-          caption="план приёма"
           tone="green"
           icon={Landmark}
         />
