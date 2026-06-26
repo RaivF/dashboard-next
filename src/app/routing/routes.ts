@@ -27,8 +27,8 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     path: ROUTES.report,
-    label: 'Отчёт Выпуск 2026',
-    title: 'Отчёт Выпуск 2026',
+    label: 'Итоги учебного года 2025 / 2026',
+    title: 'Итоги учебного года 2025 / 2026',
   },
   {
     path: ROUTES.campusPlan,

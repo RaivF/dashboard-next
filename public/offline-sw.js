@@ -1,7 +1,7 @@
 const CACHE_PREFIX = 'university-dashboard'
-const APP_CACHE = `${CACHE_PREFIX}-app-v2`
-const DATA_CACHE = `${CACHE_PREFIX}-data-v2`
-const STATIC_CACHE = `${CACHE_PREFIX}-static-v2`
+const APP_CACHE = `${CACHE_PREFIX}-app-v6`
+const DATA_CACHE = `${CACHE_PREFIX}-data-v6`
+const STATIC_CACHE = `${CACHE_PREFIX}-static-v6`
 
 const APP_SHELL_URLS = [
   '/',

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
 import {
   BookOpen,
-  ClipboardList,
+  ChevronLeft,
+  ChevronRight,
   GraduationCap,
-  Layers3,
-  Target,
-  Users,
+  Landmark,
+  Table2,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -50,9 +50,42 @@ type GraduationLevel = GraduationRow & {
   rows: GraduationRow[]
 }
 
+type UgsnInfoColumn = {
+  key: string
+  group: string
+  label: string
+}
+
+type UgsnInfoRow = {
+  key: string
+  label: string
+  values: Record<string, number | null>
+}
+
+type UgsnInfoTable = {
+  title: string
+  sheet: string
+  sourceFile: string
+  columns: UgsnInfoColumn[]
+  rows: UgsnInfoRow[]
+}
+
+type UgsnWorkbookSheet = {
+  name: string
+  rows: string[][]
+  columnCount: number
+}
+
+type UgsnInfoWorkbook = {
+  sourceFile: string
+  sheets: UgsnWorkbookSheet[]
+}
+
 type Report20252026 = {
   title: string
   source: string
+  ugsnInfo?: UgsnInfoTable
+  ugsnWorkbook?: UgsnInfoWorkbook
   admissionCampaign: {
     year: string
     programsTotal: number
@@ -115,6 +148,76 @@ type ReportMetricProps = {
   onClick: () => void
 }
 
+type KcpYearValues = {
+  fullTime: number
+  partTime: number
+  distance: number
+}
+
+type KcpComparisonRow = {
+  level: string
+  actual2025: KcpYearValues
+  plan2026: KcpYearValues
+}
+
+type KcpCollegeRow = {
+  name: string
+  base: number
+  additional: number
+  note: string
+}
+
+type KcpYearKey = 'actual2025' | 'plan2026'
+
+const KCP_COMPARISON_ROWS: KcpComparisonRow[] = [
+  {
+    level: 'Бакалавриат',
+    actual2025: { fullTime: 1518, partTime: 380, distance: 449 },
+    plan2026: { fullTime: 2221, partTime: 370, distance: 267 },
+  },
+  {
+    level: 'Специалитет',
+    actual2025: { fullTime: 127, partTime: 0, distance: 50 },
+    plan2026: { fullTime: 205, partTime: 0, distance: 65 },
+  },
+  {
+    level: 'Магистратура',
+    actual2025: { fullTime: 687, partTime: 15, distance: 391 },
+    plan2026: { fullTime: 1064, partTime: 45, distance: 421 },
+  },
+  {
+    level: 'СПО',
+    actual2025: { fullTime: 500, partTime: 0, distance: 0 },
+    plan2026: { fullTime: 650, partTime: 0, distance: 0 },
+  },
+  {
+    level: 'Аспирантура',
+    actual2025: { fullTime: 50, partTime: 0, distance: 0 },
+    plan2026: { fullTime: 105, partTime: 0, distance: 0 },
+  },
+]
+
+const KCP_COLLEGE_ROWS: KcpCollegeRow[] = [
+  {
+    name: 'Энергодарский колледж',
+    base: 100,
+    additional: 50,
+    note: 'СПО: 100 (5) + 50 (11)',
+  },
+  {
+    name: 'Васильевский колледж',
+    base: 225,
+    additional: 50,
+    note: 'СПО: 225 (8) + 50 (11)',
+  },
+  {
+    name: 'Бердянский колледж',
+    base: 225,
+    additional: 0,
+    note: 'СПО: 225 (8)',
+  },
+]
+
 function getPercent(value: number, total: number): number {
   if (!total) return 0
   return Math.round((value / total) * 100)
@@ -125,8 +228,52 @@ function formatValue(value: number | string | undefined) {
   return value || ''
 }
 
-function shouldShowContextNote(note?: string) {
-  return Boolean(note && !note.startsWith('96%'))
+function normalizeReportLabel(value: string) {
+  return value.normalize('NFKC').replace(/\s+/g, ' ').trim().toLocaleLowerCase('ru-RU')
+}
+
+function getKcpRowTotal(values: KcpYearValues) {
+  return values.fullTime + values.partTime + values.distance
+}
+
+function getKcpYearTotal(rows: KcpComparisonRow[], year: KcpYearKey) {
+  return rows.reduce((sum, row) => sum + getKcpRowTotal(row[year]), 0)
+}
+
+function getKcpColumnTotal(rows: KcpComparisonRow[], year: KcpYearKey, column: keyof KcpYearValues) {
+  return rows.reduce((sum, row) => sum + row[year][column], 0)
+}
+
+function getKcpCollegeTotal(rows: KcpCollegeRow[]) {
+  return rows.reduce((sum, row) => sum + row.base + row.additional, 0)
+}
+
+function formatKcpCell(value: number) {
+  return value ? formatNumber(value) : '—'
+}
+
+function getContingentTotal(table?: UgsnInfoTable): number {
+  if (!table) return 0
+
+  return table.rows.reduce((sum, row) => (
+    sum + table.columns.reduce((rowSum, column) => (
+      normalizeReportLabel(column.label) === 'всего' ? rowSum + (row.values[column.key] || 0) : rowSum
+    ), 0)
+  ), 0)
+}
+
+function getSheetHeaderRowCount(sheet: UgsnWorkbookSheet): number {
+  const secondRow = sheet.rows[1] || []
+  return secondRow.some((cell) => cell === 'Всего' || cell === 'Контракт') ? 2 : 1
+}
+
+function normalizeWorkbookRow(row: string[], columnCount: number) {
+  return Array.from({ length: columnCount }, (_item, index) => row[index] || '')
+}
+
+function getFirstFilledColumn(row: string[], columnCount: number) {
+  const index = normalizeWorkbookRow(row, columnCount).findIndex(Boolean)
+  return index < 0 ? columnCount : index
 }
 
 function getAdmissionPlanForGraduationLevel(levelName: string, admissionPlan: ReportPlanRow[]) {
@@ -230,6 +377,296 @@ function ReportDetailPanel({
   )
 }
 
+function UgsnWorkbookModal({
+  workbook,
+  activeSheetIndex,
+  onSheetChange,
+  onClose,
+}: {
+  workbook: UgsnInfoWorkbook
+  activeSheetIndex: number
+  onSheetChange: (index: number) => void
+  onClose: () => void
+}) {
+  const sheet = workbook.sheets[activeSheetIndex] || workbook.sheets[0]
+  const headerRowCount = sheet ? getSheetHeaderRowCount(sheet) : 0
+  const headerRows = sheet?.rows.slice(0, headerRowCount) || []
+  const bodyRows = sheet?.rows.slice(headerRowCount) || []
+  const columnCount = Math.max(sheet?.columnCount || 0, 1)
+  const firstHeaderRow = headerRows[0] || []
+  const leadingColumns = headerRowCount === 2 ? getFirstFilledColumn(firstHeaderRow, columnCount) : 0
+  const hasGroupedHeader = headerRowCount === 2
+
+  const goToPreviousSheet = () => {
+    onSheetChange(activeSheetIndex === 0 ? workbook.sheets.length - 1 : activeSheetIndex - 1)
+  }
+  const goToNextSheet = () => {
+    onSheetChange(activeSheetIndex === workbook.sheets.length - 1 ? 0 : activeSheetIndex + 1)
+  }
+
+  return (
+    <div className="report-workbook-backdrop" role="presentation" onClick={onClose}>
+      <section
+        className="report-workbook-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Контингент обучающихся"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="report-workbook-modal__header">
+          <div>
+            <span>{workbook.sourceFile}</span>
+            <h2>Контингент обучающихся</h2>
+            <p>{workbook.sheets.length} листов Excel-документа</p>
+          </div>
+          <button className="report-workbook-modal__close" type="button" aria-label="Закрыть" onClick={onClose}>
+            <X size={22} strokeWidth={2.4} />
+          </button>
+        </header>
+
+        <div className="report-workbook-modal__toolbar">
+          <button type="button" aria-label="Предыдущий лист" onClick={goToPreviousSheet}>
+            <ChevronLeft size={20} />
+          </button>
+          <div className="report-workbook-modal__tabs" role="tablist" aria-label="Листы Excel">
+            {workbook.sheets.map((item, index) => (
+              <button
+                className={`report-workbook-modal__tab${index === activeSheetIndex ? ' report-workbook-modal__tab--active' : ''}`}
+                key={item.name}
+                type="button"
+                role="tab"
+                aria-selected={index === activeSheetIndex}
+                onClick={() => onSheetChange(index)}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+          <button type="button" aria-label="Следующий лист" onClick={goToNextSheet}>
+            <ChevronRight size={20} />
+          </button>
+        </div>
+
+        {sheet ? (
+          <div className="report-workbook-modal__sheet">
+            <div className="report-workbook-modal__sheet-title">
+              <span>Лист {activeSheetIndex + 1} из {workbook.sheets.length}</span>
+              <strong>{sheet.name}</strong>
+            </div>
+            <div className="report-workbook-table-wrap">
+              <table className={[
+                'report-workbook-table',
+                hasGroupedHeader ? 'report-workbook-table--grouped' : '',
+                leadingColumns >= 2 || (!hasGroupedHeader && columnCount <= 4) ? 'report-workbook-table--wide-labels' : '',
+              ].filter(Boolean).join(' ')}
+              >
+                <thead>
+                  {hasGroupedHeader ? (
+                    <>
+                      <tr>
+                        {Array.from({ length: leadingColumns }, (_item, index) => (
+                          <th className="report-workbook-table__leading" key={`leading-${index}`} rowSpan={2}>
+                            {firstHeaderRow[index] || ''}
+                          </th>
+                        ))}
+                        {(() => {
+                          const cells = []
+                          let columnIndex = leadingColumns
+                          const normalizedFirstRow = normalizeWorkbookRow(firstHeaderRow, columnCount)
+
+                          while (columnIndex < columnCount) {
+                            const label = normalizedFirstRow[columnIndex]
+                            let span = 1
+                            while (
+                              columnIndex + span < columnCount &&
+                              !normalizedFirstRow[columnIndex + span]
+                            ) {
+                              span += 1
+                            }
+                            cells.push(
+                              <th className="report-workbook-table__group" colSpan={span} key={`group-${columnIndex}`}>
+                                {label}
+                              </th>,
+                            )
+                            columnIndex += span
+                          }
+
+                          return cells
+                        })()}
+                      </tr>
+                      <tr>
+                        {normalizeWorkbookRow(headerRows[1] || [], columnCount)
+                          .slice(leadingColumns)
+                          .map((cell, index) => (
+                            <th key={`subhead-${index}`}>{cell}</th>
+                          ))}
+                      </tr>
+                    </>
+                  ) : (
+                    headerRows.map((row, rowIndex) => (
+                      <tr key={`head-${rowIndex}`}>
+                        {normalizeWorkbookRow(row, columnCount).map((cell, columnIndex) => (
+                          <th key={`head-${rowIndex}-${columnIndex}`}>{cell || `Колонка ${columnIndex + 1}`}</th>
+                        ))}
+                      </tr>
+                    ))
+                  )}
+                </thead>
+                <tbody>
+                  {bodyRows.map((row, rowIndex) => (
+                    <tr key={`${sheet.name}-${rowIndex}`}>
+                      {normalizeWorkbookRow(row, columnCount).map((cell, columnIndex) => (
+                        <td key={`${sheet.name}-${rowIndex}-${columnIndex}`}>
+                          {cell || '—'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="report-detail-empty">В Excel-файле нет доступных листов.</div>
+        )}
+      </section>
+    </div>
+  )
+}
+
+function KcpComparisonModal({
+  rows,
+  collegeRows,
+  onClose,
+}: {
+  rows: KcpComparisonRow[]
+  collegeRows: KcpCollegeRow[]
+  onClose: () => void
+}) {
+  const total2025 = getKcpYearTotal(rows, 'actual2025')
+  const total2026 = getKcpYearTotal(rows, 'plan2026')
+  const spo2026Total = getKcpRowTotal(rows.find((row) => row.level === 'СПО')?.plan2026 || {
+    fullTime: 0,
+    partTime: 0,
+    distance: 0,
+  })
+  const collegeTotal = getKcpCollegeTotal(collegeRows)
+  const columns: Array<{ key: keyof KcpYearValues; label: string }> = [
+    { key: 'fullTime', label: 'очная' },
+    { key: 'partTime', label: 'очно-заочная' },
+    { key: 'distance', label: 'заочная' },
+  ]
+
+  return (
+    <div className="report-kcp-backdrop" role="presentation" onClick={onClose}>
+      <section
+        className="report-kcp-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="КЦП 2025"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="report-kcp-modal__header">
+          <div>
+            <span>Контрольные цифры приёма</span>
+            <h2>КЦП 2025</h2>
+            <p>Факт 2025 и план 2026 по уровням и формам обучения.</p>
+          </div>
+          <strong>{formatNumber(total2025)}</strong>
+          <button className="report-kcp-modal__close" type="button" aria-label="Закрыть" onClick={onClose}>
+            <X size={22} strokeWidth={2.4} />
+          </button>
+        </header>
+
+        <div className="report-kcp-modal__summary" aria-label="Итоги КЦП">
+          <div>
+            <span>2025 факт</span>
+            <strong>{formatNumber(total2025)}</strong>
+          </div>
+          <div>
+            <span>2026 план</span>
+            <strong>{formatNumber(total2026)}</strong>
+          </div>
+        </div>
+
+        <div className="report-kcp-table-wrap">
+          <table className="report-kcp-table">
+            <thead>
+              <tr>
+                <th rowSpan={2}>Уровень</th>
+                <th colSpan={4}>2025</th>
+                <th colSpan={4}>2026</th>
+              </tr>
+              <tr>
+                {columns.map((column) => <th key={`2025-${column.key}`}>{column.label}</th>)}
+                <th>всего</th>
+                {columns.map((column) => <th key={`2026-${column.key}`}>{column.label}</th>)}
+                <th>всего</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.level}>
+                  <th scope="row">{row.level}</th>
+                  {columns.map((column) => (
+                    <td key={`${row.level}-2025-${column.key}`}>{formatKcpCell(row.actual2025[column.key])}</td>
+                  ))}
+                  <td className="report-kcp-table__total">{formatNumber(getKcpRowTotal(row.actual2025))}</td>
+                  {columns.map((column) => (
+                    <td key={`${row.level}-2026-${column.key}`}>{formatKcpCell(row.plan2026[column.key])}</td>
+                  ))}
+                  <td className="report-kcp-table__total">{formatNumber(getKcpRowTotal(row.plan2026))}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Итого</th>
+                {columns.map((column) => (
+                  <td key={`total-2025-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'actual2025', column.key))}</td>
+                ))}
+                <td>{formatNumber(total2025)}</td>
+                {columns.map((column) => (
+                  <td key={`total-2026-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'plan2026', column.key))}</td>
+                ))}
+                <td>{formatNumber(total2026)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <section className="report-kcp-colleges" aria-label="КЦП СПО по колледжам">
+          <div className="report-kcp-colleges__header">
+            <div>
+              <span>Дополнение</span>
+              <h3>СПО по колледжам</h3>
+            </div>
+            <strong>{formatNumber(collegeTotal)}</strong>
+          </div>
+          <div className="report-kcp-colleges__grid">
+            {collegeRows.map((row) => {
+              const rowTotal = row.base + row.additional
+
+              return (
+                <div className="report-kcp-colleges__row" key={row.name}>
+                  <div>
+                    <span>{row.name}</span>
+                    <small>{row.note}</small>
+                  </div>
+                  <strong>{formatNumber(rowTotal)}</strong>
+                </div>
+              )
+            })}
+          </div>
+          <p className="report-kcp-colleges__check">
+            Итого по колледжам: {formatNumber(collegeTotal)} · строка СПО 2026: {formatNumber(spo2026Total)}
+          </p>
+        </section>
+      </section>
+    </div>
+  )
+}
+
 function ReportMetric({ label, value, caption, tone = 'blue', icon: Icon, onClick }: ReportMetricProps) {
   return (
     <ClickableBlock
@@ -249,327 +686,6 @@ function ReportMetric({ label, value, caption, tone = 'blue', icon: Icon, onClic
   )
 }
 
-function MiniBarList({
-  rows,
-  total,
-  valueKey,
-  onOpen,
-}: {
-  rows: DetailRow[]
-  total: number
-  valueKey?: string
-  onOpen: (row: DetailRow) => void
-}) {
-  return (
-    <div className="report-mini-bars">
-      {rows.map((row) => {
-        const value = Number(row.value) || 0
-        const percent = getPercent(value, total)
-
-        return (
-          <ClickableBlock
-            as="div"
-            className="report-mini-bar"
-            key={row.name}
-            ariaLabel={`Показать состав: ${row.name}`}
-            onClick={() => onOpen(row)}
-          >
-            <div className="report-mini-bar__header">
-              <span>{row.name}</span>
-              <strong>{formatNumber(value)}</strong>
-            </div>
-            <div className="report-mini-bar__track" aria-label={`${valueKey || 'значение'} ${formatNumber(value)}`}>
-              <span style={{ width: `${percent}%` }} />
-            </div>
-            {row.caption && <small>{row.caption}</small>}
-          </ClickableBlock>
-        )
-      })}
-    </div>
-  )
-}
-
-function AdmissionTable({
-  title,
-  subtitle,
-  rows,
-  onOpen,
-}: {
-  title: string
-  subtitle: string
-  rows: ReportDirectionRow[]
-  onOpen: (row: ReportDirectionRow) => void
-}) {
-  return (
-    <section className="panel report-table-panel">
-      <div className="panel__header">
-        <div>
-          <h2>{title}</h2>
-          <p>{subtitle}</p>
-        </div>
-      </div>
-      <div className="report-table-wrap">
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Уровень / УГСН</th>
-              <th>Всего</th>
-              <th>КЦП</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((item) => (
-              <tr
-                className="report-table__clickable-row"
-                key={`${title}-${item.level}-${item.name}`}
-                role="button"
-                tabIndex={0}
-                aria-label={`Показать состав строки ${item.name}`}
-                onClick={() => onOpen(item)}
-                onKeyDown={keyOpen(() => onOpen(item))}
-              >
-                <td>
-                  <span>{item.level}</span>
-                  <small>{item.name}</small>
-                </td>
-                <td>{formatNumber(item.total)}</td>
-                <td>{formatNumber(item.kcp)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  )
-}
-
-function AdmissionSection({
-  report,
-  openDetail,
-}: {
-  report: Report20252026
-  openDetail: (detail: DetailPayload) => void
-}) {
-  const campaign = report.admissionCampaign
-  const programsRows = campaign.programBreakdown.map((item) => ({
-    name: item.name,
-    value: item.quantity,
-    caption: 'образовательных программ',
-  }))
-  const enrolledKcpTotal = campaign.enrolledKcp2025.reduce((sum, item) => sum + item.quantity, 0)
-  const enrolledTotal = campaign.enrolledTotal2025 ?? enrolledKcpTotal
-  const planTotal = campaign.plan2026.reduce((sum, item) => sum + item.total, 0)
-  const planKcpTotal = campaign.plan2026.reduce((sum, item) => sum + item.kcp, 0)
-
-  const openRows = (title: string, total: number | string, rows: DetailRow[], subtitle?: string) => {
-    openDetail({ title, subtitle, total, rows })
-  }
-
-  return (
-    <section className="report-section">
-      <div className="report-section__heading">
-        <ClipboardList size={30} aria-hidden="true" />
-        <div>
-          <h2>Приёмная кампания {campaign.year}</h2>
-          <p>Программы, зачисление, план набора и ориентиры из исходного доклада.</p>
-        </div>
-      </div>
-
-      <div className="report-admission-grid">
-        <section className="panel report-admission-panel">
-          <div className="panel__header">
-            <div>
-              <h2>Программы приёма</h2>
-              <p>Разбивка общего числа программ по уровням.</p>
-            </div>
-            <button
-              className="report-panel-action"
-              type="button"
-              onClick={() => openRows('Программы приёма', campaign.programsTotal, programsRows)}
-            >
-              {formatNumber(campaign.programsTotal)}
-            </button>
-          </div>
-          <MiniBarList
-            rows={programsRows}
-            total={campaign.programsTotal}
-            onOpen={(row) =>
-              openRows(row.name, row.value || 0, [], 'Пока нет списка конкретных программ внутри этого уровня.')
-            }
-          />
-        </section>
-
-        <section className="panel report-admission-panel">
-          <div className="panel__header">
-            <div>
-              <h2>Зачисление 2025</h2>
-              <p>Итог ВО и разложение КЦП по уровням.</p>
-            </div>
-            <button
-              className="report-panel-action"
-              type="button"
-              onClick={() =>
-                openRows('Зачислено ВО', enrolledTotal, [
-                  ...campaign.enrolledKcp2025.map((item) => ({
-                    name: item.name,
-                    value: item.quantity,
-                    caption: 'КЦП',
-                  })),
-                  {
-                    name: 'Прочее зачисление',
-                    value: enrolledTotal - enrolledKcpTotal,
-                    caption: 'Платное и другие категории без детальной разбивки в текущих данных',
-                  },
-                ])
-              }
-            >
-              {formatNumber(enrolledTotal)}
-            </button>
-          </div>
-          <MiniBarList
-            rows={campaign.enrolledKcp2025.map((item) => ({
-              name: item.name,
-              value: item.quantity,
-              caption: 'зачислено на КЦП',
-            }))}
-            total={enrolledKcpTotal}
-            onOpen={(row) => openRows(row.name, row.value || 0, [], 'Детализация по направлениям ниже в таблице.')}
-          />
-        </section>
-      </div>
-
-      <section className="panel report-plan-panel">
-        <div className="panel__header">
-          <div>
-            <h2>План набора 2026</h2>
-            <p>Общий план, КЦП, прирост и изменение бюджетных мест.</p>
-          </div>
-          <button
-            className="report-panel-action"
-            type="button"
-            onClick={() =>
-              openRows(
-                'План набора 2026',
-                planTotal,
-                campaign.plan2026.map((item) => ({
-                  name: item.name,
-                  value: item.total,
-                  caption: `КЦП ${formatNumber(item.kcp)} · рост ${item.growthPercent}% · КЦП +${formatNumber(item.kcpDelta)}`,
-                })),
-              )
-            }
-          >
-            {formatNumber(planTotal)}
-          </button>
-        </div>
-        <div className="report-plan-cards">
-          {campaign.plan2026.map((item) => {
-            const share = getPercent(item.total, planTotal)
-            const kcpShare = getPercent(item.kcp, item.total)
-
-            return (
-              <ClickableBlock
-                className="report-plan-card"
-                key={item.name}
-                ariaLabel={`Показать состав плана ${item.name}`}
-                onClick={() =>
-                  openRows(item.name, item.total, [
-                    { name: 'Всего мест', value: item.total },
-                    { name: 'КЦП', value: item.kcp, caption: `${kcpShare}% от плана уровня` },
-                    { name: 'Рост к предыдущему периоду', value: `${item.growthPercent}%` },
-                    { name: 'Прирост КЦП', value: item.kcpDelta },
-                  ])
-                }
-              >
-                <span>{item.name}</span>
-                <strong>{formatNumber(item.total)}</strong>
-                <div className="report-plan-card__track">
-                  <span style={{ width: `${share}%` }} />
-                </div>
-                <small>{formatNumber(item.kcp)} · рост {item.growthPercent}%</small>
-              </ClickableBlock>
-            )
-          })}
-        </div>
-        <div className="report-plan-summary">
-          <span>КЦП по плану</span>
-          <strong>{formatNumber(planKcpTotal)}</strong>
-        </div>
-      </section>
-
-      <div className="report-tables-grid">
-        <AdmissionTable
-          title="Приём 2025 по УГСН"
-          subtitle="Все строки, доступные из текущей структуры отчёта."
-          rows={campaign.admission2025Top}
-          onOpen={(row) =>
-            openRows(row.name, row.total, [
-              { name: 'Уровень', value: row.level },
-              { name: 'Всего принято', value: row.total },
-              { name: 'КЦП', value: row.kcp, caption: `${getPercent(row.kcp, row.total)}% от строки` },
-              { name: 'Вне КЦП', value: row.total - row.kcp },
-            ])
-          }
-        />
-        <AdmissionTable
-          title="План 2026 по УГСН"
-          subtitle="Направления с крупнейшими плановыми значениями."
-          rows={campaign.plan2026Top}
-          onOpen={(row) =>
-            openRows(row.name, row.total, [
-              { name: 'Уровень', value: row.level },
-              { name: 'План всего', value: row.total },
-              { name: 'КЦП', value: row.kcp, caption: `${getPercent(row.kcp, row.total)}% от строки` },
-              { name: 'Вне КЦП', value: row.total - row.kcp },
-            ])
-          }
-        />
-      </div>
-    </section>
-  )
-}
-
-function GraduationContextSection({
-  context,
-  openDetail,
-}: {
-  context: ReportContextItem[]
-  openDetail: (detail: DetailPayload) => void
-}) {
-  return (
-    <section className="report-section report-section--compact">
-      <div className="report-section__heading">
-        <Layers3 size={30} aria-hidden="true" />
-        <div>
-          <h2>Ориентиры по выпуску</h2>
-        </div>
-      </div>
-
-      <div className="report-context-grid">
-        {context.map((item) => (
-          <ClickableBlock
-            className="report-context-card"
-            key={item.name}
-            ariaLabel={`Показать состав показателя ${item.name}`}
-            onClick={() =>
-              openDetail({
-                title: item.name,
-                total: item.value,
-                rows: [],
-                emptyText: item.note || 'Детализация этого ориентира будет добавлена позже.',
-              })
-            }
-          >
-            <span>{item.name}</span>
-            <strong>{formatNumber(item.value)}</strong>
-            {shouldShowContextNote(item.note) && <p>{item.note}</p>}
-          </ClickableBlock>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function GraduationTable({
   level,
   onOpen,
@@ -577,6 +693,8 @@ function GraduationTable({
   level: GraduationLevel
   onOpen: (detail: DetailPayload) => void
 }) {
+  const sortedRows = [...level.rows].sort((first, second) => second.total - first.total)
+
   return (
     <section className="panel report-table-panel">
       <div className="panel__header">
@@ -614,7 +732,7 @@ function GraduationTable({
             </tr>
           </thead>
           <tbody>
-            {level.rows.map((item) => (
+            {sortedRows.map((item) => (
               <tr
                 className="report-table__clickable-row"
                 key={`${level.name}-${item.name}`}
@@ -670,13 +788,13 @@ function GraduationSection({
     name: level.name,
     value: level.summer,
     caption: `${getPercent(level.summer, graduation.summer.quantity)}% летнего выпуска`,
-    meta: `${getPercent(level.summer, graduation.total)}% от общего выпуска. Бюджет/платно по летнему выпуску: нет данных в источнике.`,
+    meta: `${getPercent(level.summer, graduation.total)}% от общего выпуска`,
   }))
   const winterLevelRows = graduation.levels.map((level) => ({
     name: level.name,
     value: level.winter,
     caption: `${getPercent(level.winter, graduation.winter.quantity)}% зимнего выпуска`,
-    meta: `${getPercent(level.winter, graduation.total)}% от общего выпуска. Бюджет/платно по зимнему выпуску: нет данных в источнике.`,
+    meta: `${getPercent(level.winter, graduation.total)}% от общего выпуска`,
   }))
 
   return (
@@ -686,19 +804,6 @@ function GraduationSection({
         <div>
           <h2>Выпуск {graduation.year}</h2>
           <p>Разделение на летний выпуск очной формы и зимний выпуск очно-заочной/заочной формы.</p>
-        </div>
-      </div>
-
-      <div className="report-graduation-guide" aria-label="Пояснение к летнему и зимнему выпуску">
-        <div className="report-graduation-guide__item report-graduation-guide__item--summer">
-          <span>Летний выпуск</span>
-          <strong>очная форма</strong>
-          <small>{formatNumber(graduation.summer.quantity)} · {summerPercent}% от выпуска</small>
-        </div>
-        <div className="report-graduation-guide__item report-graduation-guide__item--winter">
-          <span>Зимний выпуск</span>
-          <strong>очно-заочная и заочная формы</strong>
-          <small>{formatNumber(graduation.winter.quantity)} · {winterPercent}% от выпуска</small>
         </div>
       </div>
 
@@ -722,14 +827,7 @@ function GraduationSection({
                     title: graduation.summer.title,
                     total: graduation.summer.quantity,
                     subtitle: graduation.summer.description,
-                    rows: [
-                      ...summerLevelRows,
-                      {
-                        name: 'Платно / бесплатно',
-                        caption: 'Нет прямой разбивки летнего выпуска на бюджет и платное обучение.',
-                        value: 'нет данных',
-                      },
-                    ],
+                    rows: summerLevelRows,
                   },
                 },
                 {
@@ -743,20 +841,8 @@ function GraduationSection({
                     title: graduation.winter.title,
                     total: graduation.winter.quantity,
                     subtitle: graduation.winter.description,
-                    rows: [
-                      ...winterLevelRows,
-                      {
-                        name: 'Платно / бесплатно',
-                        caption: 'Нет прямой разбивки зимнего выпуска на бюджет и платное обучение.',
-                        value: 'нет данных',
-                      },
-                    ],
+                    rows: winterLevelRows,
                   },
-                },
-                {
-                  name: 'Платно / бесплатно',
-                  caption: 'Разделение выпуска по платной и бюджетной основе в источнике не указано.',
-                  value: 'нет данных',
                 },
               ],
             })
@@ -782,14 +868,7 @@ function GraduationSection({
                   title: graduation.summer.title,
                   total: graduation.summer.quantity,
                   subtitle: graduation.summer.description,
-                  rows: [
-                    ...summerLevelRows,
-                    {
-                      name: 'Платно / бесплатно',
-                      caption: 'Нет прямой разбивки летнего выпуска на бюджет и платное обучение.',
-                      value: 'нет данных',
-                    },
-                  ],
+                  rows: summerLevelRows,
                 })
               }}
             >
@@ -806,14 +885,7 @@ function GraduationSection({
                   title: graduation.winter.title,
                   total: graduation.winter.quantity,
                   subtitle: graduation.winter.description,
-                  rows: [
-                    ...winterLevelRows,
-                    {
-                      name: 'Платно / бесплатно',
-                      caption: 'Нет прямой разбивки зимнего выпуска на бюджет и платное обучение.',
-                      value: 'нет данных',
-                    },
-                  ],
+                  rows: winterLevelRows,
                 })
               }}
             >
@@ -852,23 +924,13 @@ function GraduationSection({
                           name: 'Летний выпуск',
                           value: level.summer,
                           caption: `${levelSummerPercent}% выпуска уровня`,
-                          meta: `${getPercent(level.summer, graduation.summer.quantity)}% летнего выпуска. Бюджет/платно по сезону: нет данных в источнике.`,
+                          meta: `${getPercent(level.summer, graduation.summer.quantity)}% летнего выпуска`,
                         },
                         {
                           name: 'Зимний выпуск',
                           value: level.winter,
                           caption: `${levelWinterPercent}% выпуска уровня`,
-                          meta: `${getPercent(level.winter, graduation.winter.quantity)}% зимнего выпуска. Бюджет/платно по сезону: нет данных в источнике.`,
-                        },
-                        {
-                          name: 'Бюджет по плану приёма 2026',
-                          value: relatedAdmissionPlan ? relatedAdmissionPlan.kcp : 'нет данных',
-                          caption: 'Ориентир из плана приёма, не разбивка выпуска.',
-                        },
-                        {
-                          name: 'Платно по плану приёма 2026',
-                          value: relatedAdmissionPlan ? paidPlaces : 'нет данных',
-                          caption: 'Ориентир из плана приёма, не разбивка выпуска.',
+                          meta: `${getPercent(level.winter, graduation.winter.quantity)}% зимнего выпуска`,
                         },
                         ...level.rows.map((row) => ({ name: row.name, value: row.total })),
                       ],
@@ -906,8 +968,12 @@ function GraduationSection({
                   </div>
                   <div className="report-graduation-level__plan-row" aria-label="План приёма 2026">
                     <span>План приёма 2026</span>
-                    <strong>бюджет {relatedAdmissionPlan ? formatNumber(relatedAdmissionPlan.kcp) : 'нет данных'}</strong>
-                    <strong>платно {relatedAdmissionPlan ? formatNumber(paidPlaces) : 'нет данных'}</strong>
+                    {relatedAdmissionPlan && (
+                      <>
+                        <strong>бюджет {formatNumber(relatedAdmissionPlan.kcp)}</strong>
+                        <strong>платно {formatNumber(paidPlaces)}</strong>
+                      </>
+                    )}
                   </div>
                 </ClickableBlock>
               )
@@ -941,40 +1007,28 @@ export default function ReportPage() {
   const { report: reportData, loading } = useReport20252026()
   const report = reportData as Report20252026 | null
   const [activeDetail, setActiveDetail] = useState<DetailPayload | null>(null)
+  const [isWorkbookOpen, setWorkbookOpen] = useState(false)
+  const [isKcpModalOpen, setKcpModalOpen] = useState(false)
+  const [activeWorkbookSheet, setActiveWorkbookSheet] = useState(0)
 
   useEffect(() => {
-    if (!activeDetail) return undefined
+    if (!activeDetail && !isWorkbookOpen && !isKcpModalOpen) return undefined
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setActiveDetail(null)
+      if (event.key !== 'Escape') return
+      setActiveDetail(null)
+      setWorkbookOpen(false)
+      setKcpModalOpen(false)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeDetail])
+  }, [activeDetail, isWorkbookOpen, isKcpModalOpen])
 
   const reportMetrics = useMemo(() => {
     if (!report) return []
 
     const campaign = report.admissionCampaign
-    const enrolledKcpTotal = campaign.enrolledKcp2025.reduce((sum, item) => sum + item.quantity, 0)
-    const enrolledTotal = campaign.enrolledTotal2025 ?? enrolledKcpTotal
-    const planTotal = campaign.plan2026.reduce((sum, item) => sum + item.total, 0)
-    const graduation = report.graduation
-    const graduationSummerPercent = getPercent(graduation.summer.quantity, graduation.total)
-    const graduationWinterPercent = 100 - graduationSummerPercent
-    const graduationSummerRows = graduation.levels.map((level) => ({
-      name: level.name,
-      value: level.summer,
-      caption: `${getPercent(level.summer, graduation.summer.quantity)}% летнего выпуска`,
-      meta: `${getPercent(level.summer, graduation.total)}% от общего выпуска. Бюджет/платно по летнему выпуску: нет данных в источнике.`,
-    }))
-    const graduationWinterRows = graduation.levels.map((level) => ({
-      name: level.name,
-      value: level.winter,
-      caption: `${getPercent(level.winter, graduation.winter.quantity)}% зимнего выпуска`,
-      meta: `${getPercent(level.winter, graduation.total)}% от общего выпуска. Бюджет/платно по зимнему выпуску: нет данных в источнике.`,
-    }))
 
     return [
       {
@@ -993,106 +1047,16 @@ export default function ReportPage() {
           })),
         },
       },
-      {
-        label: 'Зачислено ВО',
-        value: enrolledTotal,
-        caption: 'КЦП, платное и прочие категории',
-        tone: 'green',
-        icon: Users,
-        detail: {
-          title: 'Зачислено ВО',
-          total: enrolledTotal,
-          rows: [
-            ...campaign.enrolledKcp2025.map((item) => ({
-              name: item.name,
-              value: item.quantity,
-              caption: 'КЦП',
-            })),
-            {
-              name: 'Прочее зачисление',
-              value: enrolledTotal - enrolledKcpTotal,
-              caption: 'без детальной разбивки в текущей структуре данных',
-            },
-          ],
-        },
-      },
-      {
-        label: 'План набора 2026',
-        value: planTotal,
-        caption: 'Бакалавриат, специалитет, магистратура',
-        tone: 'purple',
-        icon: ClipboardList,
-        detail: {
-          title: 'План набора 2026',
-          total: planTotal,
-          rows: campaign.plan2026.map((item) => ({
-            name: item.name,
-            value: item.total,
-            caption: `КЦП ${formatNumber(item.kcp)} · рост ${item.growthPercent}%`,
-          })),
-        },
-      },
-      {
-        label: 'Выпуск 2026',
-        value: graduation.total,
-        caption: 'Летний и зимний выпуск',
-        tone: 'cyan',
-        icon: GraduationCap,
-        detail: {
-          title: 'Выпуск 2026',
-          total: graduation.total,
-          rows: [
-            {
-              name: graduation.summer.title,
-              value: graduation.summer.quantity,
-              caption: `${graduationSummerPercent}% от общего выпуска`,
-              meta: graduationSummerRows
-                .map((row) => `${row.name.toLowerCase()} ${formatValue(row.value)} (${row.caption.split('%')[0]}%)`)
-                .join(' / '),
-              detail: {
-                title: graduation.summer.title,
-                total: graduation.summer.quantity,
-                subtitle: graduation.summer.description,
-                rows: [
-                  ...graduationSummerRows,
-                  {
-                    name: 'Платно / бесплатно',
-                    caption: 'Нет прямой разбивки летнего выпуска на бюджет и платное обучение.',
-                    value: 'нет данных',
-                  },
-                ],
-              },
-            },
-            {
-              name: graduation.winter.title,
-              value: graduation.winter.quantity,
-              caption: `${graduationWinterPercent}% от общего выпуска`,
-              meta: graduationWinterRows
-                .map((row) => `${row.name.toLowerCase()} ${formatValue(row.value)} (${row.caption.split('%')[0]}%)`)
-                .join(' / '),
-              detail: {
-                title: graduation.winter.title,
-                total: graduation.winter.quantity,
-                subtitle: graduation.winter.description,
-                rows: [
-                  ...graduationWinterRows,
-                  {
-                    name: 'Платно / бесплатно',
-                    caption: 'Нет прямой разбивки зимнего выпуска на бюджет и платное обучение.',
-                    value: 'нет данных',
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      },
     ]
   }, [report])
 
   if (loading && !report) return <ReportLoading />
 
   if (!report) return null
+
+  const contingentTotal = getContingentTotal(report.ugsnInfo)
+  const kcp2025Total = getKcpYearTotal(KCP_COMPARISON_ROWS, 'actual2025')
+  const workbook = report.ugsnWorkbook
 
   return (
     <section className="report-page">
@@ -1108,6 +1072,25 @@ export default function ReportPage() {
             onClick={() => setActiveDetail(item.detail)}
           />
         ))}
+        <ReportMetric
+          label="КЦП 2025"
+          value={kcp2025Total}
+          caption="по формам обучения"
+          tone="cyan"
+          icon={Landmark}
+          onClick={() => setKcpModalOpen(true)}
+        />
+        <ReportMetric
+          label="Контингент обучающихся"
+          value={contingentTotal || '—'}
+          caption={workbook ? `сумма колонок «Всего»` : 'данные UGSN_INFO'}
+          tone="soft"
+          icon={Table2}
+          onClick={() => {
+            setActiveWorkbookSheet(0)
+            setWorkbookOpen(true)
+          }}
+        />
       </section>
 
       <GraduationSection
@@ -1115,32 +1098,23 @@ export default function ReportPage() {
         admissionPlan={report.admissionCampaign.plan2026}
         openDetail={setActiveDetail}
       />
-      <GraduationContextSection context={report.admissionCampaign.context} openDetail={setActiveDetail} />
 
-      <AdmissionSection report={report} openDetail={setActiveDetail} />
+      {isWorkbookOpen && workbook && (
+        <UgsnWorkbookModal
+          workbook={workbook}
+          activeSheetIndex={activeWorkbookSheet}
+          onSheetChange={setActiveWorkbookSheet}
+          onClose={() => setWorkbookOpen(false)}
+        />
+      )}
 
-      <section className="report-section report-section--compact">
-        <div className="report-section__heading">
-          <Layers3 size={30} aria-hidden="true" />
-          <div>
-            <h2>Незаполненные раскрытия</h2>
-            <p>Для показателей без детальной структуры попап уже предусмотрен и будет заполнен после уточнения данных.</p>
-          </div>
-        </div>
-        <div className="report-placeholder-grid">
-          {['Перечень конкретных программ', 'Детализация платного зачисления', 'Разрез по институтам'].map((name) => (
-            <ClickableBlock
-              className="report-placeholder-card"
-              key={name}
-              ariaLabel={`Открыть пустую детализацию ${name}`}
-              onClick={() => setActiveDetail({ title: name, rows: [] })}
-            >
-              <Target size={22} aria-hidden="true" />
-              <span>{name}</span>
-            </ClickableBlock>
-          ))}
-        </div>
-      </section>
+      {isKcpModalOpen && (
+        <KcpComparisonModal
+          rows={KCP_COMPARISON_ROWS}
+          collegeRows={KCP_COLLEGE_ROWS}
+          onClose={() => setKcpModalOpen(false)}
+        />
+      )}
 
       {activeDetail && (
         <ReportDetailPanel

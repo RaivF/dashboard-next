@@ -67,7 +67,7 @@ const masterGraduation = [
 
 export function buildReport20252026Response() {
   return {
-    title: 'Отчёт Выпуск 2026',
+    title: 'Итоги учебного года 2025 / 2026',
     source: 'ДОКЛАД ректора МОН++ (1).docx',
     admissionCampaign: {
       year: '2025/2026',
