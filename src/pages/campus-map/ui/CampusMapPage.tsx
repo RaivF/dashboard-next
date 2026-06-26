@@ -22,8 +22,8 @@ const INITIAL_CAMERA = {
 }
 
 const INITIAL_LOCATION = {
-  center: [35.37318, 46.84212],
-  zoom: 18.35,
+  center: [35.3739, 46.84685],
+  zoom: 17.2,
 } satisfies { center: Coordinates; zoom: number }
 
 const CAMPUS_POINTS = [
@@ -31,36 +31,43 @@ const CAMPUS_POINTS = [
     id: 'main',
     title: 'Главный корпус',
     caption: 'центр кампуса',
-    coordinates: [35.37288, 46.842187],
+    coordinates: [35.373212, 46.846211],
     accent: '#ef4444',
   },
   {
     id: 'admission',
     title: 'Приёмная комиссия',
     caption: 'входная группа',
-    coordinates: [35.37082, 46.84264],
+    coordinates: [35.374316, 46.846501],
     accent: '#2563eb',
   },
   {
     id: 'library',
     title: 'Библиотека',
     caption: 'учебный корпус',
-    coordinates: [35.37464, 46.84274],
+    coordinates: [35.372422, 46.847241],
     accent: '#16a34a',
   },
   {
     id: 'sport',
     title: 'Спорткомплекс',
     caption: 'площадка',
-    coordinates: [35.37576, 46.84143],
+    coordinates: [35.377363, 46.849367],
     accent: '#f59e0b',
   },
   {
     id: 'dormitory',
     title: 'Общежитие',
     caption: 'студенческий блок',
-    coordinates: [35.36965, 46.84136],
+    coordinates: [35.376096, 46.844295],
     accent: '#7c3aed',
+  },
+  {
+    id: 'building-15',
+    title: 'Корпус №15',
+    caption: 'учебный корпус',
+    coordinates: [35.370347, 46.844609],
+    accent: '#0f766e',
   },
 ] satisfies CampusPoint[]
 
@@ -94,11 +101,15 @@ type YMapControlsInstance = {
   addChild: (child: unknown) => void
 }
 
+type YMaps3Import = ((moduleName: string) => Promise<{
+  YMapZoomControl: new (options: Record<string, never>) => unknown
+}>) & {
+  registerCdn?: (urlTemplate: string, packages: string[]) => void
+}
+
 type YMaps3Api = {
   ready: Promise<void>
-  import: (moduleName: string) => Promise<{
-    YMapZoomControl: new (options: Record<string, never>) => unknown
-  }>
+  import: YMaps3Import
   YMap: new (
     root: HTMLElement,
     options: {
@@ -169,6 +180,12 @@ function getMapLoader(): Promise<YMaps3Api> {
   return mapLoaderPromise
 }
 
+function registerMapUiPackages(ymaps3: YMaps3Api) {
+  ymaps3.import.registerCdn?.('https://cdn.jsdelivr.net/npm/{package}', [
+    '@yandex/ymaps3-default-ui-theme@0.0',
+  ])
+}
+
 function createFlagElement(point: CampusPoint): HTMLButtonElement {
   const marker = document.createElement('button')
   marker.className = 'campus-map__flag'
@@ -210,6 +227,7 @@ export default function CampusMapPage() {
       try {
         const ymaps3 = await getMapLoader()
         await ymaps3.ready
+        registerMapUiPackages(ymaps3)
         if (!isMounted || !rootElement) return
 
         const {

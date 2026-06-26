@@ -26,7 +26,7 @@ describe('analytics', () => {
     )
     assert.equal(response.admission_control_numbers.directions.length, 151)
     assert.equal(analytics.kcp.directions.length, response.admission_control_numbers.directions.length)
-    assert.ok(analytics.byFunding.some((item) => item.name === 'Отдельная квота'))
+    assert.ok(analytics.byFunding.some((item) => item.name === 'Отдельная квота (СВО)'))
     assert.ok(analytics.byFunding.some((item) => item.name === 'Особая квота'))
     assert.equal(analytics.topSpecialties.length, 5)
     assert.equal(analytics.bottomSpecialties.length, 5)
@@ -202,7 +202,7 @@ describe('analytics', () => {
       { name: 'Бюджетная основа', quantity: 5 },
       { name: 'Платное обучение', quantity: 0 },
       { name: 'Целевая квота', quantity: 0 },
-      { name: 'Отдельная квота', quantity: 0 },
+      { name: 'Отдельная квота (СВО)', quantity: 0 },
       { name: 'Особая квота', quantity: 0 },
     ])
     assert.equal(analytics.personal, 5)
@@ -346,7 +346,7 @@ describe('analytics', () => {
       { name: 'Бюджетная основа', quantity: 4 },
       { name: 'Платное обучение', quantity: 6 },
       { name: 'Целевая квота', quantity: 0 },
-      { name: 'Отдельная квота', quantity: 0 },
+      { name: 'Отдельная квота (СВО)', quantity: 0 },
       { name: 'Особая квота', quantity: 0 },
     ])
     assert.equal(analytics.previousYearComparison.previous, 10)

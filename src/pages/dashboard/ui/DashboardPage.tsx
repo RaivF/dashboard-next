@@ -17,10 +17,6 @@ export default function DashboardPage() {
     setShowPreviousYearOverlay,
     showPreviousYearFunding,
     setShowPreviousYearFunding,
-    showPreviousYearForm,
-    setShowPreviousYearForm,
-    showPreviousYearMethod,
-    setShowPreviousYearMethod,
     campaignYear,
     setCampaignYear,
   } = useDashboardSettings()
@@ -64,10 +60,6 @@ export default function DashboardPage() {
         setShowPreviousYearOverlay={setShowPreviousYearOverlay}
         showPreviousYearFunding={showPreviousYearFunding}
         setShowPreviousYearFunding={setShowPreviousYearFunding}
-        showPreviousYearForm={showPreviousYearForm}
-        setShowPreviousYearForm={setShowPreviousYearForm}
-        showPreviousYearMethod={showPreviousYearMethod}
-        setShowPreviousYearMethod={setShowPreviousYearMethod}
       />
     </>
   )

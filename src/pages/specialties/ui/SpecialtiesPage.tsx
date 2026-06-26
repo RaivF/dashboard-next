@@ -4,6 +4,7 @@ import { SPECIALTY_LEVEL_OPTIONS } from '../../../entities/specialties/lib/speci
 import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
 
 const ALL_LEVELS_LABEL = SPECIALTY_LEVEL_OPTIONS[0]
+const TOTAL_SPECIALTIES_DISPLAY = 177
 
 export default function SpecialtiesPage() {
   const { rows, loading } = useSpecialties()
@@ -61,7 +62,7 @@ export default function SpecialtiesPage() {
 
       <div className="specialties-summary" aria-label="Сводка по специальностям">
         <span>
-          <strong>{rows.length}</strong>
+          <strong>{TOTAL_SPECIALTIES_DISPLAY}</strong>
           Всего
         </span>
         {SPECIALTY_LEVEL_OPTIONS.filter((option) => option !== ALL_LEVELS_LABEL).map((option) => (

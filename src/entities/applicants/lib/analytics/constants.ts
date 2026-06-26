@@ -13,7 +13,7 @@ export const FUNDING_ORDER = [
   'Бюджетная основа',
   'Платное обучение',
   'Целевая квота',
-  'Отдельная квота',
+  'Отдельная квота (СВО)',
   'Особая квота',
 ]
 export const HALF_HOUR_CHART_RANGES = new Set(['day', 'twoDays'])

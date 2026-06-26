@@ -14,7 +14,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { CSSProperties } from 'react'
-import { formatNumber, formatPercentDecimal } from '../../../../shared/lib/formatters.js'
+import { formatNumber } from '../../../../shared/lib/formatters.js'
 import Panel from '../../../../shared/ui/Panel.js'
 import ChartLoading from './ChartLoading.js'
 import ChartTooltip from './ChartTooltip.js'
@@ -75,7 +75,6 @@ type DonutMetricColumn = {
   key: string
   label: string
   quantityKey: 'currentQuantity' | 'previousQuantity'
-  percentKey: 'currentPercent' | 'previousPercent'
 }
 
 function ChartEmpty() {
@@ -300,13 +299,11 @@ function DonutComparisonLegend({
     key: 'current',
     label: 'Текущий',
     quantityKey: 'currentQuantity',
-    percentKey: 'currentPercent',
   }
   const previousColumn: DonutMetricColumn = {
     key: 'previous',
     label: 'Прошлый год',
     quantityKey: 'previousQuantity',
-    percentKey: 'previousPercent',
   }
   const metricColumns: DonutMetricColumn[] =
     showPreviousYear && comparisonOrder === 'previous-first'
@@ -328,7 +325,6 @@ function DonutComparisonLegend({
           {metricColumns.map((column) => (
             <div className="donut-legend__metric" key={column.key}>
               <strong>{formatNumber(item[column.quantityKey])}</strong>
-              <span>{formatPercentDecimal(item[column.percentKey])}</span>
             </div>
           ))}
         </div>

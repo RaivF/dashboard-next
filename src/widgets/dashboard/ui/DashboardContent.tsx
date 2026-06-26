@@ -92,9 +92,9 @@ type CategoryChartProps = {
   subtitle: string
   data: NamedQuantity[]
   loading: boolean
-  previousYearData: NamedQuantity[]
-  showPreviousYear: boolean
-  onTogglePreviousYear: (value: boolean) => void
+  previousYearData?: NamedQuantity[]
+  showPreviousYear?: boolean
+  onTogglePreviousYear?: (value: boolean) => void
   currentYear?: string
   previousYear?: string
   comparisonOrder?: 'current-first' | 'previous-first'
@@ -105,6 +105,12 @@ const DonutChart = RawDonutChart as ComponentType<CategoryChartProps>
 const VerticalBarChart = RawVerticalBarChart as ComponentType<CategoryChartProps>
 
 const KCP_FILL_PERCENT = 7
+
+const MANUAL_FORM_DATA: NamedQuantity[] = [
+  { name: 'Очная', quantity: 1898 },
+  { name: 'Заочная', quantity: 371 },
+  { name: 'Очно-заочная', quantity: 334 },
+]
 
 const TARGET_ADMISSION_PARTNERS: NamedQuantity[] = [
   {
@@ -241,11 +247,12 @@ function KcpSummary() {
 function DialogRows({ title, rows }: { title: string; rows: NamedQuantity[] }) {
   const visibleRows = rows.filter((row) => row.quantity > 0)
 
+  if (visibleRows.length === 0) return null
+
   return (
     <section className="dashboard-dialog-section">
       <h3>{title}</h3>
       <div className="dashboard-dialog-rows">
-        {visibleRows.length === 0 && <div className="dashboard-dialog-empty">Нет данных</div>}
         {visibleRows.map((row) => (
           <div className="dashboard-dialog-row" key={`${title}-${row.name}-${row.caption || ''}`}>
             <span>
@@ -275,7 +282,7 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
 
       <div className="dashboard-dialog-grid">
         <DialogRows title="Основание обучения" rows={analytics.byFunding} />
-        <DialogRows title="Форма обучения" rows={analytics.byForm} />
+        <DialogRows title="Форма обучения" rows={MANUAL_FORM_DATA} />
         <DialogRows title="Уровни образования" rows={analytics.byDegree} />
         <DialogRows title="Способ подачи" rows={analytics.byMethod} />
         <DialogRows title="Приоритеты" rows={analytics.byPriority} />
@@ -296,10 +303,6 @@ type DashboardContentProps = {
   setShowPreviousYearOverlay: (value: boolean) => void
   showPreviousYearFunding: boolean
   setShowPreviousYearFunding: (value: boolean) => void
-  showPreviousYearForm: boolean
-  setShowPreviousYearForm: (value: boolean) => void
-  showPreviousYearMethod: boolean
-  setShowPreviousYearMethod: (value: boolean) => void
 }
 
 export default function DashboardContent({
@@ -311,10 +314,6 @@ export default function DashboardContent({
   setShowPreviousYearOverlay,
   showPreviousYearFunding,
   setShowPreviousYearFunding,
-  showPreviousYearForm,
-  setShowPreviousYearForm,
-  showPreviousYearMethod,
-  setShowPreviousYearMethod,
 }: DashboardContentProps) {
   const [activeStatDialog, setActiveStatDialog] = useState<StatDialog | null>(null)
   const currentAcademicYear = formatAcademicYear(campaignYear)
@@ -427,24 +426,18 @@ export default function DashboardContent({
 
       <section className="dashboard-grid dashboard-grid--middle">
         <VerticalBarChart
-          title="Форма обучения"
+          title="Форма обучения по заявлениям"
           subtitle="Очная, заочная, очно-заочная"
-          data={analytics.byForm}
+          data={MANUAL_FORM_DATA}
           loading={loading}
-          previousYearData={analytics.previousYearByForm}
-          showPreviousYear={showPreviousYearForm}
-          onTogglePreviousYear={setShowPreviousYearForm}
           currentYear={currentAcademicYear}
           previousYear={previousAcademicYear}
         />
         <VerticalBarChart
-          title="Способ подачи"
+          title="Способ подачи заявлений"
           subtitle="Лично, онлайн-каналы, почта"
           data={analytics.byMethod}
           loading={loading}
-          previousYearData={analytics.previousYearByMethod}
-          showPreviousYear={showPreviousYearMethod}
-          onTogglePreviousYear={setShowPreviousYearMethod}
           currentYear={currentAcademicYear}
           previousYear={previousAcademicYear}
         />

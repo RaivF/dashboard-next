@@ -286,13 +286,6 @@ function getFirstFilledColumn(row: string[], columnCount: number) {
   return index < 0 ? columnCount : index
 }
 
-function getAdmissionPlanForGraduationLevel(levelName: string, admissionPlan: ReportPlanRow[]) {
-  return admissionPlan.find((plan) => (
-    (levelName === 'Бакалавры' && plan.name === 'Бакалавриат') ||
-    (levelName === 'Магистры' && plan.name === 'Магистратура')
-  ))
-}
-
 function getDetailPopoverStyle(source?: HTMLElement | null): DetailPopoverStyle {
   if (!source || typeof window === 'undefined') return {}
 
@@ -615,27 +608,33 @@ function KcpComparisonModal({
 
         <div className="report-kcp-modal__summary" aria-label="Итоги КЦП">
           <div>
-            <span>2025 факт</span>
-            <strong>{formatNumber(total2025)}</strong>
+            <span>Было КЦП</span>
+            <strong>{formatNumber(99999)}</strong>
           </div>
           <div>
-            <span>2026 план</span>
-            <strong>{formatNumber(total2026)}</strong>
+            <span>Было принято</span>
+            <strong>{formatNumber(99999)}</strong>
           </div>
         </div>
 
         <div className="report-kcp-table-wrap">
           <table className="report-kcp-table">
+            <colgroup>
+              <col className="report-kcp-table__col-level" />
+              <col className="report-kcp-table__col-row-total" />
+              {Array.from({ length: 7 }, (_item, index) => (
+                <col className="report-kcp-table__col-value" key={`kcp-col-${index}`} />
+              ))}
+            </colgroup>
             <thead>
               <tr>
                 <th rowSpan={2}>Уровень</th>
                 <th rowSpan={2}>Итого</th>
-                <th colSpan={4}>2025</th>
+                <th colSpan={3}>2025</th>
                 <th colSpan={4}>2026</th>
               </tr>
               <tr>
                 {columns.map((column) => <th key={`2025-${column.key}`}>{column.label}</th>)}
-                <th>всего</th>
                 {columns.map((column) => <th key={`2026-${column.key}`}>{column.label}</th>)}
                 <th>всего</th>
               </tr>
@@ -648,7 +647,6 @@ function KcpComparisonModal({
                   {columns.map((column) => (
                     <td key={`${row.level}-2025-${column.key}`}>{formatKcpCell(row.actual2025[column.key])}</td>
                   ))}
-                  <td className="report-kcp-table__total">{formatNumber(getKcpRowTotal(row.actual2025))}</td>
                   {columns.map((column) => (
                     <td key={`${row.level}-2026-${column.key}`}>{formatKcpCell(row.plan2026[column.key])}</td>
                   ))}
@@ -663,7 +661,6 @@ function KcpComparisonModal({
                 {columns.map((column) => (
                   <td key={`total-2025-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'actual2025', column.key))}</td>
                 ))}
-                <td>{formatNumber(total2025)}</td>
                 {columns.map((column) => (
                   <td key={`total-2026-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'plan2026', column.key))}</td>
                 ))}
@@ -710,7 +707,7 @@ function ReportMetric({ label, value, caption, tone = 'blue', icon: Icon, onClic
           <Icon size={22} />
         </span>
       )}
-      <span>{label}</span>
+      {label && <span>{label}</span>}
       <strong>{typeof value === 'number' ? formatNumber(value) : value}</strong>
       {caption && <p>{caption}</p>}
     </>
@@ -824,11 +821,9 @@ function GraduationTable({
 
 function GraduationSection({
   graduation,
-  admissionPlan,
   openDetail,
 }: {
   graduation: Report20252026['graduation']
-  admissionPlan: ReportPlanRow[]
   openDetail: DetailOpenHandler
 }) {
   const summerPercent = getPercent(graduation.summer.quantity, graduation.total)
@@ -872,12 +867,6 @@ function GraduationSection({
                   meta: winterLevelRows
                     .map((row) => `${row.name.toLowerCase()} ${formatValue(row.value)} (${row.caption.split('%')[0]}%)`)
                     .join(' / '),
-                  detail: {
-                    title: graduation.winter.title,
-                    total: graduation.winter.quantity,
-                    subtitle: graduation.winter.description,
-                    rows: winterLevelRows,
-                  },
                 },
                 {
                   name: graduation.summer.title,
@@ -886,12 +875,6 @@ function GraduationSection({
                   meta: summerLevelRows
                     .map((row) => `${row.name.toLowerCase()} ${formatValue(row.value)} (${row.caption.split('%')[0]}%)`)
                     .join(' / '),
-                  detail: {
-                    title: graduation.summer.title,
-                    total: graduation.summer.quantity,
-                    subtitle: graduation.summer.description,
-                    rows: summerLevelRows,
-                  },
                 },
               ],
             }, event.currentTarget)
@@ -908,40 +891,22 @@ function GraduationSection({
             </div>
           </div>
           <div className="report-graduation-legend">
-            <button
+            <div
               className="report-graduation-legend__item report-graduation-legend__item--winter"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                openDetail({
-                  title: graduation.winter.title,
-                  total: graduation.winter.quantity,
-                  subtitle: graduation.winter.description,
-                  rows: winterLevelRows,
-                }, event.currentTarget)
-              }}
+              onClick={(event) => event.stopPropagation()}
             >
               <span>{graduation.winter.title}</span>
               <strong>{formatNumber(graduation.winter.quantity)}</strong>
               <small>{winterPercent}%</small>
-            </button>
-            <button
+            </div>
+            <div
               className="report-graduation-legend__item report-graduation-legend__item--summer"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                openDetail({
-                  title: graduation.summer.title,
-                  total: graduation.summer.quantity,
-                  subtitle: graduation.summer.description,
-                  rows: summerLevelRows,
-                }, event.currentTarget)
-              }}
+              onClick={(event) => event.stopPropagation()}
             >
               <span>{graduation.summer.title}</span>
               <strong>{formatNumber(graduation.summer.quantity)}</strong>
               <small>{summerPercent}%</small>
-            </button>
+            </div>
           </div>
         </ClickableBlock>
 
@@ -949,14 +914,12 @@ function GraduationSection({
           <header>
             <span>Структура выпуска</span>
             <strong>Бакалавры и магистры</strong>
-            <p>Полоса показывает выпуск по периодам. Бюджет и платное обучение ниже — отдельный ориентир из плана приёма.</p>
+            <p>Полоса показывает выпуск по периодам.</p>
           </header>
           <div className="report-graduation-levels__list">
             {graduation.levels.map((level) => {
               const levelSummerPercent = getPercent(level.summer, level.total)
               const levelWinterPercent = 100 - levelSummerPercent
-              const relatedAdmissionPlan = getAdmissionPlanForGraduationLevel(level.name, admissionPlan)
-              const paidPlaces = relatedAdmissionPlan ? Math.max(0, relatedAdmissionPlan.total - relatedAdmissionPlan.kcp) : 0
 
               return (
                 <ClickableBlock
@@ -1014,15 +977,6 @@ function GraduationSection({
                       <strong>{formatNumber(level.summer)}</strong>
                       <em>{levelSummerPercent}% уровня</em>
                     </span>
-                  </div>
-                  <div className="report-graduation-level__plan-row" aria-label="План приёма 2026">
-                    <span>План приёма 2026</span>
-                    {relatedAdmissionPlan && (
-                      <>
-                        <strong>бюджет {formatNumber(relatedAdmissionPlan.kcp)}</strong>
-                        <strong>платно {formatNumber(paidPlaces)}</strong>
-                      </>
-                    )}
                   </div>
                 </ClickableBlock>
               )
@@ -1092,14 +1046,14 @@ export default function ReportPage() {
 
     return [
       {
-        label: 'Программ приёма',
+        label: '',
         value: 108,
         caption: 'направления подготовки',
         tone: 'blue',
         icon: BookOpen,
         detail: {
           title: 'Программы приёма',
-          total: 108,
+          total: campaign.programsTotal,
           rows: campaign.programBreakdown.map((item) => ({
             name: item.name,
             value: item.quantity,
@@ -1150,6 +1104,7 @@ export default function ReportPage() {
         <ReportMetric
           label="Контингент обучающихся"
           value={contingentTotal || '—'}
+          caption="контингент обучающихся по состоянию на 01.06.2025 г."
           tone="soft"
           icon={Table2}
           onClick={() => {
@@ -1161,7 +1116,6 @@ export default function ReportPage() {
 
       <GraduationSection
         graduation={report.graduation}
-        admissionPlan={report.admissionCampaign.plan2026}
         openDetail={openDetail}
       />
 
