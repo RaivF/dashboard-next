@@ -1093,17 +1093,17 @@ export default function ReportPage() {
     return [
       {
         label: 'Программ приёма',
-        value: campaign.programsTotal,
-        caption: 'образовательных программ',
+        value: 108,
+        caption: 'направления подготовки',
         tone: 'blue',
         icon: BookOpen,
         detail: {
           title: 'Программы приёма',
-          total: campaign.programsTotal,
+          total: 108,
           rows: campaign.programBreakdown.map((item) => ({
             name: item.name,
             value: item.quantity,
-            caption: 'образовательных программ',
+            caption: 'направления подготовки',
           })),
         },
       },
