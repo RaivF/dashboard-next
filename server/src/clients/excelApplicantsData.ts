@@ -56,9 +56,9 @@ const FUNDING_BY_PLACE_KIND = new Map([
   ['Платные места', 'Платное обучение'],
   ['Особая квота', 'Особая квота'],
   ['Отдельная квота', 'Отдельная квота'],
-  ['Целевая квота', 'Целевой прием'],
-  ['Целевой прием', 'Целевой прием'],
-  ['Целевой приём', 'Целевой прием'],
+  ['Целевая квота', 'Целевая квота'],
+  ['Целевой прием', 'Целевая квота'],
+  ['Целевой приём', 'Целевая квота'],
 ])
 
 const APPLICATION_METHOD_BY_SOURCE = new Map([
@@ -284,6 +284,7 @@ function findWorkbookPath(dataDir: string): string | null {
     .map((entry) => entry.name)
     .filter((name) => /\.xlsx$/i.test(name))
     .filter((name) => !name.startsWith('~$') && !name.startsWith('unique_people_'))
+    .filter((name) => !['UGSN_INFO.xlsx', 'manual-dashboard-data.xlsx', 'manual-dashboard-data-2025.xlsx'].includes(name))
     .sort((a, b) => a.localeCompare(b, 'ru'))
 
   if (candidates.length === 0) return null

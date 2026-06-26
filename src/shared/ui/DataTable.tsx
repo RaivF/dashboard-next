@@ -40,11 +40,7 @@ export default function DataTable({ title, subtitle, data, loading = false }: Da
         <TableSkeleton />
       ) : (
         <div className="table-list">
-          {rows.length === 0 && (
-            <div className="table-list__empty">
-              РќРµС‚ РґР°РЅРЅС‹С… РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ
-            </div>
-          )}
+          {rows.length === 0 && <div className="table-list__empty">Пусто</div>}
 
           {rows.map((item, index) => (
             <div className="table-list__row" key={`${item.name}-${item.caption || ''}`}>

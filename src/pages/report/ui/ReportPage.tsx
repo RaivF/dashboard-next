@@ -162,6 +162,11 @@ type KcpYearValues = {
   distance: number
 }
 
+type KcpColumn = {
+  key: keyof KcpYearValues
+  label: string
+}
+
 type KcpComparisonRow = {
   level: string
   actual2025: KcpYearValues
@@ -176,12 +181,16 @@ type KcpCollegeRow = {
 }
 
 type KcpYearKey = 'actual2025' | 'plan2026'
+type KcpTableTone = 'result' | 'plan'
+type KcpModalMode = 'result2025' | 'plan2026'
+
+const KCP_2025_ACTUAL_ADMISSION_TOTAL = 5339
 
 const KCP_COMPARISON_ROWS: KcpComparisonRow[] = [
   {
     level: 'Бакалавриат',
-    actual2025: { fullTime: 1518, partTime: 380, distance: 449 },
-    plan2026: { fullTime: 2221, partTime: 370, distance: 267 },
+    actual2025: { fullTime: 1878, partTime: 380, distance: 9 },
+    plan2026: { fullTime: 2248, partTime: 370, distance: 267 },
   },
   {
     level: 'Специалитет',
@@ -190,7 +199,7 @@ const KCP_COMPARISON_ROWS: KcpComparisonRow[] = [
   },
   {
     level: 'Магистратура',
-    actual2025: { fullTime: 687, partTime: 15, distance: 391 },
+    actual2025: { fullTime: 687, partTime: 15, distance: 367 },
     plan2026: { fullTime: 1064, partTime: 45, distance: 421 },
   },
   {
@@ -200,7 +209,7 @@ const KCP_COMPARISON_ROWS: KcpComparisonRow[] = [
   },
   {
     level: 'Аспирантура',
-    actual2025: { fullTime: 50, partTime: 0, distance: 0 },
+    actual2025: { fullTime: 60, partTime: 0, distance: 0 },
     plan2026: { fullTime: 105, partTime: 0, distance: 0 },
   },
 ]
@@ -282,18 +291,6 @@ function normalizeWorkbookRow(row: string[], columnCount: number) {
 function getFirstFilledColumn(row: string[], columnCount: number) {
   const index = normalizeWorkbookRow(row, columnCount).findIndex(Boolean)
   return index < 0 ? columnCount : index
-}
-
-function getWorkbookTotalColumnIndex(headerRows: string[][], columnCount: number) {
-  const normalizedHeaders = headerRows.map((row) => normalizeWorkbookRow(row, columnCount))
-
-  for (let columnIndex = columnCount - 1; columnIndex >= 0; columnIndex -= 1) {
-    if (normalizedHeaders.some((row) => normalizeReportLabel(row[columnIndex]) === 'всего')) {
-      return columnIndex
-    }
-  }
-
-  return columnCount - 1
 }
 
 function getAdmissionPlanForGraduationLevel(levelName: string, admissionPlan: ReportPlanRow[]) {
@@ -438,7 +435,6 @@ function UgsnWorkbookModal({
   const firstHeaderRow = headerRows[0] || []
   const leadingColumns = headerRowCount === 2 ? getFirstFilledColumn(firstHeaderRow, columnCount) : 0
   const hasGroupedHeader = headerRowCount === 2
-  const totalColumnIndex = getWorkbookTotalColumnIndex(headerRows, columnCount)
 
   const goToPreviousSheet = () => {
     onSheetChange(activeSheetIndex === 0 ? workbook.sheets.length - 1 : activeSheetIndex - 1)
@@ -568,18 +564,10 @@ function UgsnWorkbookModal({
                 </tbody>
                 <tfoot>
                   <tr>
-                    {Array.from({ length: columnCount }, (_item, columnIndex) => (
-                      columnIndex === 0 ? (
-                        <th key="contingent-total-label" scope="row">Итого обучающихся</th>
-                      ) : (
-                        <td
-                          className={columnIndex === totalColumnIndex ? 'report-workbook-table__grand-total' : undefined}
-                          key={`contingent-total-${columnIndex}`}
-                        >
-                          {columnIndex === totalColumnIndex ? formatNumber(contingentTotal) : '—'}
-                        </td>
-                      )
-                    ))}
+                    <th className="report-workbook-table__total-row" scope="row" colSpan={columnCount}>
+                      <span className="report-workbook-table__total-label">Итого обучающихся</span>
+                      <strong className="report-workbook-table__total-value">{formatNumber(contingentTotal)}</strong>
+                    </th>
                   </tr>
                 </tfoot>
               </table>
@@ -593,19 +581,73 @@ function UgsnWorkbookModal({
   )
 }
 
+function KcpYearTable({
+  rows,
+  columns,
+  yearKey,
+  yearLabel,
+  tone,
+}: {
+  rows: KcpComparisonRow[]
+  columns: KcpColumn[]
+  yearKey: KcpYearKey
+  yearLabel: string
+  tone: KcpTableTone
+}) {
+  return (
+    <div className="report-kcp-table-wrap">
+      <table className={`report-kcp-table report-kcp-table--single-year report-kcp-table--${tone}`}>
+        <thead>
+          <tr>
+            <th rowSpan={2}>Уровень</th>
+            <th colSpan={4}>{yearLabel}</th>
+          </tr>
+          <tr>
+            {columns.map((column) => <th key={`${yearKey}-${column.key}`}>{column.label}</th>)}
+            <th>всего</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={`${yearKey}-${row.level}`}>
+              <th scope="row">{row.level}</th>
+              {columns.map((column) => (
+                <td key={`${row.level}-${yearKey}-${column.key}`}>{formatKcpCell(row[yearKey][column.key])}</td>
+              ))}
+              <td className="report-kcp-table__total">{formatNumber(getKcpRowTotal(row[yearKey]))}</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">Итого</th>
+            {columns.map((column) => (
+              <td key={`total-${yearKey}-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, yearKey, column.key))}</td>
+            ))}
+            <td>{formatNumber(getKcpYearTotal(rows, yearKey))}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  )
+}
+
 function KcpComparisonModal({
   rows,
   collegeRows,
+  mode,
   onClose,
 }: {
   rows: KcpComparisonRow[]
   collegeRows: KcpCollegeRow[]
+  mode: KcpModalMode
   onClose: () => void
 }) {
   const total2025 = getKcpYearTotal(rows, 'actual2025')
   const total2026 = getKcpYearTotal(rows, 'plan2026')
   const collegeTotal = getKcpCollegeTotal(collegeRows)
-  const columns: Array<{ key: keyof KcpYearValues; label: string }> = [
+  const isResultMode = mode === 'result2025'
+  const columns: KcpColumn[] = [
     { key: 'fullTime', label: 'очная' },
     { key: 'partTime', label: 'очно-заочная' },
     { key: 'distance', label: 'заочная' },
@@ -617,102 +659,94 @@ function KcpComparisonModal({
         className="report-kcp-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="КЦП 2025"
+        aria-label={isResultMode ? 'Результат приёмки 2025' : 'КЦП 2026'}
         onClick={(event) => event.stopPropagation()}
       >
         <header className="report-kcp-modal__header">
           <div>
-            <span>Контрольные цифры приёма</span>
-            <h2>КЦП 2025</h2>
-            <p>Факт 2025 и план 2026 по уровням и формам обучения.</p>
+            <span>{isResultMode ? 'Приёмная кампания' : 'Контрольные цифры приёма'}</span>
+            <h2>{isResultMode ? 'Результат приёмки 2025' : 'КЦП за 2026 год'}</h2>
+            <p>{isResultMode ? 'Факт приёма за 2025 год и КЦП 2025.' : 'План приёма на 2026 год.'}</p>
           </div>
-          <strong>{formatNumber(total2025)}</strong>
+          <strong>{formatNumber(isResultMode ? KCP_2025_ACTUAL_ADMISSION_TOTAL : total2026)}</strong>
           <button className="report-kcp-modal__close" type="button" aria-label="Закрыть" onClick={onClose}>
             <X size={22} strokeWidth={2.4} />
           </button>
         </header>
 
-        <div className="report-kcp-modal__summary" aria-label="Итоги КЦП">
-          <div>
-            <span>2025 факт</span>
-            <strong>{formatNumber(total2025)}</strong>
-          </div>
-          <div>
-            <span>2026 план</span>
-            <strong>{formatNumber(total2026)}</strong>
-          </div>
-        </div>
-
-        <div className="report-kcp-table-wrap">
-          <table className="report-kcp-table">
-            <thead>
-              <tr>
-                <th rowSpan={2}>Уровень</th>
-                <th colSpan={4}>2025</th>
-                <th colSpan={4}>2026</th>
-              </tr>
-              <tr>
-                {columns.map((column) => <th key={`2025-${column.key}`}>{column.label}</th>)}
-                <th>всего</th>
-                {columns.map((column) => <th key={`2026-${column.key}`}>{column.label}</th>)}
-                <th>всего</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.level}>
-                  <th scope="row">{row.level}</th>
-                  {columns.map((column) => (
-                    <td key={`${row.level}-2025-${column.key}`}>{formatKcpCell(row.actual2025[column.key])}</td>
-                  ))}
-                  <td className="report-kcp-table__total">{formatNumber(getKcpRowTotal(row.actual2025))}</td>
-                  {columns.map((column) => (
-                    <td key={`${row.level}-2026-${column.key}`}>{formatKcpCell(row.plan2026[column.key])}</td>
-                  ))}
-                  <td className="report-kcp-table__total">{formatNumber(getKcpRowTotal(row.plan2026))}</td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th scope="row">Итого</th>
-                {columns.map((column) => (
-                  <td key={`total-2025-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'actual2025', column.key))}</td>
-                ))}
-                <td>{formatNumber(total2025)}</td>
-                {columns.map((column) => (
-                  <td key={`total-2026-${column.key}`}>{formatNumber(getKcpColumnTotal(rows, 'plan2026', column.key))}</td>
-                ))}
-                <td>{formatNumber(total2026)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-
-        <section className="report-kcp-colleges" aria-label="КЦП СПО по колледжам">
-          <div className="report-kcp-colleges__header">
-            <div>
-              <span>Дополнение</span>
-              <h3>СПО по колледжам</h3>
-            </div>
-            <strong>{formatNumber(collegeTotal)}</strong>
-          </div>
-          <div className="report-kcp-colleges__grid">
-            {collegeRows.map((row) => {
-              const rowTotal = row.base + row.additional
-
-              return (
-                <div className="report-kcp-colleges__row" key={row.name}>
-                  <div>
-                    <span>{row.name}</span>
-                    <small>{row.note}</small>
-                  </div>
-                  <strong>{formatNumber(rowTotal)}</strong>
+        <div className="report-kcp-modal__blocks">
+          {isResultMode ? (
+            <section className="report-kcp-block report-kcp-block--result" aria-label="Результат приёмки за 2025 год">
+              <div className="report-kcp-block__header">
+                <div>
+                  <span>Результат приёмки</span>
+                  <h3>2025 год</h3>
                 </div>
-              )
-            })}
-          </div>
-        </section>
+                <strong>{formatNumber(KCP_2025_ACTUAL_ADMISSION_TOTAL)}</strong>
+              </div>
+              <div className="report-kcp-modal__summary" aria-label="Итоги приёмки 2025">
+                <div>
+                  <span>КЦП 2025</span>
+                  <strong>{formatNumber(total2025)}</strong>
+                </div>
+                <div>
+                  <span>Факт приёма</span>
+                  <strong>{formatNumber(KCP_2025_ACTUAL_ADMISSION_TOTAL)}</strong>
+                </div>
+              </div>
+              <KcpYearTable
+                rows={rows}
+                columns={columns}
+                yearKey="actual2025"
+                yearLabel="2025"
+                tone="result"
+              />
+            </section>
+          ) : (
+            <section className="report-kcp-block report-kcp-block--plan" aria-label="КЦП за 2026 год">
+              <div className="report-kcp-block__header">
+                <div>
+                  <span>Контрольные цифры приёма</span>
+                  <h3>КЦП за 2026 год</h3>
+                </div>
+                <strong>{formatNumber(total2026)}</strong>
+              </div>
+              <div className="report-kcp-modal__summary" aria-label="План КЦП 2026">
+                <div>
+                  <span>План</span>
+                  <strong>{formatNumber(total2026)}</strong>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+
+        {isResultMode && (
+          <section className="report-kcp-colleges" aria-label="КЦП СПО по колледжам">
+            <div className="report-kcp-colleges__header">
+              <div>
+                <span>Дополнение</span>
+                <h3>СПО по колледжам</h3>
+              </div>
+              <strong>{formatNumber(collegeTotal)}</strong>
+            </div>
+            <div className="report-kcp-colleges__grid">
+              {collegeRows.map((row) => {
+                const rowTotal = row.base + row.additional
+
+                return (
+                  <div className="report-kcp-colleges__row" key={row.name}>
+                    <div>
+                      <span>{row.name}</span>
+                      <small>{row.note}</small>
+                    </div>
+                    <strong>{formatNumber(rowTotal)}</strong>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
       </section>
     </div>
   )
@@ -1060,7 +1094,7 @@ export default function ReportPage() {
   const [activeDetail, setActiveDetail] = useState<DetailPayload | null>(null)
   const [detailPopoverStyle, setDetailPopoverStyle] = useState<DetailPopoverStyle>({})
   const [isWorkbookOpen, setWorkbookOpen] = useState(false)
-  const [isKcpModalOpen, setKcpModalOpen] = useState(false)
+  const [kcpModalMode, setKcpModalMode] = useState<KcpModalMode | null>(null)
   const [activeWorkbookSheet, setActiveWorkbookSheet] = useState(0)
 
   const openDetail: DetailOpenHandler = (detail, source) => {
@@ -1074,18 +1108,18 @@ export default function ReportPage() {
   }
 
   useEffect(() => {
-    if (!activeDetail && !isWorkbookOpen && !isKcpModalOpen) return undefined
+    if (!activeDetail && !isWorkbookOpen && !kcpModalMode) return undefined
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Escape') return
       closeDetail()
       setWorkbookOpen(false)
-      setKcpModalOpen(false)
+      setKcpModalMode(null)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeDetail, isWorkbookOpen, isKcpModalOpen])
+  }, [activeDetail, isWorkbookOpen, kcpModalMode])
 
   const reportMetrics = useMemo(() => {
     if (!report) return []
@@ -1118,6 +1152,7 @@ export default function ReportPage() {
 
   const contingentTotal = getContingentTotal(report.ugsnInfo)
   const kcp2025Total = getKcpYearTotal(KCP_COMPARISON_ROWS, 'actual2025')
+  const kcp2026Total = getKcpYearTotal(KCP_COMPARISON_ROWS, 'plan2026')
   const workbook = report.ugsnWorkbook
 
   return (
@@ -1135,11 +1170,20 @@ export default function ReportPage() {
           />
         ))}
         <ReportMetric
-          label="КЦП 2025"
-          value={kcp2025Total}
+          label="Результат приёмки 2025"
+          value={KCP_2025_ACTUAL_ADMISSION_TOTAL}
+          caption={`КЦП: ${formatNumber(kcp2025Total)}`}
           tone="cyan"
           icon={Landmark}
-          onClick={() => setKcpModalOpen(true)}
+          onClick={() => setKcpModalMode('result2025')}
+        />
+        <ReportMetric
+          label="КЦП 2026"
+          value={kcp2026Total}
+          caption="план приёма"
+          tone="green"
+          icon={Landmark}
+          onClick={() => setKcpModalMode('plan2026')}
         />
         <ReportMetric
           label="Контингент обучающихся"
@@ -1169,11 +1213,12 @@ export default function ReportPage() {
         />
       )}
 
-      {isKcpModalOpen && (
+      {kcpModalMode && (
         <KcpComparisonModal
           rows={KCP_COMPARISON_ROWS}
           collegeRows={KCP_COLLEGE_ROWS}
-          onClose={() => setKcpModalOpen(false)}
+          mode={kcpModalMode}
+          onClose={() => setKcpModalMode(null)}
         />
       )}
 

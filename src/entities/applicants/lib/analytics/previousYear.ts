@@ -1,11 +1,11 @@
 import { HALF_HOUR_CHART_RANGES } from './constants.js'
-import { countUniqueApplicants } from './normalizers.js'
+import { countUniqueApplicants, numberValue } from './normalizers.js'
 import { parseDateOnly } from './date.js'
 import { fullDate, fullDateTime, formatDateRange } from './format.js'
 import { groupApplicantsByDate } from './grouping.js'
 import { groupApplicantsByHalfHour, parseDateTime, utcDateKey, utcDateTimeKey } from './chartSeries.js'
 import type { ApplicantStatistic, ChartPoint, ChartRange, PreviousYearChartPoint, PreviousYearComparison, PreviousYearWindow, RangeWindow } from './types.js'
-import { getPreviousYearStatistics } from './types.js'
+import { getManualPreviousYearApplicantsByDate, getPreviousYearStatistics } from './types.js'
 
 export function shiftUtcDateYears(date: Date | null, years: number): Date | null {
   if (!date || Number.isNaN(date.getTime?.())) return null
@@ -33,8 +33,22 @@ export function filterItemsByWindow(
   })
 }
 
-export function getPreviousYearWindow(response: unknown, rangeWindow: RangeWindow): PreviousYearWindow {
+function getManualPreviousYearItems(response: unknown): ApplicantStatistic[] {
+  return getManualPreviousYearApplicantsByDate(response)
+    .map((item) => ({
+      date: String(item.date || ''),
+      quantity: numberValue(item.quantity),
+    }))
+    .filter((item) => item.date)
+}
+
+function getPreviousYearItems(response: unknown): ApplicantStatistic[] {
   const previousYearItems = getPreviousYearStatistics(response)
+  return previousYearItems.length > 0 ? previousYearItems : getManualPreviousYearItems(response)
+}
+
+export function getPreviousYearWindow(response: unknown, rangeWindow: RangeWindow): PreviousYearWindow {
+  const previousYearItems = getPreviousYearItems(response)
 
   if (!rangeWindow.startDate || !rangeWindow.endDate || previousYearItems.length === 0) {
     return {
@@ -85,7 +99,7 @@ export function buildPreviousYearChartSeries(
   currentSeries: ChartPoint[],
   range: ChartRange,
 ): PreviousYearChartPoint[] {
-  const previousYearItems = getPreviousYearStatistics(response)
+  const previousYearItems = getPreviousYearItems(response)
 
   if (!currentSeries.length || previousYearItems.length === 0) return []
 

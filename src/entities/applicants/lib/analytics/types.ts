@@ -21,6 +21,15 @@ export type AnalyticsResponse = AnalyticsRecord & {
   applicants_statistics?: unknown
   control_admission_numbers?: unknown
   kcp?: unknown
+  manual_applicants_by_date?: unknown
+  manual_funding_by_date?: unknown
+  manual_summary?: unknown
+  manual_method?: unknown
+  manual_previous_year_applicants_by_date?: unknown
+  manual_previous_year_funding_by_date?: unknown
+  manual_previous_year_method?: unknown
+  manual_top_specialties?: unknown
+  manual_bottom_specialties?: unknown
   meta?: {
     note?: unknown
     source?: unknown
@@ -47,6 +56,18 @@ export type ChartPoint = {
   fullLabel: string
   quantity: number
   isMissing: boolean
+}
+
+export type ManualApplicantsByDate = AnalyticsRecord & {
+  by_degree?: unknown
+  date?: unknown
+  quantity?: unknown
+}
+
+export type ManualCategoryByDate = AnalyticsRecord & {
+  categories?: unknown
+  date?: unknown
+  quantity?: unknown
 }
 
 export type PreviousYearChartPoint = ChartPoint & {
@@ -162,4 +183,49 @@ export function getApplicantsStatistics(response: unknown): ApplicantStatistic[]
 export function getPreviousYearStatistics(response: unknown): ApplicantStatistic[] {
   if (!isAnalyticsRecord(response) || !Array.isArray(response.previous_year_statistics)) return []
   return response.previous_year_statistics.filter(isAnalyticsRecord) as ApplicantStatistic[]
+}
+
+export function getManualApplicantsByDate(response: unknown): ManualApplicantsByDate[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_applicants_by_date)) return []
+  return response.manual_applicants_by_date.filter(isAnalyticsRecord) as ManualApplicantsByDate[]
+}
+
+export function getManualPreviousYearApplicantsByDate(response: unknown): ManualApplicantsByDate[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_previous_year_applicants_by_date)) return []
+  return response.manual_previous_year_applicants_by_date.filter(isAnalyticsRecord) as ManualApplicantsByDate[]
+}
+
+export function getManualFundingByDate(response: unknown): ManualCategoryByDate[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_funding_by_date)) return []
+  return response.manual_funding_by_date.filter(isAnalyticsRecord) as ManualCategoryByDate[]
+}
+
+export function getManualPreviousYearFundingByDate(response: unknown): ManualCategoryByDate[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_previous_year_funding_by_date)) return []
+  return response.manual_previous_year_funding_by_date.filter(isAnalyticsRecord) as ManualCategoryByDate[]
+}
+
+export function getManualSummary(response: unknown): AnalyticsRecord {
+  if (!isAnalyticsRecord(response) || !isAnalyticsRecord(response.manual_summary)) return {}
+  return response.manual_summary
+}
+
+export function getManualMethod(response: unknown): QuantityItem[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_method)) return []
+  return response.manual_method.filter(isAnalyticsRecord) as QuantityItem[]
+}
+
+export function getManualPreviousYearMethod(response: unknown): QuantityItem[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_previous_year_method)) return []
+  return response.manual_previous_year_method.filter(isAnalyticsRecord) as QuantityItem[]
+}
+
+export function getManualTopSpecialties(response: unknown): SpecialtySummary[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_top_specialties)) return []
+  return response.manual_top_specialties.filter(isAnalyticsRecord) as SpecialtySummary[]
+}
+
+export function getManualBottomSpecialties(response: unknown): SpecialtySummary[] {
+  if (!isAnalyticsRecord(response) || !Array.isArray(response.manual_bottom_specialties)) return []
+  return response.manual_bottom_specialties.filter(isAnalyticsRecord) as SpecialtySummary[]
 }

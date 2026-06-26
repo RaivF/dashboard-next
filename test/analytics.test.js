@@ -201,7 +201,7 @@ describe('analytics', () => {
     assert.deepEqual(analytics.byFunding, [
       { name: 'Бюджетная основа', quantity: 5 },
       { name: 'Платное обучение', quantity: 0 },
-      { name: 'Целевой прием', quantity: 0 },
+      { name: 'Целевая квота', quantity: 0 },
       { name: 'Отдельная квота', quantity: 0 },
       { name: 'Особая квота', quantity: 0 },
     ])
@@ -345,7 +345,7 @@ describe('analytics', () => {
     assert.deepEqual(analytics.previousYearByFunding, [
       { name: 'Бюджетная основа', quantity: 4 },
       { name: 'Платное обучение', quantity: 6 },
-      { name: 'Целевой прием', quantity: 0 },
+      { name: 'Целевая квота', quantity: 0 },
       { name: 'Отдельная квота', quantity: 0 },
       { name: 'Особая квота', quantity: 0 },
     ])

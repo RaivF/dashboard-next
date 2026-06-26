@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { after, before, describe, it } from 'node:test'
 import {
   createApp,
@@ -137,7 +140,7 @@ describe('server', () => {
     assert.equal(isCorsOriginAllowed('https://dashboard.example', { CORS_ORIGIN: 'https://dashboard.example' }), true)
   })
 
-  it('returns health state and mock statistics', async () => {
+  it('returns health state and manual dashboard statistics', async () => {
     const healthResponse = await requestJson(baseUrl, '/api/health')
     assert.equal(healthResponse.status, 200)
 
@@ -148,10 +151,41 @@ describe('server', () => {
     assert.equal(statisticsResponse.status, 200)
 
     const statistics = await statisticsResponse.json()
-    assert.equal(statistics.meta.source, 'mock')
-    assert.equal(statistics.meta.period, '2025-01')
-    assert.ok(statistics.applicants_statistics.length > 3000)
-    assert.ok(statistics.previous_year_statistics.length > 3000)
+    assert.equal(statistics.meta.source, 'manual-xlsx')
+    assert.equal(statistics.meta.manualFile, 'manual-dashboard-data.xlsx')
+    assert.equal(statistics.meta.manualPreviousYearFile, 'manual-dashboard-data-2025.xlsx')
+    assert.deepEqual(statistics.applicants_statistics, [])
+    assert.deepEqual(statistics.previous_year_statistics, [])
+    assert.equal(statistics.manual_applicants_by_date.length, 7)
+    assert.equal(statistics.manual_applicants_by_date[0].date, '2026-06-20')
+    assert.equal(statistics.manual_applicants_by_date[0].quantity, 132)
+    assert.equal(statistics.manual_applicants_by_date[1].date, '2026-06-21')
+    assert.equal(statistics.manual_applicants_by_date[1].quantity, 0)
+    assert.equal(statistics.manual_applicants_by_date.at(-1).date, '2026-06-26')
+    assert.equal(statistics.manual_applicants_by_date.at(-1).quantity, 0)
+    assert.equal(statistics.manual_funding_by_date.length, 7)
+    assert.equal(statistics.manual_funding_by_date[0].categories[0].name, 'Бюджетная основа')
+    assert.equal(statistics.manual_funding_by_date[0].categories[0].quantity, 121)
+    assert.equal(statistics.manual_funding_by_date[0].categories[1].name, 'Платное обучение')
+    assert.equal(statistics.manual_funding_by_date[0].categories[1].quantity, 11)
+    assert.equal(statistics.manual_summary.applicationsTotal, 2603)
+    assert.equal(statistics.manual_summary.onlineChannels, 287)
+    assert.equal(statistics.manual_method[0].name, 'Онлайн')
+    assert.equal(statistics.manual_method[0].quantity, 287)
+    assert.equal(statistics.manual_method[1].name, 'Очно / через вуз')
+    assert.equal(statistics.manual_method[1].quantity, 2316)
+    assert.equal(statistics.manual_top_specialties[0].name, 'Юриспруденция')
+    assert.equal(statistics.manual_top_specialties[0].quantity, 323)
+    assert.equal(statistics.manual_bottom_specialties[0].name, 'Технологические машины и оборудование')
+    assert.equal(statistics.manual_bottom_specialties[0].quantity, 1)
+    assert.equal(statistics.manual_previous_year_applicants_by_date.length, 6)
+    assert.equal(statistics.manual_previous_year_applicants_by_date[0].date, '2025-06-20')
+    assert.equal(statistics.manual_previous_year_applicants_by_date[0].quantity, 196)
+    assert.equal(statistics.manual_previous_year_applicants_by_date[2].date, '2025-06-22')
+    assert.equal(statistics.manual_previous_year_applicants_by_date[2].quantity, 0)
+    assert.equal(statistics.manual_previous_year_funding_by_date.length, 6)
+    assert.equal(statistics.manual_previous_year_funding_by_date[0].categories[0].quantity, 175)
+    assert.equal(statistics.manual_previous_year_funding_by_date[0].categories[1].quantity, 21)
   })
 
   it('returns report data and a normalized api 404 response', async () => {
@@ -166,5 +200,56 @@ describe('server', () => {
 
     const missing = await missingResponse.json()
     assert.equal(missing.error.message, 'Not found')
+  })
+
+  it('persists manual page edits through the api', async () => {
+    const tempDir = await mkdtemp(path.join(tmpdir(), 'dashboard-manual-edits-'))
+    const manualEditsFile = path.join(tempDir, 'edits.json')
+    const app = createApp({
+      CORS_ORIGIN: '*',
+      MANUAL_EDITS_FILE: manualEditsFile,
+    })
+    const manualEditsServer = await new Promise((resolve) => {
+      const instance = app.listen(0, () => resolve(instance))
+    })
+
+    try {
+      const { port } = manualEditsServer.address()
+      const manualEditsBaseUrl = `http://127.0.0.1:${port}`
+
+      const emptyResponse = await requestJson(manualEditsBaseUrl, '/api/manual-edits')
+      assert.equal(emptyResponse.status, 200)
+      assert.deepEqual(await emptyResponse.json(), { version: 1, pages: {} })
+
+      const nextStore = {
+        version: 1,
+        pages: {
+          '/': {
+            'section:nth-of-type(1) > strong:nth-of-type(1)': {
+              text: '12345',
+              updatedAt: '2026-06-26T00:00:00.000Z',
+            },
+          },
+        },
+      }
+      const saveResponse = await requestJson(manualEditsBaseUrl, '/api/manual-edits', {
+        method: 'PUT',
+        body: JSON.stringify(nextStore),
+      })
+      assert.equal(saveResponse.status, 200)
+      assert.deepEqual(await saveResponse.json(), nextStore)
+
+      const savedResponse = await requestJson(manualEditsBaseUrl, '/api/manual-edits')
+      assert.equal(savedResponse.status, 200)
+      assert.deepEqual(await savedResponse.json(), nextStore)
+    } finally {
+      await new Promise((resolve, reject) => {
+        manualEditsServer.close((error) => {
+          if (error) reject(error)
+          else resolve()
+        })
+      })
+      await rm(tempDir, { recursive: true, force: true })
+    }
   })
 })

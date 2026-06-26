@@ -16,10 +16,8 @@ import {
   DonutChart as RawDonutChart,
   VerticalBarChart as RawVerticalBarChart,
 } from './charts/ChartCard.js'
-import KcpProgress from './KcpProgress.js'
+import type KcpProgress from './KcpProgress.js'
 
-// Temporarily hidden until admission control numbers become available in source data.
-const KCP_ENABLED = false
 type NamedQuantity = {
   name: string
   quantity: number
@@ -106,12 +104,53 @@ const DateAreaChart = RawDateAreaChart as ComponentType<DateAreaChartProps>
 const DonutChart = RawDonutChart as ComponentType<CategoryChartProps>
 const VerticalBarChart = RawVerticalBarChart as ComponentType<CategoryChartProps>
 
-const ADMISSION_PARTNERS = Array.from({ length: 7 }, (_item, index) => `Партнёр ${index + 1}`)
+const KCP_FILL_PERCENT = 7
+
+const TARGET_ADMISSION_PARTNERS: NamedQuantity[] = [
+  {
+    name: 'ГБПОУ Республики Крым "Романовский колледж индустрии гостеприимства"',
+    quantity: 2,
+  },
+  {
+    name: 'ГБПОУ Республики Крым "Белогорский технологический техникум"',
+    quantity: 1,
+  },
+  {
+    name: 'ГБПОУ Республики Крым "Евпаторийский индустриальный техникум имени С.Л. Соколова"',
+    quantity: 1,
+  },
+  {
+    name: 'Министерство транспорта и развития транспортной инфраструктуры Запорожской области',
+    quantity: 1,
+  },
+  {
+    name: 'Министерство финансов Запорожской области',
+    quantity: 1,
+  },
+  {
+    name: 'Мелитополь-Херсонский филиал ФГУП "ЖДН"',
+    quantity: 1,
+  },
+  {
+    name: 'Территориальный орган Федеральной службы государственной статистики по Запорожской области',
+    quantity: 1,
+  },
+  {
+    name: 'ГУП "Управление автомобильными дорогами Запорожской области"',
+    quantity: 1,
+  },
+  {
+    name: 'МБУ ДПО "Информационно-методический центр" городского округа Симферополь Республики Крым',
+    quantity: 6,
+  },
+]
+
+const TARGET_ADMISSION_OFFERS_TOTAL = TARGET_ADMISSION_PARTNERS.reduce((sum, partner) => sum + partner.quantity, 0)
 
 const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Всего заявлений',
-    getValue: (analytics) => analytics.applicationsTotal,
+    getValue: (analytics) => (analytics.applicationsTotal > 0 ? analytics.applicationsTotal : 'Пусто'),
     getCaption: (_analytics, selectedRange) => `Суммарное количество · ${selectedRange.toLowerCase()}`,
     icon: FileText,
     tone: 'blue',
@@ -123,7 +162,7 @@ const STAT_CARDS: StatCardDefinition[] = [
   },
   {
     title: 'Физических лиц',
-    getValue: (analytics) => analytics.total,
+    getValue: (analytics) => (analytics.total > 0 ? analytics.total : 'Пусто'),
     getCaption: (analytics, selectedRange) => (
       analytics.uniqueApplicants
         ? `В среднем ${Math.round(analytics.applicationsPerApplicant)} заявления на человека`
@@ -134,28 +173,28 @@ const STAT_CARDS: StatCardDefinition[] = [
   },
   {
     title: 'Онлайн-каналы',
-    getValue: (analytics) => analytics.web + analytics.online,
+    getValue: (analytics) => (analytics.byMethod.length > 0 ? analytics.web + analytics.online : 'Пусто'),
     getCaption: () => 'СУПЕРСЕРВИС',
     icon: MousePointerClick,
     tone: 'cyan',
   },
   {
     title: 'Бюджетная основа',
-    getValue: (analytics) => analytics.budget,
+    getValue: (analytics) => (analytics.byFunding.length > 0 ? analytics.budget : 'Пусто'),
     getCaption: () => 'Поступающие на бюджет',
     icon: Award,
     tone: 'green',
   },
   {
-    title: 'Места для приёма',
-    getValue: () => 7,
-    getCaption: () => 'Доступные места для приёма',
+    title: 'Целевые места',
+    getValue: () => TARGET_ADMISSION_OFFERS_TOTAL,
+    getCaption: () => 'Предложения заказчиков целевого обучения',
     icon: Target,
     tone: 'pink',
     dialog: {
       id: 'admissionPlaces',
-      ariaLabel: 'Открыть подробную информацию по местам для приёма',
-      title: 'Подробная информация по местам для приёма',
+      ariaLabel: 'Открыть партнёров целевого обучения',
+      title: 'Партнёры целевого обучения',
     },
   },
 ]
@@ -176,6 +215,26 @@ function DialogMetric({ label, value, caption }: { label: string; value: number 
       <strong>{formatDialogValue(value)}</strong>
       {caption && <small>{caption}</small>}
     </div>
+  )
+}
+
+function KcpSummary() {
+  return (
+    <section className="kcp-panel kcp-panel--summary" aria-label="Заполнение контрольных цифр приёма">
+      <div className="kcp-panel__header">
+        <div>
+          <h2>КЦП</h2>
+          <p>Контрольные цифры приёма</p>
+        </div>
+        <div className="kcp-panel__header-actions">
+          <strong>{KCP_FILL_PERCENT}%</strong>
+        </div>
+      </div>
+
+      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${KCP_FILL_PERCENT}%`}>
+        <span className="kcp-panel__fill" style={{ width: `${KCP_FILL_PERCENT}%` }} />
+      </div>
+    </section>
   )
 }
 
@@ -285,9 +344,6 @@ export default function DashboardContent({
 
   return (
     <>
-      {/* КЦП показывает итог по всей приёмной кампании и намеренно не синхронизируется с выбранным периодом. */}
-      {KCP_ENABLED && <KcpProgress data={analytics.kcp} loading={loading} />}
-
       <section className="stats-grid">
         {STAT_CARDS.map((card) => {
           const dialog = card.dialog
@@ -306,6 +362,8 @@ export default function DashboardContent({
           )
         })}
       </section>
+
+      <KcpSummary />
 
       {activeDialogTitle && (
         <div
@@ -331,10 +389,11 @@ export default function DashboardContent({
             <div className="dashboard-dialog__content">
               {activeStatDialog === 'applications' && <ApplicationsDialogContent analytics={analytics} />}
               {activeStatDialog === 'admissionPlaces' && (
-                <div className="dashboard-dialog__list" aria-label="Список партнёров">
-                  {ADMISSION_PARTNERS.map((partner) => (
-                    <div className="dashboard-dialog__list-item" key={partner}>
-                      {partner}
+                <div className="dashboard-dialog__list" aria-label="Партнёры целевого обучения">
+                  {TARGET_ADMISSION_PARTNERS.map((partner) => (
+                    <div className="dashboard-dialog__list-item" key={partner.name}>
+                      <span>{partner.name}</span>
+                      <strong>{formatNumber(partner.quantity)}</strong>
                     </div>
                   ))}
                 </div>
@@ -394,9 +453,6 @@ export default function DashboardContent({
       <section className="dashboard-grid dashboard-grid--bottom">
         <DataTable title="Топ 5 самых популярных направлений" subtitle="Специальности с наибольшим количеством поступающих" data={analytics.topSpecialties} loading={loading} />
         <DataTable title="Топ 5 самых невостребованных направлений" subtitle="Специальности с наименьшим количеством поступающих" data={analytics.bottomSpecialties} loading={loading} />
-        <DataTable title="Уровни образования" subtitle="Количество поступающих по уровням" data={analytics.byDegree.slice(0, 7)} loading={loading} />
-        <DataTable title="Приоритеты" subtitle="Первые 5 приоритетов по порядку" data={analytics.byPriority} loading={loading} />
-        <DataTable title="Первый приоритет по направлениям" subtitle="Количество поступающих на специальность" data={analytics.firstPrioritySpecialties} loading={loading} />
       </section>
     </>
   )

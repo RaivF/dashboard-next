@@ -262,6 +262,7 @@ html:is([data-theme='light'], [data-theme='dark']) .specialties-summary span,
 html:is([data-theme='light'], [data-theme='dark']) .specialties-table td,
 html:is([data-theme='light'], [data-theme='dark']) .table-loading__row,
 html:is([data-theme='light'], [data-theme='dark']) .chart-loading,
+html:is([data-theme='light'], [data-theme='dark']) .chart-empty,
 html:is([data-theme='light'], [data-theme='dark']) .table-list__empty {
   border-color: var(--theme-border);
   background: var(--theme-soft);
@@ -289,6 +290,7 @@ html[data-theme='light'] .specialties-summary span,
 html[data-theme='light'] .specialties-table td,
 html[data-theme='light'] .table-loading__row,
 html[data-theme='light'] .chart-loading,
+html[data-theme='light'] .chart-empty,
 html[data-theme='light'] .table-list__empty,
 html[data-theme='light'] .specialties-search,
 html[data-theme='light'] .specialties-select,

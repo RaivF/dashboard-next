@@ -78,6 +78,10 @@ type DonutMetricColumn = {
   percentKey: 'currentPercent' | 'previousPercent'
 }
 
+function ChartEmpty() {
+  return <div className="chart-empty">Пусто</div>
+}
+
 export function DateAreaChart({
   data,
   loading = false,
@@ -118,6 +122,8 @@ export function DateAreaChart({
       <div className="chart chart--large" aria-busy={loading}>
         {loading ? (
           <ChartLoading variant="area" />
+        ) : chartData.length === 0 ? (
+          <ChartEmpty />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 14, right: 24, left: 0, bottom: 8 }}>
@@ -224,6 +230,8 @@ export function VerticalBarChart({
       <div className="chart chart--medium" aria-busy={loading}>
         {loading ? (
           <ChartLoading variant="bar" />
+        ) : chartData.length === 0 ? (
+          <ChartEmpty />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 28, right: 20, left: 0, bottom: 10 }}>
@@ -373,6 +381,8 @@ export function DonutChart({
       <div className="donut-stack" aria-busy={loading}>
         {loading ? (
           <ChartLoading variant="donut" />
+        ) : rows.length === 0 ? (
+          <ChartEmpty />
         ) : (
           <>
             <div className="donut-visuals">

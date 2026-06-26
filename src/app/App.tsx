@@ -6,6 +6,8 @@ import ReportPage from '../pages/report/ui/ReportPage.js'
 import SpecialtiesPage from '../pages/specialties/ui/SpecialtiesPage.js'
 import { useTheme } from '../features/theme-switcher/model/useTheme.js'
 import ThemeSwitcher from '../features/theme-switcher/ui/ThemeSwitcher.js'
+import { ManualEditingProvider } from '../features/manual-editing/model/ManualEditingProvider.js'
+import EditModeToggle from '../features/manual-editing/ui/EditModeToggle.js'
 import AppHeader from '../widgets/app-header/ui/AppHeader.js'
 import { NAV_ITEMS, ROUTES, getRouteTitle, resolveRoutePath } from './routing/routes.js'
 import type { RoutePath } from './routing/routes.js'
@@ -50,19 +52,24 @@ export default function App() {
   }
 
   return (
-    <main className="app-shell">
-      <AppHeader
-        activePath={pagePath}
-        navItems={NAV_ITEMS}
-        title={getRouteTitle(pagePath)}
-        onNavigate={handleNavigate}
-      />
+    <ManualEditingProvider pageKey={pagePath} editablePages={[ROUTES.dashboard, ROUTES.report]}>
+      <main className="app-shell">
+        <AppHeader
+          activePath={pagePath}
+          navItems={NAV_ITEMS}
+          title={getRouteTitle(pagePath)}
+          onNavigate={handleNavigate}
+        />
 
-      <CurrentPage path={pagePath} />
+        <div data-manual-edit-scope="true">
+          <CurrentPage path={pagePath} />
+        </div>
 
-      <footer className="dashboard-footer">
-        <ThemeSwitcher theme={theme} onThemeChange={setTheme} />
-      </footer>
-    </main>
+        <footer className="dashboard-footer">
+          <EditModeToggle />
+          <ThemeSwitcher theme={theme} onThemeChange={setTheme} />
+        </footer>
+      </main>
+    </ManualEditingProvider>
   )
 }

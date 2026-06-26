@@ -301,14 +301,31 @@
   white-space: nowrap;
 }
 
-.dashboard-dialog__list {
-  max-width: 560px;
-}
-
 .dashboard-dialog__list-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
   padding: 14px 16px;
   border-radius: 18px;
-  font-size: 18px;
+}
+
+.dashboard-dialog__list-item span {
+  min-width: 0;
+  color: var(--muted-strong);
+  font-size: 16px;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.dashboard-dialog__list-item strong {
+  min-width: 48px;
+  color: var(--theme-text, #f8fafc);
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .kcp-panel {
@@ -320,6 +337,11 @@
   background:
     linear-gradient(135deg, rgba(13, 52, 82, 0.68), rgba(15, 23, 42, 0.74)),
     radial-gradient(circle at 100% 0%, rgba(52, 211, 153, 0.18), transparent 56%);
+}
+
+.kcp-panel--summary {
+  min-height: 150px;
+  align-content: center;
 }
 
 .kcp-panel__meta {
@@ -849,6 +871,21 @@
 
 .chart {
   width: 100%;
+}
+
+.chart-empty {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border: 1px dashed rgba(148, 163, 184, 0.24);
+  border-radius: 18px;
+  color: var(--muted);
+  font-size: clamp(16px, 1.1vw, 20px);
+  font-weight: 820;
+  text-align: center;
 }
 
 .chart--large {
@@ -1916,9 +1953,27 @@
   font-weight: 950;
 }
 
-.report-workbook-table__grand-total {
+.report-workbook-table tfoot .report-workbook-table__total-row {
+  min-width: 0;
+  position: relative;
+  padding-right: 180px;
+  padding-left: 180px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.report-workbook-table__total-label {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+}
+
+.report-workbook-table__total-value {
+  display: block;
   color: var(--green);
   font-size: 16px;
+  text-align: center;
 }
 
 .report-ugsn-panel {
@@ -1978,7 +2033,7 @@
   width: min(1120px, 100%);
   max-height: calc(100vh - 44px);
   display: grid;
-  grid-template-rows: auto auto minmax(240px, 1fr) auto;
+  grid-template-rows: none;
   gap: 14px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -2052,7 +2107,7 @@
 
 .report-kcp-modal__summary {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 10px;
 }
 
@@ -2072,6 +2127,66 @@
   line-height: 1;
 }
 
+.report-kcp-modal__blocks {
+  display: grid;
+  gap: 14px;
+}
+
+.report-kcp-block {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 42%, transparent);
+}
+
+.report-kcp-block--result {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), transparent 58%),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 42%, transparent);
+}
+
+.report-kcp-block--plan {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 10%, transparent), transparent 58%),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 42%, transparent);
+}
+
+.report-kcp-block__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.report-kcp-block__header span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.report-kcp-block__header h3 {
+  margin: 2px 0 0;
+  color: var(--theme-text, #f8fafc);
+  font-size: clamp(20px, 1.5vw, 28px);
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.report-kcp-block__header strong {
+  color: var(--cyan);
+  font-size: clamp(24px, 2vw, 34px);
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.report-kcp-block--plan .report-kcp-block__header strong {
+  color: var(--green);
+}
+
 .report-kcp-table-wrap {
   min-height: 240px;
   overflow: auto;
@@ -2087,6 +2202,20 @@
   min-width: 920px;
   border-collapse: separate;
   border-spacing: 0;
+}
+
+.report-kcp-block .report-kcp-table-wrap {
+  min-height: 0;
+}
+
+.report-kcp-table--single-year {
+  min-width: 640px;
+}
+
+.report-kcp-block--result .report-kcp-table-wrap {
+  background:
+    linear-gradient(90deg, transparent 0 24%, color-mix(in srgb, var(--blue) 9%, transparent) 24% 100%),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 38%, transparent);
 }
 
 .report-kcp-table th,
@@ -2129,6 +2258,12 @@
     color-mix(in srgb, var(--theme-surface-strong, rgba(15, 29, 52, 0.96)) 94%, transparent);
 }
 
+.report-kcp-table--plan thead tr:first-child th:nth-child(2) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 22%, transparent), color-mix(in srgb, var(--green) 9%, transparent)),
+    color-mix(in srgb, var(--theme-surface-strong, rgba(15, 29, 52, 0.96)) 94%, transparent);
+}
+
 .report-kcp-table thead tr:nth-child(2) th:nth-child(-n+4),
 .report-kcp-table tbody td:nth-child(n+2):nth-child(-n+5) {
   background:
@@ -2138,6 +2273,13 @@
 
 .report-kcp-table thead tr:nth-child(2) th:nth-child(n+5),
 .report-kcp-table tbody td:nth-child(n+6):nth-child(-n+9) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 10%, transparent), color-mix(in srgb, var(--green) 4%, transparent)),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 64%, transparent);
+}
+
+.report-kcp-table--plan thead tr:nth-child(2) th,
+.report-kcp-table--plan tbody td {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--green) 10%, transparent), color-mix(in srgb, var(--green) 4%, transparent)),
     color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 64%, transparent);

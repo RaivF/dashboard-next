@@ -12,7 +12,7 @@ export const METHOD_ORDER = ['Лично', ONLINE_METHOD_LABEL, 'Почта']
 export const FUNDING_ORDER = [
   'Бюджетная основа',
   'Платное обучение',
-  'Целевой прием',
+  'Целевая квота',
   'Отдельная квота',
   'Особая квота',
 ]

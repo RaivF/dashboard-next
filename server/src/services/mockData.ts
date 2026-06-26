@@ -22,11 +22,11 @@ type MockApplicantStatistic = {
   specialty: Specialty
 }
 
-const FUNDING_TYPES = ['Бюджетная основа', 'Полное возмещение затрат', 'Целевой прием', 'Отдельная квота', 'Особая квота']
+const FUNDING_TYPES = ['Бюджетная основа', 'Полное возмещение затрат', 'Целевая квота', 'Отдельная квота', 'Особая квота']
 const FUNDING_MULTIPLIERS = new Map([
   ['Бюджетная основа', 1.55],
   ['Полное возмещение затрат', 1.02],
-  ['Целевой прием', 0.48],
+  ['Целевая квота', 0.48],
   ['Отдельная квота', 0.16],
   ['Особая квота', 0.12],
 ])
@@ -94,7 +94,7 @@ function buildAdmissionControlNumbers(year: number) {
     categories: [
       { name: 'Бюджетная основа', quantity: Math.round(total * 0.44) },
       { name: 'Платное обучение', quantity: Math.round(total * 0.34) },
-      { name: 'Целевой прием', quantity: Math.round(total * 0.13) },
+      { name: 'Целевая квота', quantity: Math.round(total * 0.13) },
       { name: 'Отдельная квота', quantity: Math.round(total * 0.05) },
       { name: 'Особая квота', quantity: Math.round(total * 0.04) },
     ],

@@ -1,14 +1,174 @@
 ﻿/* Theme selector */
 .dashboard-footer {
   display: flex;
+  align-items: center;
+  gap: 8px;
   justify-content: flex-end;
+  flex-wrap: wrap;
   margin-top: 8px;
   padding: 6px 2px 0;
 }
 
+.manual-edit-toggle,
+.manual-edit-status,
 .theme-switcher {
   display: inline-flex;
   align-items: center;
+}
+
+.manual-edit-toggle,
+.manual-edit-save,
+.manual-edit-status button {
+  justify-content: center;
+  gap: 7px;
+  min-height: 30px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.16);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  transition: opacity 0.18s ease, border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.manual-edit-toggle {
+  padding: 4px 10px;
+  opacity: 0.72;
+}
+
+.manual-edit-save {
+  padding: 4px 12px;
+  border-color: color-mix(in srgb, var(--green) 36%, var(--card-border));
+  background: color-mix(in srgb, var(--green) 14%, rgba(2, 6, 23, 0.16));
+  color: var(--muted-strong);
+}
+
+.manual-edit-save:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--green) 58%, var(--card-border));
+  background: color-mix(in srgb, var(--green) 22%, rgba(2, 6, 23, 0.16));
+}
+
+.manual-edit-save:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.manual-edit-toggle:hover:not(:disabled),
+.manual-edit-toggle--active {
+  border-color: color-mix(in srgb, var(--green) 42%, var(--card-border));
+  background: color-mix(in srgb, var(--green) 14%, rgba(2, 6, 23, 0.16));
+  color: var(--muted-strong);
+  opacity: 1;
+}
+
+.manual-edit-toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.36;
+}
+
+.manual-edit-status {
+  gap: 8px;
+  min-height: 30px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--green) 28%, var(--card-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--green) 9%, rgba(2, 6, 23, 0.16));
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.manual-edit-status button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+
+.manual-edit-panel {
+  position: fixed;
+  z-index: 120000;
+  top: var(--manual-edit-top, 88px);
+  left: var(--manual-edit-left, 16px);
+  width: min(404px, calc(100vw - 32px));
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--green) 36%, var(--card-border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-surface-strong, #0f172a) 96%, transparent);
+  box-shadow: 0 24px 76px rgba(2, 6, 23, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.manual-edit-panel__header,
+.manual-edit-panel__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.manual-edit-panel__header span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.manual-edit-panel__header button,
+.manual-edit-panel__actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.18));
+  border-radius: 12px;
+  background: var(--theme-soft, rgba(15, 23, 42, 0.32));
+  color: var(--theme-text, #f8fafc);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.manual-edit-panel__header button {
+  width: 34px;
+  min-height: 34px;
+}
+
+.manual-edit-panel textarea {
+  width: 100%;
+  min-height: 104px;
+  resize: vertical;
+  border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.18));
+  border-radius: 14px;
+  outline: none;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 82%, transparent);
+  color: var(--theme-text, #f8fafc);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.manual-edit-panel textarea:focus {
+  border-color: color-mix(in srgb, var(--green) 48%, var(--theme-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 16%, transparent);
+}
+
+.manual-edit-panel__actions {
+  justify-content: flex-end;
+}
+
+.manual-edit-panel__actions button[type='submit'] {
+  border-color: color-mix(in srgb, var(--green) 42%, var(--theme-border));
+  background: color-mix(in srgb, var(--green) 18%, var(--theme-soft, rgba(15, 23, 42, 0.32)));
+}
+
+.theme-switcher {
   gap: 6px;
   min-height: 30px;
   padding: 4px 8px;

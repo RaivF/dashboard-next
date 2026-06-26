@@ -7,7 +7,7 @@
   "scripts": {
     "predev": "npm run render:campus-plan",
     "dev": "concurrently -k -n backend,frontend -c blue,green \"npm:dev:server\" \"npm:dev:client\"",
-    "dev:server": "nodemon --exec \"node --import tsx\" server/src/server.ts",
+    "dev:server": "nodemon --ignore DATA/manual-edits --exec \"node --import tsx\" server/src/server.ts",
     "dev:client": "vite --host 0.0.0.0",
     "render:campus-plan": "node scripts/render-campus-plan.mjs",
     "prebuild": "npm run render:campus-plan",

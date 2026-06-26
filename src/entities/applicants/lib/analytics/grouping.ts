@@ -50,6 +50,8 @@ export function groupBy(items: ApplicantStatistic[], field: keyof ApplicantStati
 }
 
 export function groupByFunding(items: ApplicantStatistic[]): QuantityItem[] {
+  if (items.length === 0) return []
+
   const known = new Map<string, ApplicantBucket>(FUNDING_ORDER.map((name) => [name, createApplicantBucket()]))
   const extra = new Map<string, ApplicantBucket>()
 
@@ -140,6 +142,8 @@ export function normalizeMethod(value: unknown): string | null {
 }
 
 export function groupByMethod(items: ApplicantStatistic[]): QuantityItem[] {
+  if (items.length === 0) return []
+
   const known = new Map<string, ApplicantBucket>(METHOD_ORDER.map((method) => [method, createApplicantBucket()]))
   const extra = new Map<string, ApplicantBucket>()
 
