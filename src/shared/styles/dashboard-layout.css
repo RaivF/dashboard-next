@@ -1240,7 +1240,8 @@
 }
 
 .report-metrics--summary {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
+  gap: 10px;
 }
 
 .report-metrics--hero {
@@ -1906,6 +1907,20 @@
   background: color-mix(in srgb, var(--cyan) 8%, var(--theme-soft, rgba(8, 20, 39, 0.24)));
 }
 
+.report-workbook-table tfoot th,
+.report-workbook-table tfoot td {
+  color: var(--theme-text, #f8fafc);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cyan) 20%, transparent), color-mix(in srgb, var(--green) 8%, transparent)),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 76%, transparent);
+  font-weight: 950;
+}
+
+.report-workbook-table__grand-total {
+  color: var(--green);
+  font-size: 16px;
+}
+
 .report-ugsn-panel {
   padding-top: 18px;
 }
@@ -1963,9 +1978,11 @@
   width: min(1120px, 100%);
   max-height: calc(100vh - 44px);
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(240px, 1fr) auto;
   gap: 14px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 22px;
   border: 1px solid color-mix(in srgb, var(--cyan) 34%, var(--card-border));
   border-radius: 28px;
@@ -2056,11 +2073,13 @@
 }
 
 .report-kcp-table-wrap {
-  min-height: 0;
+  min-height: 240px;
   overflow: auto;
   border: 1px solid color-mix(in srgb, var(--cyan) 18%, var(--card-border));
   border-radius: 20px;
-  background: color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 38%, transparent);
+  background:
+    linear-gradient(90deg, transparent 0 17%, color-mix(in srgb, var(--blue) 9%, transparent) 17% 58.5%, color-mix(in srgb, var(--green) 9%, transparent) 58.5% 100%),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 38%, transparent);
 }
 
 .report-kcp-table {
@@ -2098,6 +2117,32 @@
   top: 42px;
 }
 
+.report-kcp-table thead tr:first-child th:nth-child(2) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 22%, transparent), color-mix(in srgb, var(--blue) 9%, transparent)),
+    color-mix(in srgb, var(--theme-surface-strong, rgba(15, 29, 52, 0.96)) 94%, transparent);
+}
+
+.report-kcp-table thead tr:first-child th:nth-child(3) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 22%, transparent), color-mix(in srgb, var(--green) 9%, transparent)),
+    color-mix(in srgb, var(--theme-surface-strong, rgba(15, 29, 52, 0.96)) 94%, transparent);
+}
+
+.report-kcp-table thead tr:nth-child(2) th:nth-child(-n+4),
+.report-kcp-table tbody td:nth-child(n+2):nth-child(-n+5) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--blue) 10%, transparent), color-mix(in srgb, var(--blue) 4%, transparent)),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 64%, transparent);
+}
+
+.report-kcp-table thead tr:nth-child(2) th:nth-child(n+5),
+.report-kcp-table tbody td:nth-child(n+6):nth-child(-n+9) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green) 10%, transparent), color-mix(in srgb, var(--green) 4%, transparent)),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 64%, transparent);
+}
+
 .report-kcp-table th:first-child,
 .report-kcp-table tbody th,
 .report-kcp-table tfoot th {
@@ -2116,7 +2161,24 @@
 .report-kcp-table tfoot td,
 .report-kcp-table tfoot th {
   color: var(--theme-text, #f8fafc);
-  background: color-mix(in srgb, var(--cyan) 12%, var(--theme-soft, rgba(8, 20, 39, 0.24)));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--cyan) 24%, transparent), color-mix(in srgb, var(--cyan) 9%, transparent)),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 72%, transparent);
+  font-weight: 950;
+}
+
+.report-kcp-table thead tr:nth-child(2) th:nth-child(4),
+.report-kcp-table thead tr:nth-child(2) th:nth-child(8),
+.report-kcp-table tbody td.report-kcp-table__total:nth-child(5),
+.report-kcp-table tbody td.report-kcp-table__total:nth-child(9),
+.report-kcp-table tfoot td:nth-child(5),
+.report-kcp-table tfoot td:nth-child(9) {
+  color: var(--theme-text, #f8fafc);
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--cyan) 30%, transparent), transparent 70%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cyan) 28%, transparent), color-mix(in srgb, var(--blue) 10%, transparent)),
+    color-mix(in srgb, var(--theme-soft, rgba(8, 20, 39, 0.24)) 74%, transparent);
+  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--cyan) 28%, transparent);
   font-weight: 950;
 }
 
@@ -2195,14 +2257,6 @@
   font-weight: 950;
   line-height: 1;
   white-space: nowrap;
-}
-
-.report-kcp-colleges__check {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.25;
 }
 
 .report-graduation-chart {
@@ -2550,10 +2604,11 @@
 .report-detail-popover {
   position: fixed;
   z-index: 45;
-  top: 98px;
-  right: 24px;
+  top: var(--detail-popover-top, 98px);
+  right: var(--detail-popover-right, 24px);
+  left: var(--detail-popover-left, auto);
   width: min(440px, calc(100vw - 32px));
-  max-height: calc(100vh - 124px);
+  max-height: min(560px, calc(100vh - var(--detail-popover-top, 98px) - 16px));
   display: grid;
   gap: 16px;
   overflow: auto;
@@ -2981,12 +3036,12 @@
   }
 
   .report-detail-popover {
-    top: auto;
-    right: 16px;
-    bottom: 16px;
-    left: 16px;
-    width: auto;
-    max-height: min(560px, calc(100vh - 32px));
+    top: var(--detail-popover-top, 98px);
+    right: var(--detail-popover-right, 16px);
+    bottom: auto;
+    left: var(--detail-popover-left, 16px);
+    width: min(440px, calc(100vw - 32px));
+    max-height: min(560px, calc(100vh - var(--detail-popover-top, 98px) - 16px));
   }
 
   .report-workbook-backdrop {

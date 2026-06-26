@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import {
   BookOpen,
   ChevronLeft,
@@ -131,10 +131,18 @@ type DetailPayload = {
   emptyText?: string
 }
 
+type ActivationEvent = KeyboardEvent<HTMLElement> | ReactMouseEvent<HTMLElement>
+type DetailOpenHandler = (detail: DetailPayload, source?: HTMLElement | null) => void
+type DetailPopoverStyle = CSSProperties & {
+  '--detail-popover-left'?: string
+  '--detail-popover-right'?: string
+  '--detail-popover-top'?: string
+}
+
 type ClickableProps = {
   className: string
   ariaLabel: string
-  onClick: () => void
+  onClick: (event: ActivationEvent) => void
   children: ReactNode
   as?: 'article' | 'div'
 }
@@ -145,7 +153,7 @@ type ReportMetricProps = {
   caption?: string
   tone?: string
   icon?: LucideIcon
-  onClick: () => void
+  onClick: (event: ActivationEvent) => void
 }
 
 type KcpYearValues = {
@@ -202,19 +210,19 @@ const KCP_COLLEGE_ROWS: KcpCollegeRow[] = [
     name: 'Энергодарский колледж',
     base: 100,
     additional: 50,
-    note: 'СПО: 100 (5) + 50 (11)',
+    note: 'СПО: 100 на базе 9 классов + 50 на базе 11 классов',
   },
   {
     name: 'Васильевский колледж',
     base: 225,
     additional: 50,
-    note: 'СПО: 225 (8) + 50 (11)',
+    note: 'СПО: 225 на базе 9 классов + 50 на базе 11 классов',
   },
   {
     name: 'Бердянский колледж',
     base: 225,
     additional: 0,
-    note: 'СПО: 225 (8)',
+    note: 'СПО: 225 на базе 9 классов',
   },
 ]
 
@@ -276,6 +284,18 @@ function getFirstFilledColumn(row: string[], columnCount: number) {
   return index < 0 ? columnCount : index
 }
 
+function getWorkbookTotalColumnIndex(headerRows: string[][], columnCount: number) {
+  const normalizedHeaders = headerRows.map((row) => normalizeWorkbookRow(row, columnCount))
+
+  for (let columnIndex = columnCount - 1; columnIndex >= 0; columnIndex -= 1) {
+    if (normalizedHeaders.some((row) => normalizeReportLabel(row[columnIndex]) === 'всего')) {
+      return columnIndex
+    }
+  }
+
+  return columnCount - 1
+}
+
 function getAdmissionPlanForGraduationLevel(levelName: string, admissionPlan: ReportPlanRow[]) {
   return admissionPlan.find((plan) => (
     (levelName === 'Бакалавры' && plan.name === 'Бакалавриат') ||
@@ -283,11 +303,29 @@ function getAdmissionPlanForGraduationLevel(levelName: string, admissionPlan: Re
   ))
 }
 
-function keyOpen(handler: () => void) {
+function getDetailPopoverStyle(source?: HTMLElement | null): DetailPopoverStyle {
+  if (!source || typeof window === 'undefined') return {}
+
+  const rect = source.getBoundingClientRect()
+  const margin = 16
+  const gap = 10
+  const popoverWidth = Math.min(440, window.innerWidth - margin * 2)
+  const left = Math.min(Math.max(rect.left, margin), window.innerWidth - popoverWidth - margin)
+  const topLimit = Math.max(margin, window.innerHeight - 180)
+  const top = Math.min(Math.max(rect.bottom + gap, margin), topLimit)
+
+  return {
+    '--detail-popover-left': `${Math.round(left)}px`,
+    '--detail-popover-right': 'auto',
+    '--detail-popover-top': `${Math.round(top)}px`,
+  }
+}
+
+function keyOpen(handler: (event: ActivationEvent) => void) {
   return (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
-    handler()
+    handler(event)
   }
 }
 
@@ -310,17 +348,19 @@ function ClickableBlock({ className, ariaLabel, onClick, children, as = 'article
 
 function ReportDetailPanel({
   detail,
+  popoverStyle,
   onClose,
   onOpenDetail,
 }: {
   detail: DetailPayload
+  popoverStyle?: DetailPopoverStyle
   onClose: () => void
-  onOpenDetail: (detail: DetailPayload) => void
+  onOpenDetail: DetailOpenHandler
 }) {
   const rows = detail.rows || []
 
   return (
-    <aside className="report-detail-popover" role="dialog" aria-modal="false" aria-label={detail.title}>
+    <aside className="report-detail-popover" role="dialog" aria-modal="false" aria-label={detail.title} style={popoverStyle}>
       <button className="report-detail-popover__close" type="button" aria-label="Закрыть" onClick={onClose}>
         <X size={22} strokeWidth={2.4} />
       </button>
@@ -360,8 +400,8 @@ function ReportDetailPanel({
                 role="button"
                 tabIndex={0}
                 aria-label={`Открыть детализацию ${row.name}`}
-                onClick={() => row.detail && onOpenDetail(row.detail)}
-                onKeyDown={keyOpen(() => row.detail && onOpenDetail(row.detail))}
+                onClick={(event) => row.detail && onOpenDetail(row.detail, event.currentTarget)}
+                onKeyDown={keyOpen((event) => row.detail && onOpenDetail(row.detail, event.currentTarget))}
               >
                 {rowContent}
               </div>
@@ -379,11 +419,13 @@ function ReportDetailPanel({
 
 function UgsnWorkbookModal({
   workbook,
+  contingentTotal,
   activeSheetIndex,
   onSheetChange,
   onClose,
 }: {
   workbook: UgsnInfoWorkbook
+  contingentTotal: number
   activeSheetIndex: number
   onSheetChange: (index: number) => void
   onClose: () => void
@@ -396,6 +438,7 @@ function UgsnWorkbookModal({
   const firstHeaderRow = headerRows[0] || []
   const leadingColumns = headerRowCount === 2 ? getFirstFilledColumn(firstHeaderRow, columnCount) : 0
   const hasGroupedHeader = headerRowCount === 2
+  const totalColumnIndex = getWorkbookTotalColumnIndex(headerRows, columnCount)
 
   const goToPreviousSheet = () => {
     onSheetChange(activeSheetIndex === 0 ? workbook.sheets.length - 1 : activeSheetIndex - 1)
@@ -523,6 +566,22 @@ function UgsnWorkbookModal({
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr>
+                    {Array.from({ length: columnCount }, (_item, columnIndex) => (
+                      columnIndex === 0 ? (
+                        <th key="contingent-total-label" scope="row">Итого обучающихся</th>
+                      ) : (
+                        <td
+                          className={columnIndex === totalColumnIndex ? 'report-workbook-table__grand-total' : undefined}
+                          key={`contingent-total-${columnIndex}`}
+                        >
+                          {columnIndex === totalColumnIndex ? formatNumber(contingentTotal) : '—'}
+                        </td>
+                      )
+                    ))}
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
@@ -545,11 +604,6 @@ function KcpComparisonModal({
 }) {
   const total2025 = getKcpYearTotal(rows, 'actual2025')
   const total2026 = getKcpYearTotal(rows, 'plan2026')
-  const spo2026Total = getKcpRowTotal(rows.find((row) => row.level === 'СПО')?.plan2026 || {
-    fullTime: 0,
-    partTime: 0,
-    distance: 0,
-  })
   const collegeTotal = getKcpCollegeTotal(collegeRows)
   const columns: Array<{ key: keyof KcpYearValues; label: string }> = [
     { key: 'fullTime', label: 'очная' },
@@ -658,9 +712,6 @@ function KcpComparisonModal({
               )
             })}
           </div>
-          <p className="report-kcp-colleges__check">
-            Итого по колледжам: {formatNumber(collegeTotal)} · строка СПО 2026: {formatNumber(spo2026Total)}
-          </p>
         </section>
       </section>
     </div>
@@ -691,7 +742,7 @@ function GraduationTable({
   onOpen,
 }: {
   level: GraduationLevel
-  onOpen: (detail: DetailPayload) => void
+  onOpen: DetailOpenHandler
 }) {
   const sortedRows = [...level.rows].sort((first, second) => second.total - first.total)
 
@@ -705,7 +756,7 @@ function GraduationTable({
         <button
           className="report-table-total"
           type="button"
-          onClick={() =>
+          onClick={(event) =>
             onOpen({
               title: level.name,
               total: level.total,
@@ -713,7 +764,7 @@ function GraduationTable({
                 { name: 'Летний выпуск', value: level.summer },
                 { name: 'Зимний выпуск', value: level.winter },
               ],
-            })
+            }, event.currentTarget)
           }
         >
           <span>Всего</span>
@@ -739,7 +790,7 @@ function GraduationTable({
                 role="button"
                 tabIndex={0}
                 aria-label={`Показать состав выпуска ${item.name}`}
-                onClick={() =>
+                onClick={(event) =>
                   onOpen({
                     title: item.name,
                     total: item.total,
@@ -747,9 +798,9 @@ function GraduationTable({
                       { name: 'Летний выпуск', value: item.summer },
                       { name: 'Зимний выпуск', value: item.winter },
                     ],
-                  })
+                  }, event.currentTarget)
                 }
-                onKeyDown={keyOpen(() =>
+                onKeyDown={keyOpen((event) =>
                   onOpen({
                     title: item.name,
                     total: item.total,
@@ -757,7 +808,7 @@ function GraduationTable({
                       { name: 'Летний выпуск', value: item.summer },
                       { name: 'Зимний выпуск', value: item.winter },
                     ],
-                  }),
+                  }, event.currentTarget),
                 )}
               >
                 <td>{item.name}</td>
@@ -780,7 +831,7 @@ function GraduationSection({
 }: {
   graduation: Report20252026['graduation']
   admissionPlan: ReportPlanRow[]
-  openDetail: (detail: DetailPayload) => void
+  openDetail: DetailOpenHandler
 }) {
   const summerPercent = getPercent(graduation.summer.quantity, graduation.total)
   const winterPercent = 100 - summerPercent
@@ -811,25 +862,11 @@ function GraduationSection({
         <ClickableBlock
           className="report-graduation-donut-panel"
           ariaLabel="Показать состав общего выпуска"
-          onClick={() =>
+          onClick={(event) =>
             openDetail({
               title: `Выпуск ${graduation.year}`,
               total: graduation.total,
               rows: [
-                {
-                  name: graduation.summer.title,
-                  value: graduation.summer.quantity,
-                  caption: `${summerPercent}% от общего выпуска`,
-                  meta: summerLevelRows
-                    .map((row) => `${row.name.toLowerCase()} ${formatValue(row.value)} (${row.caption.split('%')[0]}%)`)
-                    .join(' / '),
-                  detail: {
-                    title: graduation.summer.title,
-                    total: graduation.summer.quantity,
-                    subtitle: graduation.summer.description,
-                    rows: summerLevelRows,
-                  },
-                },
                 {
                   name: graduation.winter.title,
                   value: graduation.winter.quantity,
@@ -844,8 +881,22 @@ function GraduationSection({
                     rows: winterLevelRows,
                   },
                 },
+                {
+                  name: graduation.summer.title,
+                  value: graduation.summer.quantity,
+                  caption: `${summerPercent}% от общего выпуска`,
+                  meta: summerLevelRows
+                    .map((row) => `${row.name.toLowerCase()} ${formatValue(row.value)} (${row.caption.split('%')[0]}%)`)
+                    .join(' / '),
+                  detail: {
+                    title: graduation.summer.title,
+                    total: graduation.summer.quantity,
+                    subtitle: graduation.summer.description,
+                    rows: summerLevelRows,
+                  },
+                },
               ],
-            })
+            }, event.currentTarget)
           }
         >
           <div
@@ -860,23 +911,6 @@ function GraduationSection({
           </div>
           <div className="report-graduation-legend">
             <button
-              className="report-graduation-legend__item report-graduation-legend__item--summer"
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation()
-                openDetail({
-                  title: graduation.summer.title,
-                  total: graduation.summer.quantity,
-                  subtitle: graduation.summer.description,
-                  rows: summerLevelRows,
-                })
-              }}
-            >
-              <span>{graduation.summer.title}</span>
-              <strong>{formatNumber(graduation.summer.quantity)}</strong>
-              <small>{summerPercent}%</small>
-            </button>
-            <button
               className="report-graduation-legend__item report-graduation-legend__item--winter"
               type="button"
               onClick={(event) => {
@@ -886,12 +920,29 @@ function GraduationSection({
                   total: graduation.winter.quantity,
                   subtitle: graduation.winter.description,
                   rows: winterLevelRows,
-                })
+                }, event.currentTarget)
               }}
             >
               <span>{graduation.winter.title}</span>
               <strong>{formatNumber(graduation.winter.quantity)}</strong>
               <small>{winterPercent}%</small>
+            </button>
+            <button
+              className="report-graduation-legend__item report-graduation-legend__item--summer"
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation()
+                openDetail({
+                  title: graduation.summer.title,
+                  total: graduation.summer.quantity,
+                  subtitle: graduation.summer.description,
+                  rows: summerLevelRows,
+                }, event.currentTarget)
+              }}
+            >
+              <span>{graduation.summer.title}</span>
+              <strong>{formatNumber(graduation.summer.quantity)}</strong>
+              <small>{summerPercent}%</small>
             </button>
           </div>
         </ClickableBlock>
@@ -915,26 +966,26 @@ function GraduationSection({
                   className="report-graduation-level"
                   key={level.name}
                   ariaLabel={`Показать состав выпуска ${level.name}`}
-                  onClick={() =>
+                  onClick={(event) =>
                     openDetail({
                       title: level.name,
                       total: level.total,
                       rows: [
-                        {
-                          name: 'Летний выпуск',
-                          value: level.summer,
-                          caption: `${levelSummerPercent}% выпуска уровня`,
-                          meta: `${getPercent(level.summer, graduation.summer.quantity)}% летнего выпуска`,
-                        },
                         {
                           name: 'Зимний выпуск',
                           value: level.winter,
                           caption: `${levelWinterPercent}% выпуска уровня`,
                           meta: `${getPercent(level.winter, graduation.winter.quantity)}% зимнего выпуска`,
                         },
+                        {
+                          name: 'Летний выпуск',
+                          value: level.summer,
+                          caption: `${levelSummerPercent}% выпуска уровня`,
+                          meta: `${getPercent(level.summer, graduation.summer.quantity)}% летнего выпуска`,
+                        },
                         ...level.rows.map((row) => ({ name: row.name, value: row.total })),
                       ],
-                    })
+                    }, event.currentTarget)
                   }
                 >
                   <div className="report-graduation-level__header">
@@ -955,15 +1006,15 @@ function GraduationSection({
                     />
                   </div>
                   <div className="report-graduation-level__season-row" aria-label="Выпуск по периодам">
-                    <span className="report-graduation-level__season report-graduation-level__season--summer">
-                      <small>Лето</small>
-                      <strong>{formatNumber(level.summer)}</strong>
-                      <em>{levelSummerPercent}% уровня</em>
-                    </span>
                     <span className="report-graduation-level__season report-graduation-level__season--winter">
                       <small>Зима</small>
                       <strong>{formatNumber(level.winter)}</strong>
                       <em>{levelWinterPercent}% уровня</em>
+                    </span>
+                    <span className="report-graduation-level__season report-graduation-level__season--summer">
+                      <small>Лето</small>
+                      <strong>{formatNumber(level.summer)}</strong>
+                      <em>{levelSummerPercent}% уровня</em>
                     </span>
                   </div>
                   <div className="report-graduation-level__plan-row" aria-label="План приёма 2026">
@@ -1007,16 +1058,27 @@ export default function ReportPage() {
   const { report: reportData, loading } = useReport20252026()
   const report = reportData as Report20252026 | null
   const [activeDetail, setActiveDetail] = useState<DetailPayload | null>(null)
+  const [detailPopoverStyle, setDetailPopoverStyle] = useState<DetailPopoverStyle>({})
   const [isWorkbookOpen, setWorkbookOpen] = useState(false)
   const [isKcpModalOpen, setKcpModalOpen] = useState(false)
   const [activeWorkbookSheet, setActiveWorkbookSheet] = useState(0)
+
+  const openDetail: DetailOpenHandler = (detail, source) => {
+    setDetailPopoverStyle(getDetailPopoverStyle(source))
+    setActiveDetail(detail)
+  }
+
+  const closeDetail = () => {
+    setActiveDetail(null)
+    setDetailPopoverStyle({})
+  }
 
   useEffect(() => {
     if (!activeDetail && !isWorkbookOpen && !isKcpModalOpen) return undefined
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      setActiveDetail(null)
+      closeDetail()
       setWorkbookOpen(false)
       setKcpModalOpen(false)
     }
@@ -1069,13 +1131,12 @@ export default function ReportPage() {
             caption={item.caption}
             tone={item.tone}
             icon={item.icon}
-            onClick={() => setActiveDetail(item.detail)}
+            onClick={(event) => openDetail(item.detail, event.currentTarget)}
           />
         ))}
         <ReportMetric
           label="КЦП 2025"
           value={kcp2025Total}
-          caption="по формам обучения"
           tone="cyan"
           icon={Landmark}
           onClick={() => setKcpModalOpen(true)}
@@ -1083,7 +1144,6 @@ export default function ReportPage() {
         <ReportMetric
           label="Контингент обучающихся"
           value={contingentTotal || '—'}
-          caption={workbook ? `сумма колонок «Всего»` : 'данные UGSN_INFO'}
           tone="soft"
           icon={Table2}
           onClick={() => {
@@ -1096,12 +1156,13 @@ export default function ReportPage() {
       <GraduationSection
         graduation={report.graduation}
         admissionPlan={report.admissionCampaign.plan2026}
-        openDetail={setActiveDetail}
+        openDetail={openDetail}
       />
 
       {isWorkbookOpen && workbook && (
         <UgsnWorkbookModal
           workbook={workbook}
+          contingentTotal={contingentTotal}
           activeSheetIndex={activeWorkbookSheet}
           onSheetChange={setActiveWorkbookSheet}
           onClose={() => setWorkbookOpen(false)}
@@ -1119,8 +1180,9 @@ export default function ReportPage() {
       {activeDetail && (
         <ReportDetailPanel
           detail={activeDetail}
-          onClose={() => setActiveDetail(null)}
-          onOpenDetail={setActiveDetail}
+          popoverStyle={detailPopoverStyle}
+          onClose={closeDetail}
+          onOpenDetail={openDetail}
         />
       )}
     </section>
