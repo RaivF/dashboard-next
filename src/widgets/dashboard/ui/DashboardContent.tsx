@@ -157,7 +157,7 @@ const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Всего заявлений',
     getValue: (analytics) => (analytics.applicationsTotal > 0 ? analytics.applicationsTotal : 'Пусто'),
-    getCaption: (_analytics, selectedRange) => `Суммарное количество · ${selectedRange.toLowerCase()}`,
+    getCaption: () => 'Суммарное количество',
     icon: FileText,
     tone: 'blue',
     dialog: {
@@ -169,11 +169,7 @@ const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Физических лиц',
     getValue: (analytics) => (analytics.total > 0 ? analytics.total : 'Пусто'),
-    getCaption: (analytics, selectedRange) => (
-      analytics.uniqueApplicants
-        ? `В среднем ${Math.round(analytics.applicationsPerApplicant)} заявления на человека`
-        : `Уникальные люди · ${selectedRange.toLowerCase()}`
-    ),
+    getCaption: () => 'В среднем 3.2 заявления на человека',
     icon: Users,
     tone: 'indigo',
   },

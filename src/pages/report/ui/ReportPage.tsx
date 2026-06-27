@@ -177,7 +177,11 @@ type KcpCollegeRow = {
 
 type KcpYearKey = 'actual2025' | 'plan2026'
 
-const KCP_2025_ACTUAL_ADMISSION_TOTAL = 5339
+const KCP_SUMMARY_VALUE = '4 167 / 5 413'
+const KCP_2026_SUMMARY_TOTAL = 5413
+const KCP_2026_HIGHER_EDUCATION_TOTAL = 4658
+const KCP_2026_COLLEGE_TOTAL = 650
+const KCP_2026_POSTGRADUATE_TOTAL = 105
 
 const KCP_COMPARISON_ROWS: KcpComparisonRow[] = [
   {
@@ -598,9 +602,8 @@ function KcpComparisonModal({
           <div>
             <span>Контрольные цифры приёма</span>
             <h2>КЦП 2025</h2>
-            <p>Факт 2025 и план 2026 по уровням и формам обучения.</p>
+            <p>кцп и факт 2025 и кцп 2026 по уровням и формам обучения.</p>
           </div>
-          <strong>{formatNumber(total2025)}</strong>
           <button className="report-kcp-modal__close" type="button" aria-label="Закрыть" onClick={onClose}>
             <X size={22} strokeWidth={2.4} />
           </button>
@@ -609,11 +612,11 @@ function KcpComparisonModal({
         <div className="report-kcp-modal__summary" aria-label="Итоги КЦП">
           <div>
             <span>Было КЦП</span>
-            <strong>{formatNumber(99999)}</strong>
+            <strong>{formatNumber(4167)}</strong>
           </div>
           <div>
-            <span>Было принято</span>
-            <strong>{formatNumber(99999)}</strong>
+            <span>Было принято всего, вместе с контрактом</span>
+            <strong>{formatNumber(6087)}</strong>
           </div>
         </div>
 
@@ -630,8 +633,8 @@ function KcpComparisonModal({
               <tr>
                 <th rowSpan={2}>Уровень</th>
                 <th rowSpan={2}>Итого</th>
-                <th colSpan={3}>2025</th>
-                <th colSpan={4}>2026</th>
+                <th colSpan={3}>КЦП 2025</th>
+                <th colSpan={4}>КЦП 2026</th>
               </tr>
               <tr>
                 {columns.map((column) => <th key={`2025-${column.key}`}>{column.label}</th>)}
@@ -694,6 +697,69 @@ function KcpComparisonModal({
             })}
           </div>
         </section>
+      </section>
+    </div>
+  )
+}
+
+function Kcp2026BreakdownModal({ onClose }: { onClose: () => void }) {
+  const higherShare = getPercent(KCP_2026_HIGHER_EDUCATION_TOTAL, KCP_2026_SUMMARY_TOTAL)
+  const collegeShare = getPercent(KCP_2026_COLLEGE_TOTAL, KCP_2026_SUMMARY_TOTAL)
+  const postgraduateShare = 100 - higherShare - collegeShare
+
+  return (
+    <div className="report-kcp-backdrop" role="presentation" onClick={onClose}>
+      <section
+        className="report-kcp-modal report-kcp-modal--compact"
+        role="dialog"
+        aria-modal="true"
+        aria-label="КЦП 2026"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="report-kcp-modal__header">
+          <div>
+            <span>Контрольные цифры приёма</span>
+            <h2>КЦП 2026</h2>
+            <p>Распределение мест по уровню образования.</p>
+          </div>
+          <button className="report-kcp-modal__close" type="button" aria-label="Закрыть" onClick={onClose}>
+            <X size={22} strokeWidth={2.4} />
+          </button>
+        </header>
+
+        <div className="report-kcp-2026">
+          <div
+            className="report-kcp-2026__chart"
+            style={{
+              '--higher-share': `${higherShare}%`,
+              '--college-share': `${higherShare + collegeShare}%`,
+            } as CSSProperties}
+            aria-label={`Высшее образование ${formatNumber(KCP_2026_HIGHER_EDUCATION_TOTAL)}, среднеспециальное образование ${formatNumber(KCP_2026_COLLEGE_TOTAL)}, аспирантура ${formatNumber(KCP_2026_POSTGRADUATE_TOTAL)}`}
+          >
+            <div>
+              <span>Всего</span>
+              <strong>{formatNumber(KCP_2026_SUMMARY_TOTAL)}</strong>
+            </div>
+          </div>
+
+          <div className="report-kcp-2026__list">
+            <div className="report-kcp-2026__row report-kcp-2026__row--higher">
+              <span>Высшее образование</span>
+              <strong>{formatNumber(KCP_2026_HIGHER_EDUCATION_TOTAL)}</strong>
+              <small>{higherShare}%</small>
+            </div>
+            <div className="report-kcp-2026__row report-kcp-2026__row--college">
+              <span>Среднеспециальное образование</span>
+              <strong>{formatNumber(KCP_2026_COLLEGE_TOTAL)}</strong>
+              <small>{collegeShare}%</small>
+            </div>
+            <div className="report-kcp-2026__row report-kcp-2026__row--postgraduate">
+              <span>Аспирантура</span>
+              <strong>{formatNumber(KCP_2026_POSTGRADUATE_TOTAL)}</strong>
+              <small>{postgraduateShare}%</small>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   )
@@ -955,15 +1021,15 @@ function GraduationSection({
                   </div>
                   <div
                     className="report-graduation-level__track"
-                    aria-label={`${level.name}: ${formatNumber(level.total)}, летний выпуск ${formatNumber(level.summer)}, зимний выпуск ${formatNumber(level.winter)}`}
+                    aria-label={`${level.name}: ${formatNumber(level.total)}, зимний выпуск ${formatNumber(level.winter)}, летний выпуск ${formatNumber(level.summer)}`}
                   >
-                    <span
-                      className="report-graduation-level__bar report-graduation-level__bar--summer"
-                      style={{ width: `${levelSummerPercent}%` }}
-                    />
                     <span
                       className="report-graduation-level__bar report-graduation-level__bar--winter"
                       style={{ width: `${levelWinterPercent}%` }}
+                    />
+                    <span
+                      className="report-graduation-level__bar report-graduation-level__bar--summer"
+                      style={{ width: `${levelSummerPercent}%` }}
                     />
                   </div>
                   <div className="report-graduation-level__season-row" aria-label="Выпуск по периодам">
@@ -1013,6 +1079,7 @@ export default function ReportPage() {
   const [detailPopoverStyle, setDetailPopoverStyle] = useState<DetailPopoverStyle>({})
   const [isWorkbookOpen, setWorkbookOpen] = useState(false)
   const [isKcpModalOpen, setKcpModalOpen] = useState(false)
+  const [isKcp2026ModalOpen, setKcp2026ModalOpen] = useState(false)
   const [activeWorkbookSheet, setActiveWorkbookSheet] = useState(0)
 
   const openDetail: DetailOpenHandler = (detail, source) => {
@@ -1026,18 +1093,19 @@ export default function ReportPage() {
   }
 
   useEffect(() => {
-    if (!activeDetail && !isWorkbookOpen && !isKcpModalOpen) return undefined
+    if (!activeDetail && !isWorkbookOpen && !isKcpModalOpen && !isKcp2026ModalOpen) return undefined
 
     const handleKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Escape') return
       closeDetail()
       setWorkbookOpen(false)
       setKcpModalOpen(false)
+      setKcp2026ModalOpen(false)
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [activeDetail, isWorkbookOpen, isKcpModalOpen])
+  }, [activeDetail, isWorkbookOpen, isKcpModalOpen, isKcp2026ModalOpen])
 
   const reportMetrics = useMemo(() => {
     if (!report) return []
@@ -1069,8 +1137,6 @@ export default function ReportPage() {
   if (!report) return null
 
   const contingentTotal = getContingentTotal(report.ugsnInfo)
-  const kcp2025Total = getKcpYearTotal(KCP_COMPARISON_ROWS, 'actual2025')
-  const kcp2026Total = getKcpYearTotal(KCP_COMPARISON_ROWS, 'plan2026')
   const workbook = report.ugsnWorkbook
 
   return (
@@ -1088,18 +1154,18 @@ export default function ReportPage() {
           />
         ))}
         <ReportMetric
-          label="Результат приёмки 2025"
-          value={KCP_2025_ACTUAL_ADMISSION_TOTAL}
-          caption={`КЦП: ${formatNumber(kcp2025Total)}`}
+          label="КЦП за 2025/2026 г."
+          value={KCP_SUMMARY_VALUE}
           tone="cyan"
           icon={Landmark}
           onClick={() => setKcpModalOpen(true)}
         />
         <ReportMetric
           label="КЦП 2026"
-          value={kcp2026Total}
+          value={KCP_2026_SUMMARY_TOTAL}
           tone="green"
           icon={Landmark}
+          onClick={() => setKcp2026ModalOpen(true)}
         />
         <ReportMetric
           label="Контингент обучающихся"
@@ -1135,6 +1201,10 @@ export default function ReportPage() {
           collegeRows={KCP_COLLEGE_ROWS}
           onClose={() => setKcpModalOpen(false)}
         />
+      )}
+
+      {isKcp2026ModalOpen && (
+        <Kcp2026BreakdownModal onClose={() => setKcp2026ModalOpen(false)} />
       )}
 
       {activeDetail && (
