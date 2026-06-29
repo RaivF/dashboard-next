@@ -62,6 +62,51 @@ describe('analytics', () => {
     assert.equal(analytics.byDate.find((item) => item.date === '2026-06-20T10:00').quantity, 2)
   })
 
+  it('uses applicant rows instead of manual application totals for current funding analytics', () => {
+    const response = {
+      applicants_statistics: [
+        { date: '2026-06-20T10:00:00', applicant_id: '101', funding_type: 'Budget', quantity: 1 },
+        { date: '2026-06-20T10:05:00', applicant_id: '101', funding_type: 'Budget', quantity: 1 },
+        { date: '2026-06-21T10:00:00', applicant_id: '102', funding_type: 'Budget', quantity: 1 },
+      ],
+      manual_funding_by_date: [
+        {
+          date: '2026-06-20',
+          quantity: 999,
+          categories: [{ name: 'Budget', quantity: 999 }],
+        },
+      ],
+      previous_year_statistics: [],
+      meta: { source: 'test' },
+    }
+
+    const analytics = buildAnalytics(response, 'all', null)
+
+    assert.equal(analytics.byFunding.find((item) => item.name === 'Budget').quantity, 2)
+  })
+
+  it('keeps funding by people and form by applications in application details', () => {
+    const response = {
+      applicants_statistics: [
+        { date: '2026-06-20T10:00:00', applicant_id: '101', funding_type: 'Budget', form_of_education: 'Full-time', quantity: 1 },
+        { date: '2026-06-20T10:05:00', applicant_id: '101', funding_type: 'Budget', form_of_education: 'Full-time', quantity: 1 },
+        { date: '2026-06-21T10:00:00', applicant_id: '102', funding_type: 'Paid', form_of_education: 'Part-time', quantity: 1 },
+      ],
+      manual_summary: { applicationsTotal: 3 },
+      previous_year_statistics: [],
+      meta: { source: 'test' },
+    }
+
+    const analytics = buildAnalytics(response, 'all', null)
+
+    assert.equal(analytics.applicationsTotal, 3)
+    assert.equal(analytics.byFunding.find((item) => item.name === 'Budget').quantity, 1)
+    assert.deepEqual(analytics.byApplicationForm, [
+      { name: 'Full-time', quantity: 2 },
+      { name: 'Part-time', quantity: 1 },
+    ])
+  })
+
   it('builds the actual campaign-start window up to the latest available date', () => {
     const response = {
       applicants_statistics: [
@@ -137,6 +182,26 @@ describe('analytics', () => {
         overflow: 0,
       },
     ])
+  })
+
+  it('uses the default 20 percent KCP value when no plan is provided', () => {
+    const response = {
+      applicants_statistics: [
+        { date: '2026-06-20T10:00:00', applicant_id: '101', quantity: 1 },
+        { date: '2026-06-20T10:05:00', applicant_id: '102', quantity: 1 },
+        { date: '2026-06-21T10:00:00', applicant_id: '103', quantity: 1 },
+      ],
+      previous_year_statistics: [],
+      meta: { source: 'test' },
+    }
+
+    const analytics = buildAnalytics(response, 'all', null)
+
+    assert.equal(analytics.kcp.current, 3)
+    assert.equal(analytics.kcp.plan, 15)
+    assert.equal(analytics.kcp.percent, 20)
+    assert.equal(analytics.kcp.fillPercent, 20)
+    assert.equal(analytics.kcp.hasPlan, true)
   })
 
   it('does not duplicate KCP direction facts through ambiguous code or name fallback', () => {

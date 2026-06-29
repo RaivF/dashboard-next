@@ -43,8 +43,10 @@ function getManualPreviousYearItems(response: unknown): ApplicantStatistic[] {
 }
 
 function getPreviousYearItems(response: unknown): ApplicantStatistic[] {
+  const manualPreviousYearItems = getManualPreviousYearItems(response)
   const previousYearItems = getPreviousYearStatistics(response)
-  return previousYearItems.length > 0 ? previousYearItems : getManualPreviousYearItems(response)
+
+  return manualPreviousYearItems.length > 0 ? manualPreviousYearItems : previousYearItems
 }
 
 export function getPreviousYearWindow(response: unknown, rangeWindow: RangeWindow): PreviousYearWindow {

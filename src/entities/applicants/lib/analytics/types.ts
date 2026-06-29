@@ -136,6 +136,7 @@ export type AnalyticsResult = {
   budget: number
   byDate: ChartPoint[]
   byDegree: QuantityItem[]
+  byApplicationForm: QuantityItem[]
   byForm: QuantityItem[]
   byFunding: QuantityItem[]
   byMethod: QuantityItem[]

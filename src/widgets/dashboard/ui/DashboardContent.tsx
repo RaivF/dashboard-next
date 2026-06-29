@@ -1,4 +1,4 @@
-import {
+﻿import {
   Award,
   FileText,
   MousePointerClick,
@@ -9,7 +9,7 @@ import {
 import { useEffect, useState, type ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import DataTable from '../../../shared/ui/DataTable.js'
-import { formatNumber } from '../../../shared/lib/formatters.js'
+import { formatNumber, formatPercent } from '../../../shared/lib/formatters.js'
 import StatCard from '../../../shared/ui/StatCard.js'
 import {
   DateAreaChart as RawDateAreaChart,
@@ -51,6 +51,7 @@ type DashboardAnalytics = {
   kcp: Parameters<typeof KcpProgress>[0]['data']
   byDate: ChartPoint[]
   previousYearByDate: ChartPoint[]
+  byApplicationForm: NamedQuantity[]
   byFunding: NamedQuantity[]
   previousYearByFunding: NamedQuantity[]
   byForm: NamedQuantity[]
@@ -104,12 +105,10 @@ const DateAreaChart = RawDateAreaChart as ComponentType<DateAreaChartProps>
 const DonutChart = RawDonutChart as ComponentType<CategoryChartProps>
 const VerticalBarChart = RawVerticalBarChart as ComponentType<CategoryChartProps>
 
-const KCP_FILL_PERCENT = 7
-
 const MANUAL_FORM_DATA: NamedQuantity[] = [
-  { name: 'Очная', quantity: 1898 },
-  { name: 'Заочная', quantity: 371 },
-  { name: 'Очно-заочная', quantity: 334 },
+  { name: 'Очная', quantity: 2469 },
+  { name: 'Заочная', quantity: 428 },
+  { name: 'Очно-заочная', quantity: 412 },
 ]
 
 const TARGET_ADMISSION_PARTNERS: NamedQuantity[] = [
@@ -220,7 +219,10 @@ function DialogMetric({ label, value, caption }: { label: string; value: number 
   )
 }
 
-function KcpSummary() {
+function KcpSummary({ data }: { data: DashboardAnalytics['kcp'] }) {
+  const fillPercent = data?.hasPlan ? Math.min(100, Math.max(0, data.fillPercent || 0)) : 0
+  const percentLabel = data?.hasPlan ? formatPercent(data.percent) : 'Нет данных'
+
   return (
     <section className="kcp-panel kcp-panel--summary" aria-label="Заполнение контрольных цифр приёма">
       <div className="kcp-panel__header">
@@ -229,12 +231,12 @@ function KcpSummary() {
           <p>Контрольные цифры приёма</p>
         </div>
         <div className="kcp-panel__header-actions">
-          <strong>{KCP_FILL_PERCENT}%</strong>
+          <strong>{percentLabel}</strong>
         </div>
       </div>
 
-      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${KCP_FILL_PERCENT}%`}>
-        <span className="kcp-panel__fill" style={{ width: `${KCP_FILL_PERCENT}%` }} />
+      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${percentLabel}`}>
+        <span className="kcp-panel__fill" style={{ width: `${fillPercent}%` }} />
       </div>
     </section>
   )
@@ -278,7 +280,7 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
 
       <div className="dashboard-dialog-grid">
         <DialogRows title="Основание обучения" rows={analytics.byFunding} />
-        <DialogRows title="Форма обучения" rows={MANUAL_FORM_DATA} />
+        <DialogRows title="Форма обучения" rows={analytics.byApplicationForm.length > 0 ? analytics.byApplicationForm : MANUAL_FORM_DATA} />
       </div>
     </div>
   )
@@ -352,7 +354,7 @@ export default function DashboardContent({
         })}
       </section>
 
-      <KcpSummary />
+      <KcpSummary data={analytics.kcp} />
 
       {activeDialogTitle && (
         <div
@@ -421,7 +423,7 @@ export default function DashboardContent({
         <VerticalBarChart
           title="Форма обучения по заявлениям"
           subtitle="Очная, заочная, очно-заочная"
-          data={MANUAL_FORM_DATA}
+          data={analytics.byApplicationForm.length > 0 ? analytics.byApplicationForm : MANUAL_FORM_DATA}
           loading={loading}
           currentYear={currentAcademicYear}
           previousYear={previousAcademicYear}
@@ -443,3 +445,4 @@ export default function DashboardContent({
     </>
   )
 }
+

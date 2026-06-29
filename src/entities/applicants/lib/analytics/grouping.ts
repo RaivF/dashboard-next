@@ -49,6 +49,19 @@ export function groupBy(items: ApplicantStatistic[], field: keyof ApplicantStati
   return Array.from(map, ([name, bucket]) => ({ name, quantity: bucketQuantity(bucket) })).sort(sortByQuantityDesc)
 }
 
+export function groupByQuantity(items: ApplicantStatistic[], field: keyof ApplicantStatistic): QuantityItem[] {
+  const map = new Map<string, number>()
+
+  items.forEach((item) => {
+    const key = displayValue(item[field])
+    if (key === 'РќРµ СѓРєР°Р·Р°РЅРѕ') return
+
+    map.set(key, (map.get(key) || 0) + numberValue(item.quantity))
+  })
+
+  return Array.from(map, ([name, quantity]) => ({ name, quantity })).sort(sortByQuantityDesc)
+}
+
 export function groupByFunding(items: ApplicantStatistic[]): QuantityItem[] {
   if (items.length === 0) return []
 

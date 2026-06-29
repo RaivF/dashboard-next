@@ -47,13 +47,13 @@ export default function ChartTooltip({ active, payload, label }: ChartTooltipPro
             className={`chart-tooltip__item${isMissing ? ' chart-tooltip__item--muted' : ''}`}
             key={`${item.dataKey}-${item.name}`}
           >
-            <span>{item.name || item.payload?.name || 'Р—Р°СЏРІРѕРє'}</span>
-            <strong>{isMissing ? 'РќРµС‚ РґР°РЅРЅС‹С…' : formatNumber(item.value)}</strong>
+            <span>{item.name || item.payload?.name || 'Запись'}</span>
+            <strong>{isMissing ? 'Нет данных' : formatNumber(item.value)}</strong>
           </div>
         )
       })}
       {tooltipPayload?.previousFullLabel && (
-        <div className="chart-tooltip__note">РџСЂРѕС€Р»С‹Р№ РіРѕРґ: {tooltipPayload.previousFullLabel}</div>
+        <div className="chart-tooltip__note">Прошлый год: {tooltipPayload.previousFullLabel}</div>
       )}
     </div>
   )

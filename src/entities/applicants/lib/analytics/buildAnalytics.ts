@@ -4,7 +4,7 @@ import { countUniqueApplicants, numberValue } from './normalizers.js'
 import { formatDateRange, fullDate } from './format.js'
 import { filterItemsByRange, getRangeWindow } from './range.js'
 import { buildChartSeries } from './chartSeries.js'
-import { groupApplicantsByDate, groupBy, groupByFunding, groupByMethod, groupBySpecialty, groupPriority, isFirstPriority, isRankedSpecialty, sortByQuantityDesc } from './grouping.js'
+import { groupApplicantsByDate, groupBy, groupByFunding, groupByMethod, groupByQuantity, groupBySpecialty, groupPriority, isFirstPriority, isRankedSpecialty, sortByQuantityDesc } from './grouping.js'
 import { buildPreviousYearChartSeries, buildPreviousYearComparison, filterItemsByWindow, getPreviousYearWindow, shiftUtcDateYears } from './previousYear.js'
 import { normalizeAdmissionControlNumbers } from './kcp.js'
 import type { AnalyticsResult, ApplicantStatistic, ChartRange, ChartPoint } from './types.js'
@@ -106,9 +106,11 @@ export function buildAnalytics(
   }
   const previousYearByDate = buildPreviousYearChartSeries(response, byDate, range)
   const previousYearWindowItems = getPreviousYearWindow(response, rangeWindow).items
-  const fundingItems = hasManualFundingData
-    ? filterItemsByRange(manualFundingItems, range, selectedDate)
-    : items
+  const fundingItems = items.length > 0
+    ? items
+    : hasManualFundingData
+      ? filterItemsByRange(manualFundingItems, range, selectedDate)
+      : items
   const previousYearFundingItems = hasManualPreviousYearFundingData
     ? filterItemsByWindow(
       manualPreviousYearFundingItems,
@@ -118,6 +120,8 @@ export function buildAnalytics(
     : previousYearWindowItems
   const byFunding = groupByFunding(fundingItems)
   const previousYearByFunding = groupByFunding(previousYearFundingItems)
+  const applicationFormItems = numberValue(manualSummary.applicationsTotal) ? allItems : items
+  const byApplicationForm = groupByQuantity(applicationFormItems, 'form_of_education')
   const byForm = groupBy(items, 'form_of_education')
   const previousYearByForm = groupBy(previousYearWindowItems, 'form_of_education')
   const byDegree = groupBy(items, 'degree_type')
@@ -177,6 +181,7 @@ export function buildAnalytics(
     personal,
     byDate,
     previousYearByDate,
+    byApplicationForm,
     byFunding,
     previousYearByFunding,
     byForm,

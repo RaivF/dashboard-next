@@ -1,7 +1,7 @@
 import axios from 'axios'
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 
-const DEFAULT_TIMEOUT_MS = 20000
+const DEFAULT_TIMEOUT_MS = 45000
 
 function getApiBaseUrl() {
   return import.meta.env?.VITE_API_BASE_URL || ''

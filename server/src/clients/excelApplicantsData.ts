@@ -279,17 +279,37 @@ function rowToApplicantStatistic(row: WorksheetRow, headers: HeaderRow): Applica
 function findWorkbookPath(dataDir: string): string | null {
   if (!existsSync(dataDir)) return null
 
-  const candidates = readdirSync(dataDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .map((entry) => entry.name)
-    .filter((name) => /\.xlsx$/i.test(name))
-    .filter((name) => !name.startsWith('~$') && !name.startsWith('unique_people_'))
-    .filter((name) => !['UGSN_INFO.xlsx', 'manual-dashboard-data.xlsx', 'manual-dashboard-data-2025.xlsx'].includes(name))
-    .sort((a, b) => a.localeCompare(b, 'ru'))
+  const collectCandidates = (dir: string): string[] => readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const entryPath = path.join(dir, entry.name)
+
+      if (entry.isDirectory()) return collectCandidates(entryPath)
+      if (!entry.isFile()) return []
+
+      return [entryPath]
+    })
+
+  const candidates = collectCandidates(dataDir)
+    .map((filePath) => ({
+      filePath,
+      name: path.basename(filePath),
+      relativePath: path.relative(dataDir, filePath),
+    }))
+    .filter(({ name }) => /\.xlsx$/i.test(name))
+    .filter(({ name }) => !name.startsWith('~$') && !name.startsWith('unique_people_'))
+    .filter(({ name }) => !['UGSN_INFO.xlsx', 'manual-dashboard-data.xlsx', 'manual-dashboard-data-2025.xlsx'].includes(name))
+    .sort((a, b) => {
+      const aIsCombined = a.name === 'combined_applications.xlsx'
+      const bIsCombined = b.name === 'combined_applications.xlsx'
+
+      if (aIsCombined !== bIsCombined) return aIsCombined ? -1 : 1
+
+      return a.relativePath.localeCompare(b.relativePath, 'ru')
+    })
 
   if (candidates.length === 0) return null
 
-  return path.join(dataDir, candidates[0])
+  return candidates[0].filePath
 }
 
 export function isExcelApplicantsSourceEnabled(env: ServerEnvironment = process.env): boolean {
