@@ -45,8 +45,15 @@ const CAMPUS_POINTS = [
     id: 'library',
     title: 'Библиотека',
     caption: 'учебный корпус',
-    coordinates: [35.372422, 46.847241],
+    coordinates: [35.372956, 46.847047],
     accent: '#16a34a',
+  },
+  {
+    id: 'canteen',
+    title: 'Столовая',
+    caption: 'питание',
+    coordinates: [35.372422, 46.847241],
+    accent: '#ea580c',
   },
   {
     id: 'sport',
@@ -68,6 +75,41 @@ const CAMPUS_POINTS = [
     caption: 'учебный корпус',
     coordinates: [35.370347, 46.844609],
     accent: '#0f766e',
+  },
+  {
+    id: 'youth-center',
+    title: 'Молодёжный центр',
+    caption: 'корпус',
+    coordinates: [35.371926, 46.846351],
+    accent: '#0891b2',
+  },
+  {
+    id: 'building-9',
+    title: 'Корпус №9',
+    caption: 'учебный корпус',
+    coordinates: [35.373311, 46.845219],
+    accent: '#4f46e5',
+  },
+  {
+    id: 'building-7',
+    title: 'Корпус №7',
+    caption: 'учебный корпус',
+    coordinates: [35.372477, 46.845238],
+    accent: '#db2777',
+  },
+  {
+    id: 'building-5',
+    title: 'Корпус №5',
+    caption: 'учебный корпус',
+    coordinates: [35.371856, 46.845416],
+    accent: '#65a30d',
+  },
+  {
+    id: 'building-4',
+    title: 'Корпус №4',
+    caption: 'учебный корпус',
+    coordinates: [35.371872, 46.845913],
+    accent: '#9333ea',
   },
 ] satisfies CampusPoint[]
 

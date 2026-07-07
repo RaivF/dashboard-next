@@ -114,6 +114,15 @@ const currentPeopleDates = [
   '07.07.2026',
 ]
 const currentPeople = [132, 141, 119, 176, 118, 125, 88, 200, 236, 211, 216, 360, 134, 241, 100]
+const previousPeopleDates = currentPeopleDates.map((date) => date.replace('2026', '2025'))
+const previousPeople = [35, 42, 23, 72, 21, 26, 8, 96, 139, 112, 120, 256, 37, 142, 15]
+
+const fundingDates = ['20.06.2026', '21.06.2026', '22.06.2026', '23.06.2026', '24.06.2026', '25.06.2026', '26.06.2026', '27.06.2026', '28.06.2026', '29.06.2026', '30.06.2026', '01.07.2026', '02.07.2026', '03.07.2026', '04.07.2026', '05.07.2026', '06.07.2026', '07.07.2026']
+const previousFundingDates = fundingDates.map((date) => date.replace('2026', '2025'))
+const previousFundingBudget = [138, 10, 118, 133, 150, 119, 108, 97, 15, 232, 254, 233, 232, 156, 123, 9, 178, 37]
+const previousFundingPaid = [4, 2, 2, 3, 3, 2, 5, 3, 2, 10, 9, 6, 9, 4, 5, 3, 6, 1]
+const previousFundingEmpty = previousFundingDates.map(() => 0)
+const previousFundingTotals = previousFundingBudget.map((quantity, index) => quantity + previousFundingPaid[index])
 
 writeWorkbook(path.resolve('DATA/manual-dashboard-data.xlsx'), [
   {
@@ -182,23 +191,23 @@ writeWorkbook(path.resolve('DATA/manual-dashboard-data-2025.xlsx'), [
   {
     name: 'Физ лица',
     rows: [
-      ['Уровень', '20.06.2025', '21.06.2025', '22.06.2025', '23.06.2025', '24.06.2025', '25.06.2025', '26.06.2025', '27.06.2025'],
-      ['Аспирантура', '', '', '', '', '', '', '', ''],
-      ['ВО', 196, 67, 0, 145, 170, 181, 120, 80],
-      ['СПО', '', '', '', '', '', '', '', ''],
-      ['Итого', 196, 67, 0, 145, 170, 181, 120, 80],
+      ['Уровень', ...previousPeopleDates],
+      ['Аспирантура', ...previousPeopleDates.map(() => '')],
+      ['ВО', ...previousPeople],
+      ['СПО', ...previousPeopleDates.map(() => '')],
+      ['Итого', ...previousPeople],
     ],
   },
   {
     name: 'Основание обучения',
     rows: [
-      ['Категория', '20.06.2025', '21.06.2025', '22.06.2025', '23.06.2025', '24.06.2025', '25.06.2025', '26.06.2025', '27.06.2025'],
-      ['Бюджетная основа', 175, 52, 0, 130, 192, 159, '', ''],
-      ['Платное обучение', 21, 15, 0, 15, 29, 22, '', ''],
-      ['Целевая квота', '', '', '', '', '', '', '', ''],
-      ['Отдельная квота', '', '', '', '', '', '', '', ''],
-      ['Особая квота', '', '', '', '', '', '', '', ''],
-      ['Итого', 196, 67, 0, 145, 221, 181, 120, 80],
+      ['Категория', ...previousFundingDates],
+      ['Бюджетная основа', ...previousFundingBudget],
+      ['Платное обучение', ...previousFundingPaid],
+      ['Целевая квота', ...previousFundingEmpty],
+      ['Отдельная квота', ...previousFundingEmpty],
+      ['Особая квота', ...previousFundingEmpty],
+      ['Итого', ...previousFundingTotals],
     ],
   },
 ])

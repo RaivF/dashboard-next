@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useApplicantsStatistics } from '../../../entities/applicants/model/useApplicantsStatistics.js'
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
+import { buildUnusedSpecialties } from '../../../entities/applicants/lib/analytics/unusedSpecialties.js'
+import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
 import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.js'
@@ -24,7 +26,15 @@ export default function DashboardPage() {
     loading,
     refresh,
   } = useApplicantsStatistics(period)
+  const {
+    rows: specialties,
+    loading: specialtiesLoading,
+  } = useSpecialties()
   const analytics = useMemo(() => buildAnalytics(response, range, selectedDate), [response, range, selectedDate])
+  const unusedSpecialties = useMemo(
+    () => buildUnusedSpecialties(specialties, analytics.allItems),
+    [analytics.allItems, specialties],
+  )
   const selectedRange = getRangeLabel(range)
 
   return (
@@ -49,6 +59,8 @@ export default function DashboardPage() {
         campaignYear={campaignYear}
         loading={loading}
         selectedRange={selectedRange}
+        unusedSpecialties={unusedSpecialties}
+        unusedSpecialtiesLoading={specialtiesLoading}
         showPreviousYearOverlay={showPreviousYearOverlay}
         setShowPreviousYearOverlay={setShowPreviousYearOverlay}
         showPreviousYearFunding={showPreviousYearFunding}

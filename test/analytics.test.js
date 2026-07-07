@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { buildMockResponse } from '../server/mockData.js'
 import { buildAnalytics } from '../src/entities/applicants/lib/analytics.js'
+import { buildUnusedSpecialties } from '../src/entities/applicants/lib/analytics/unusedSpecialties.js'
 
 describe('analytics', () => {
   it('builds full-year mock analytics with previous-year comparison', () => {
@@ -441,6 +442,33 @@ describe('analytics', () => {
       { name: 'Лично', quantity: 0 },
       { name: 'Онлайн-каналы', quantity: 18 },
       { name: 'Почта', quantity: 0 },
+    ])
+  })
+
+  it('builds zero-application specialties from the specialties reference', () => {
+    const specialties = [
+      { code: '09.03.01', name: 'Информатика', level: 'Бакалавриат' },
+      { code: '38.03.01', name: 'Экономика', level: 'Бакалавриат' },
+      { code: '44.03.05', name: 'Педагогическое образование', level: 'Бакалавриат' },
+    ]
+    const applications = [
+      {
+        specialty: { code: '09.03.01', name: 'Другое имя в источнике' },
+        quantity: 1,
+      },
+      {
+        specialty: { code: '', name: 'Экономика' },
+        quantity: 1,
+      },
+    ]
+
+    assert.deepEqual(buildUnusedSpecialties(specialties, applications), [
+      {
+        name: 'Педагогическое образование',
+        code: '44.03.05',
+        caption: 'Код: 44.03.05 • Бакалавриат',
+        quantity: 0,
+      },
     ])
   })
 })

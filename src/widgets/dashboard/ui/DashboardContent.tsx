@@ -63,6 +63,7 @@ type DashboardAnalytics = {
   byDegree: NamedQuantity[]
   byPriority: NamedQuantity[]
   firstPrioritySpecialties: NamedQuantity[]
+  allItems: unknown[]
 }
 
 type StatDialog = 'applications' | 'admissionPlaces'
@@ -291,6 +292,8 @@ type DashboardContentProps = {
   campaignYear: number
   loading: boolean
   selectedRange: string
+  unusedSpecialties: NamedQuantity[]
+  unusedSpecialtiesLoading: boolean
   showPreviousYearOverlay: boolean
   setShowPreviousYearOverlay: (value: boolean) => void
   showPreviousYearFunding: boolean
@@ -302,6 +305,8 @@ export default function DashboardContent({
   campaignYear,
   loading,
   selectedRange,
+  unusedSpecialties,
+  unusedSpecialtiesLoading,
   showPreviousYearOverlay,
   setShowPreviousYearOverlay,
   showPreviousYearFunding,
@@ -440,7 +445,16 @@ export default function DashboardContent({
 
       <section className="dashboard-grid dashboard-grid--bottom">
         <DataTable title="Топ 5 самых популярных направлений" subtitle="Специальности с наибольшим количеством поступающих" data={analytics.topSpecialties} loading={loading} />
-        <DataTable title="Топ 5 самых невостребованных направлений" subtitle="Специальности с наименьшим количеством поступающих" data={analytics.bottomSpecialties} loading={loading} />
+        <DataTable title="Топ 5 направлений с минимальным числом заявлений" subtitle="Специальности, где заявления уже есть, но их меньше всего" data={analytics.bottomSpecialties} loading={loading} />
+      </section>
+
+      <section className="dashboard-grid dashboard-grid--unused">
+        <DataTable
+          title="Невостребованные направления"
+          subtitle="Направления из справочника специальностей, где сейчас 0 заявлений"
+          data={unusedSpecialties}
+          loading={loading || unusedSpecialtiesLoading}
+        />
       </section>
     </>
   )

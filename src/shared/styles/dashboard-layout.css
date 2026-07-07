@@ -756,6 +756,28 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.dashboard-grid--unused {
+  grid-template-columns: 1fr;
+}
+
+.dashboard-grid--unused .table-list {
+  overflow: auto;
+  max-height: min(62vh, 720px);
+  padding-right: 6px;
+  scrollbar-gutter: stable;
+}
+
+.dashboard-grid--unused .table-list::-webkit-scrollbar {
+  width: 10px;
+}
+
+.dashboard-grid--unused .table-list::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--blue) 55%, var(--muted));
+  background-clip: content-box;
+}
+
 .panel {
   border-radius: 32px;
   padding: 24px;
