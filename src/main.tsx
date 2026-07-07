@@ -11,6 +11,8 @@ if (!root) {
   throw new Error('Root element not found')
 }
 
+registerOfflineSupport()
+
 createRoot(root).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -18,5 +20,3 @@ createRoot(root).render(
     </BrowserRouter>
   </React.StrictMode>,
 )
-
-registerOfflineSupport()

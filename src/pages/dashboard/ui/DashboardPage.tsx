@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useApplicantsStatistics } from '../../../entities/applicants/model/useApplicantsStatistics.js'
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
-import { warmOfflineResources } from '../../../shared/offline/offlineResources.js'
 import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.js'
 import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.js'
 
@@ -27,12 +26,6 @@ export default function DashboardPage() {
   } = useApplicantsStatistics(period)
   const analytics = useMemo(() => buildAnalytics(response, range, selectedDate), [response, range, selectedDate])
   const selectedRange = getRangeLabel(range)
-
-  useEffect(() => {
-    warmOfflineResources().catch((warmupError: unknown) => {
-      console.warn('Offline resources warmup failed:', warmupError)
-    })
-  }, [])
 
   return (
     <>

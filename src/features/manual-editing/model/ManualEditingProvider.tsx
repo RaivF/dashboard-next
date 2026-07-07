@@ -25,8 +25,6 @@ type ManualEditingProviderProps = {
   pageKey: string
 }
 
-const LOCAL_STORAGE_KEY = 'university-dashboard-manual-edits'
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
@@ -57,18 +55,6 @@ function normalizeStore(value: unknown): ManualEditsStore {
     version: 1,
     pages,
   }
-}
-
-function readLocalStore(): ManualEditsStore {
-  try {
-    return normalizeStore(JSON.parse(window.localStorage.getItem(LOCAL_STORAGE_KEY) || 'null'))
-  } catch {
-    return createEmptyManualEditsStore()
-  }
-}
-
-function writeLocalStore(store: ManualEditsStore) {
-  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(store))
 }
 
 function isElement(value: EventTarget | null): value is Element {
@@ -171,19 +157,18 @@ export function ManualEditingProvider({ children, editablePages, pageKey }: Manu
         const normalizedStore = normalizeStore(remoteStore)
         storeRef.current = normalizedStore
         setStore(normalizedStore)
-        writeLocalStore(normalizedStore)
         setSaveState('idle')
       })
       .catch((error: unknown) => {
-        console.warn('Manual edits load failed, using local copy:', error)
+        console.warn('Manual edits load failed:', error)
         if (!mounted) return
         if (hasUnsavedChangesRef.current) {
           setSaveState('dirty')
           return
         }
-        const localStore = readLocalStore()
-        storeRef.current = localStore
-        setStore(localStore)
+        const emptyStore = createEmptyManualEditsStore()
+        storeRef.current = emptyStore
+        setStore(emptyStore)
         setSaveState('error')
       })
 
@@ -235,7 +220,6 @@ export function ManualEditingProvider({ children, editablePages, pageKey }: Manu
       storeRef.current = normalizedStore
       hasUnsavedChangesRef.current = false
       setStore(normalizedStore)
-      writeLocalStore(normalizedStore)
       setHasUnsavedChanges(false)
       setSaveState('saved')
     } catch (error) {

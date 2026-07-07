@@ -1,68 +1,53 @@
-import { OFFLINE_CACHE_URLS, warmOfflineResources } from './offlineResources.js'
+const CACHE_PREFIX = 'university-dashboard'
+const OFFLINE_DB_NAME = 'university-dashboard-offline'
+const RELOAD_KEY = 'dashboard-browser-cache-cleanup-reloaded'
 
-function postWarmCacheMessage(registration: ServiceWorkerRegistration) {
-  const worker = registration.active || registration.waiting || registration.installing
-  worker?.postMessage({
-    type: 'WARM_OFFLINE_CACHE',
-    urls: OFFLINE_CACHE_URLS,
+function deleteOfflineDatabase(): Promise<void> {
+  if (!('indexedDB' in window)) return Promise.resolve()
+
+  return new Promise((resolve) => {
+    const request = indexedDB.deleteDatabase(OFFLINE_DB_NAME)
+    request.onsuccess = () => resolve()
+    request.onerror = () => resolve()
+    request.onblocked = () => resolve()
   })
 }
 
-async function cleanupDevelopmentOfflineCache() {
-  if (!('serviceWorker' in navigator)) return false
+async function cleanupBrowserCache() {
+  const registrations = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : []
+  const hadController = 'serviceWorker' in navigator && Boolean(navigator.serviceWorker.controller)
 
-  const hadController = Boolean(navigator.serviceWorker.controller)
-
-  const registrations = await navigator.serviceWorker.getRegistrations()
   await Promise.allSettled(registrations.map((registration) => registration.unregister()))
 
   if ('caches' in window) {
     const cacheNames = await caches.keys()
     await Promise.allSettled(
       cacheNames
-        .filter((cacheName) => cacheName.startsWith('university-dashboard'))
+        .filter((cacheName) => cacheName.startsWith(CACHE_PREFIX))
         .map((cacheName) => caches.delete(cacheName)),
     )
   }
 
-  return hadController
+  await deleteOfflineDatabase()
+
+  return hadController || registrations.length > 0
 }
 
 export function registerOfflineSupport() {
-  if (!import.meta.env.PROD) {
-    window.addEventListener('load', () => {
-      cleanupDevelopmentOfflineCache()
-        .then((shouldReload) => {
-          const reloadKey = 'dashboard-dev-offline-cleanup-reloaded'
-          if (!shouldReload) {
-            sessionStorage.removeItem(reloadKey)
-            return
-          }
-
-          if (sessionStorage.getItem(reloadKey)) return
-          sessionStorage.setItem(reloadKey, '1')
-          window.location.reload()
-        })
-        .catch((error: unknown) => {
-          console.warn('Offline cache cleanup failed:', error)
-        })
-    })
-    return
-  }
-
-  if (!('serviceWorker' in navigator)) return
-
   window.addEventListener('load', () => {
-    navigator.serviceWorker
-      .register('/offline-sw.js')
-      .then(async (registration) => {
-        postWarmCacheMessage(registration)
-        await navigator.serviceWorker.ready
-        postWarmCacheMessage(registration)
-        await warmOfflineResources()
+    cleanupBrowserCache()
+      .then((shouldReload) => {
+        if (!shouldReload) {
+          sessionStorage.removeItem(RELOAD_KEY)
+          return
+        }
+
+        if (sessionStorage.getItem(RELOAD_KEY)) return
+        sessionStorage.setItem(RELOAD_KEY, '1')
+        window.location.reload()
       })
       .catch((error: unknown) => {
-        console.warn('Offline cache registration failed:', error)
+        console.warn('Browser cache cleanup failed:', error)
       })
   })
 }

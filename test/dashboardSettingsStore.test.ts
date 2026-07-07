@@ -1,38 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-function createMemoryStorage(): Storage {
-  const entries = new Map<string, string>()
-
-  return {
-    get length() {
-      return entries.size
-    },
-    clear: () => entries.clear(),
-    getItem: (key) => entries.get(key) ?? null,
-    key: (index) => Array.from(entries.keys())[index] ?? null,
-    removeItem: (key) => entries.delete(key),
-    setItem: (key, value) => entries.set(key, value),
-  }
-}
-
-const memoryStorage = createMemoryStorage()
-
-Object.defineProperty(globalThis, 'localStorage', {
-  configurable: true,
-  value: memoryStorage,
-})
-
 const {
   getCampaignYear,
   useDashboardSettingsStore,
 } = await import('../src/features/dashboard-settings/model/dashboardSettingsStore.js')
-
-const originalWarn = console.warn
-console.warn = (...args: unknown[]) => {
-  if (String(args[0]).includes('dashboard-settings-state')) return
-  originalWarn(...args)
-}
 
 describe('dashboard settings store', () => {
   it('clamps campaign year and resets selected date when campaign changes', () => {
