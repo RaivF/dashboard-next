@@ -111,6 +111,41 @@ const CAMPUS_POINTS = [
     coordinates: [35.371872, 46.845913],
     accent: '#9333ea',
   },
+  {
+    id: 'dormitory-1',
+    title: 'Общежитие 1',
+    caption: 'студенческий блок',
+    coordinates: [35.380633, 46.85805],
+    accent: '#7c3aed',
+  },
+  {
+    id: 'dormitory-2',
+    title: 'Общежитие 2',
+    caption: 'студенческий блок',
+    coordinates: [35.381414, 46.858149],
+    accent: '#8b5cf6',
+  },
+  {
+    id: 'dormitory-3',
+    title: 'Общежитие 3',
+    caption: 'студенческий блок',
+    coordinates: [35.363592, 46.83228],
+    accent: '#a855f7',
+  },
+  {
+    id: 'dormitory-4',
+    title: 'Общежитие 4',
+    caption: 'студенческий блок',
+    coordinates: [35.366592, 46.833304],
+    accent: '#c026d3',
+  },
+  {
+    id: 'dormitory-5',
+    title: 'Общежитие 5',
+    caption: 'студенческий блок',
+    coordinates: [35.35565, 46.834925],
+    accent: '#d946ef',
+  },
 ] satisfies CampusPoint[]
 
 type Coordinates = [number, number]
@@ -250,6 +285,7 @@ export default function CampusMapPage() {
   const cameraRef = useRef<CameraState>(INITIAL_CAMERA)
   const [status, setStatus] = useState<CampusMapStatus>(MAP_API_KEY ? 'idle' : 'missing-key')
   const [camera, setCamera] = useState<CameraState>(INITIAL_CAMERA)
+  const [areMarkersVisible, setAreMarkersVisible] = useState(true)
   const [loadAttempt, setLoadAttempt] = useState(0)
 
   useEffect(() => {
@@ -383,7 +419,10 @@ export default function CampusMapPage() {
   }
 
   return (
-    <section className="campus-map" aria-label="3D-карта кампуса">
+    <section
+      className={`campus-map${areMarkersVisible ? '' : ' campus-map--markers-hidden'}`}
+      aria-label="3D-карта кампуса"
+    >
       <div className="campus-map__surface">
         <div ref={rootRef} className="campus-map__canvas" />
 
@@ -407,6 +446,18 @@ export default function CampusMapPage() {
             )}
           </div>
         )}
+
+        <label className="campus-map__markers-toggle">
+          <input
+            type="checkbox"
+            checked={areMarkersVisible}
+            onChange={(event) => setAreMarkersVisible(event.target.checked)}
+          />
+          <span className="campus-map__markers-toggle-track" aria-hidden="true">
+            <span />
+          </span>
+          <span>Метки</span>
+        </label>
 
         <div className="campus-map__tools" aria-label="Управление камерой">
           <button type="button" onClick={() => updateCamera({ azimuth: camera.azimuth - 30 })} title="Повернуть влево" aria-label="Повернуть карту влево">

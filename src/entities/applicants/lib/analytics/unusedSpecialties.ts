@@ -17,6 +17,15 @@ function specialtyKeys(code: unknown, name: unknown): string[] {
   return keys
 }
 
+function isAllowedUnusedSpecialtyLevel(specialty: SpecialtyRow): boolean {
+  const levelCode = normalizeKeyPart(specialty.code).split('.')[1]
+
+  if (levelCode) return levelCode === '03' || levelCode === '04'
+
+  const level = normalizeKeyPart(specialty.level)
+  return level === 'бакалавриат' || level === 'магистратура'
+}
+
 export function buildUnusedSpecialties(
   specialties: SpecialtyRow[],
   applications: ApplicantStatistic[],
@@ -29,6 +38,7 @@ export function buildUnusedSpecialties(
   })
 
   return specialties
+    .filter(isAllowedUnusedSpecialtyLevel)
     .filter((specialty) => {
       const keys = specialtyKeys(specialty.code, specialty.name)
       return keys.length > 0 && keys.every((key) => !occupiedKeys.has(key))

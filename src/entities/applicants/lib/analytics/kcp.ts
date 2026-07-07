@@ -3,7 +3,7 @@ import { normalizeSpecialty } from './grouping.js'
 import type { AdmissionControlNumbers, AdmissionDirectionPlan, AdmissionDirectionStats, AnalyticsRecord, ApplicantStatistic, QuantityItem } from './types.js'
 import { isAnalyticsRecord } from './types.js'
 
-const DEFAULT_KCP_PERCENT = 50
+const DEFAULT_KCP_PERCENT = 48
 
 function readArray(source: AnalyticsRecord, keys: string[]): unknown[] {
   for (const key of keys) {

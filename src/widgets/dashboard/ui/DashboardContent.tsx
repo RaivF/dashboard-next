@@ -152,6 +152,21 @@ const TARGET_ADMISSION_PARTNERS: NamedQuantity[] = [
 ]
 
 const TARGET_ADMISSION_OFFERS_TOTAL = TARGET_ADMISSION_PARTNERS.reduce((sum, partner) => sum + partner.quantity, 0)
+const TARGET_FUNDING_QUOTA_NAME = 'Целевая квота'
+
+function withTargetFundingQuota(rows: NamedQuantity[]): NamedQuantity[] {
+  let hasTargetQuota = false
+  const updatedRows = rows.map((row) => {
+    if (row.name !== TARGET_FUNDING_QUOTA_NAME) return row
+
+    hasTargetQuota = true
+    return { ...row, quantity: TARGET_ADMISSION_OFFERS_TOTAL }
+  })
+
+  return hasTargetQuota
+    ? updatedRows
+    : [...updatedRows, { name: TARGET_FUNDING_QUOTA_NAME, quantity: TARGET_ADMISSION_OFFERS_TOTAL }]
+}
 
 const STAT_CARDS: StatCardDefinition[] = [
   {
@@ -160,16 +175,11 @@ const STAT_CARDS: StatCardDefinition[] = [
     getCaption: () => 'Суммарное количество',
     icon: FileText,
     tone: 'blue',
-    dialog: {
-      id: 'applications',
-      ariaLabel: 'Открыть подробную информацию по всем заявлениям',
-      title: 'Подробная информация по всем заявлениям',
-    },
   },
   {
     title: 'Физических лиц',
     getValue: (analytics) => (analytics.total > 0 ? analytics.total : 'Пусто'),
-    getCaption: () => 'В среднем 3.2 заявления на человека',
+    getCaption: () => 'В среднем 3.3 заявления на человека',
     icon: Users,
     tone: 'indigo',
   },
@@ -231,12 +241,12 @@ function KcpSummary({ data }: { data: DashboardAnalytics['kcp'] }) {
           <p>Контрольные цифры приёма</p>
         </div>
         <div className="kcp-panel__header-actions">
-          <strong>{hasKcpData ? '50%' : 'Нет данных'}</strong>
+          <strong>{hasKcpData ? '48%' : 'Нет данных'}</strong>
         </div>
       </div>
 
-      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${hasKcpData ? '50%' : 'Нет данных'}`}>
-        <span className="kcp-panel__fill" style={{ width: hasKcpData ? '50%' : '0%' }} />
+      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${hasKcpData ? '48%' : 'Нет данных'}`}>
+        <span className="kcp-panel__fill" style={{ width: hasKcpData ? '48%' : '0%' }} />
       </div>
     </section>
   )
@@ -273,7 +283,7 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
         <DialogMetric label="Физических лиц" value={analytics.total} />
         <DialogMetric
           label="В среднем"
-          value="3.2"
+          value="3.3"
           caption="заявления на человека"
         />
       </div>
@@ -316,6 +326,7 @@ export default function DashboardContent({
   const previousAcademicYear = formatAcademicYear(Number(campaignYear) - 1)
   const currentCalendarYearValue = analytics.rangeEnd?.getUTCFullYear?.()
   const currentCalendarYear = currentCalendarYearValue ? String(currentCalendarYearValue) : ''
+  const fundingRows = withTargetFundingQuota(analytics.byFunding)
   const previousCalendarYear = String(
     analytics.previousYearComparison.previousYear ||
       (currentCalendarYearValue ? currentCalendarYearValue - 1 : ''),
@@ -412,7 +423,7 @@ export default function DashboardContent({
         <DonutChart
           title="Основание обучения"
           subtitle="Бюджет, платное обучение, целевой приём, отдельная и особая квоты"
-          data={analytics.byFunding}
+          data={fundingRows}
           loading={loading}
           previousYearData={analytics.previousYearByFunding}
           showPreviousYear={showPreviousYearFunding}

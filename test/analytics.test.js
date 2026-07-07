@@ -4,6 +4,10 @@ import { buildMockResponse } from '../server/mockData.js'
 import { buildAnalytics } from '../src/entities/applicants/lib/analytics.js'
 import { buildUnusedSpecialties } from '../src/entities/applicants/lib/analytics/unusedSpecialties.js'
 
+function assertClose(actual, expected) {
+  assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} should be close to ${expected}`)
+}
+
 describe('analytics', () => {
   it('builds full-year mock analytics with previous-year comparison', () => {
     const response = buildMockResponse('2025-01')
@@ -15,13 +19,13 @@ describe('analytics', () => {
     assert.ok(analytics.total > 0)
     assert.ok(analytics.previousYearComparison.previous > 0)
     assert.ok(response.admission_control_numbers.total > 0)
-    assert.equal(analytics.kcp.plan, analytics.kcp.current * 2)
+    assert.equal(analytics.kcp.plan, analytics.kcp.current * 100 / 48)
     assert.equal(
       analytics.kcp.current,
       response.applicants_statistics.reduce((sum, item) => sum + item.quantity, 0),
     )
-    assert.equal(analytics.kcp.percent, 50)
-    assert.equal(analytics.kcp.fillPercent, 50)
+    assertClose(analytics.kcp.percent, 48)
+    assertClose(analytics.kcp.fillPercent, 48)
     assert.equal(
       response.admission_control_numbers.directions.reduce((sum, item) => sum + item.quantity, 0),
       response.admission_control_numbers.total,
@@ -155,11 +159,11 @@ describe('analytics', () => {
     const analytics = buildAnalytics(response, 'day', new Date(2025, 0, 1))
 
     assert.equal(analytics.total, 120)
-    assert.equal(analytics.kcp.plan, 300)
+    assert.equal(analytics.kcp.plan, 312.5)
     assert.equal(analytics.kcp.current, 150)
-    assert.equal(analytics.kcp.percent, 50)
-    assert.equal(analytics.kcp.fillPercent, 50)
-    assert.equal(analytics.kcp.remaining, 150)
+    assert.equal(analytics.kcp.percent, 48)
+    assert.equal(analytics.kcp.fillPercent, 48)
+    assert.equal(analytics.kcp.remaining, 162.5)
     assert.equal(analytics.kcp.overflow, 0)
     assert.equal(analytics.kcp.hasPlan, true)
     assert.deepEqual(analytics.kcp.directions, [
@@ -186,7 +190,7 @@ describe('analytics', () => {
     ])
   })
 
-  it('uses the default 50 percent KCP value when no plan is provided', () => {
+  it('uses the default 48 percent KCP value when no plan is provided', () => {
     const response = {
       applicants_statistics: [
         { date: '2026-06-20T10:00:00', applicant_id: '101', quantity: 1 },
@@ -200,9 +204,9 @@ describe('analytics', () => {
     const analytics = buildAnalytics(response, 'all', null)
 
     assert.equal(analytics.kcp.current, 3)
-    assert.equal(analytics.kcp.plan, 6)
-    assert.equal(analytics.kcp.percent, 50)
-    assert.equal(analytics.kcp.fillPercent, 50)
+    assert.equal(analytics.kcp.plan, 6.25)
+    assert.equal(analytics.kcp.percent, 48)
+    assert.equal(analytics.kcp.fillPercent, 48)
     assert.equal(analytics.kcp.hasPlan, true)
   })
 
@@ -451,6 +455,8 @@ describe('analytics', () => {
       { code: '09.03.01', name: 'Информатика', level: 'Бакалавриат' },
       { code: '38.03.01', name: 'Экономика', level: 'Бакалавриат' },
       { code: '44.03.05', name: 'Педагогическое образование', level: 'Бакалавриат' },
+      { code: '35.04.01', name: 'Лесное дело', level: 'Магистратура' },
+      { code: '06.06.01', name: 'Биологические науки', level: 'Аспирантура' },
     ]
     const applications = [
       {
@@ -468,6 +474,12 @@ describe('analytics', () => {
         name: 'Педагогическое образование',
         code: '44.03.05',
         caption: 'Код: 44.03.05 • Бакалавриат',
+        quantity: 0,
+      },
+      {
+        name: 'Лесное дело',
+        code: '35.04.01',
+        caption: 'Код: 35.04.01 • Магистратура',
         quantity: 0,
       },
     ])
