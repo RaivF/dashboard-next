@@ -115,14 +115,23 @@ const currentPeopleDates = [
 ]
 const currentPeople = [132, 141, 119, 176, 118, 125, 88, 200, 236, 211, 216, 360, 134, 241, 100]
 const previousPeopleDates = currentPeopleDates.map((date) => date.replace('2026', '2025'))
-const previousPeople = [35, 42, 23, 72, 21, 26, 8, 96, 139, 112, 120, 256, 37, 142, 15]
+const previousPeople = [49, 34, 58, 64, 19, 51, 12, 137, 91, 129, 74, 252, 43, 118, 27]
 
 const fundingDates = ['20.06.2026', '21.06.2026', '22.06.2026', '23.06.2026', '24.06.2026', '25.06.2026', '26.06.2026', '27.06.2026', '28.06.2026', '29.06.2026', '30.06.2026', '01.07.2026', '02.07.2026', '03.07.2026', '04.07.2026', '05.07.2026', '06.07.2026', '07.07.2026']
 const previousFundingDates = fundingDates.map((date) => date.replace('2026', '2025'))
-const previousFundingBudget = [138, 10, 118, 133, 150, 119, 108, 97, 15, 232, 254, 233, 232, 156, 123, 9, 178, 37]
-const previousFundingPaid = [4, 2, 2, 3, 3, 2, 5, 3, 2, 10, 9, 6, 9, 4, 5, 3, 6, 1]
-const previousFundingEmpty = previousFundingDates.map(() => 0)
-const previousFundingTotals = previousFundingBudget.map((quantity, index) => quantity + previousFundingPaid[index])
+const previousFundingBudget = [139, 14, 119, 75, 153, 106, 130, 64, 4, 194, 174, 241, 78, 270, 126, 8, 226, 221]
+const previousFundingPaid = [6, 1, 7, 2, 4, 3, 9, 1, 0, 5, 7, 4, 3, 10, 2, 1, 12, 2]
+const previousFundingTarget = [0, 0, 1, 0, 2, 0, 1, 0, 0, 1, 0, 2, 0, 1, 0, 0, 2, 0]
+const previousFundingSeparate = [0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1]
+const previousFundingSpecial = [1, 0, 2, 0, 1, 0, 3, 0, 0, 1, 2, 0, 1, 0, 2, 0, 1, 1]
+const previousFundingTotals = previousFundingBudget.map(
+  (quantity, index) =>
+    quantity +
+    previousFundingPaid[index] +
+    previousFundingTarget[index] +
+    previousFundingSeparate[index] +
+    previousFundingSpecial[index],
+)
 
 writeWorkbook(path.resolve('DATA/manual-dashboard-data.xlsx'), [
   {
@@ -204,9 +213,9 @@ writeWorkbook(path.resolve('DATA/manual-dashboard-data-2025.xlsx'), [
       ['Категория', ...previousFundingDates],
       ['Бюджетная основа', ...previousFundingBudget],
       ['Платное обучение', ...previousFundingPaid],
-      ['Целевая квота', ...previousFundingEmpty],
-      ['Отдельная квота', ...previousFundingEmpty],
-      ['Особая квота', ...previousFundingEmpty],
+      ['Целевая квота', ...previousFundingTarget],
+      ['Отдельная квота', ...previousFundingSeparate],
+      ['Особая квота', ...previousFundingSpecial],
       ['Итого', ...previousFundingTotals],
     ],
   },

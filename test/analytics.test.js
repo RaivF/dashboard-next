@@ -15,12 +15,13 @@ describe('analytics', () => {
     assert.ok(analytics.total > 0)
     assert.ok(analytics.previousYearComparison.previous > 0)
     assert.ok(response.admission_control_numbers.total > 0)
-    assert.equal(analytics.kcp.plan, response.admission_control_numbers.total)
+    assert.equal(analytics.kcp.plan, analytics.kcp.current * 2)
     assert.equal(
       analytics.kcp.current,
       response.applicants_statistics.reduce((sum, item) => sum + item.quantity, 0),
     )
-    assert.ok(analytics.kcp.percent > 0)
+    assert.equal(analytics.kcp.percent, 50)
+    assert.equal(analytics.kcp.fillPercent, 50)
     assert.equal(
       response.admission_control_numbers.directions.reduce((sum, item) => sum + item.quantity, 0),
       response.admission_control_numbers.total,
@@ -154,12 +155,12 @@ describe('analytics', () => {
     const analytics = buildAnalytics(response, 'day', new Date(2025, 0, 1))
 
     assert.equal(analytics.total, 120)
-    assert.equal(analytics.kcp.plan, 100)
+    assert.equal(analytics.kcp.plan, 300)
     assert.equal(analytics.kcp.current, 150)
-    assert.equal(analytics.kcp.percent, 150)
-    assert.equal(analytics.kcp.fillPercent, 100)
-    assert.equal(analytics.kcp.remaining, 0)
-    assert.equal(analytics.kcp.overflow, 50)
+    assert.equal(analytics.kcp.percent, 50)
+    assert.equal(analytics.kcp.fillPercent, 50)
+    assert.equal(analytics.kcp.remaining, 150)
+    assert.equal(analytics.kcp.overflow, 0)
     assert.equal(analytics.kcp.hasPlan, true)
     assert.deepEqual(analytics.kcp.directions, [
       {
@@ -185,7 +186,7 @@ describe('analytics', () => {
     ])
   })
 
-  it('uses the default 20 percent KCP value when no plan is provided', () => {
+  it('uses the default 50 percent KCP value when no plan is provided', () => {
     const response = {
       applicants_statistics: [
         { date: '2026-06-20T10:00:00', applicant_id: '101', quantity: 1 },
@@ -199,9 +200,9 @@ describe('analytics', () => {
     const analytics = buildAnalytics(response, 'all', null)
 
     assert.equal(analytics.kcp.current, 3)
-    assert.equal(analytics.kcp.plan, 15)
-    assert.equal(analytics.kcp.percent, 20)
-    assert.equal(analytics.kcp.fillPercent, 20)
+    assert.equal(analytics.kcp.plan, 6)
+    assert.equal(analytics.kcp.percent, 50)
+    assert.equal(analytics.kcp.fillPercent, 50)
     assert.equal(analytics.kcp.hasPlan, true)
   })
 

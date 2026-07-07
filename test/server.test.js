@@ -24,6 +24,16 @@ function requestJson(baseUrl, path, options = {}) {
   })
 }
 
+function sumCategoryByName(days, name) {
+  return days.reduce((sum, day) => (
+    sum + (day.categories.find((category) => category.name === name)?.quantity || 0)
+  ), 0)
+}
+
+function getCategoryQuantity(day, name) {
+  return day.categories.find((category) => category.name === name)?.quantity || 0
+}
+
 describe('server', () => {
   let server
   let baseUrl
@@ -183,19 +193,27 @@ describe('server', () => {
     assert.equal(statistics.manual_bottom_specialties[0].quantity, 1)
     assert.equal(statistics.manual_previous_year_applicants_by_date.length, 15)
     assert.equal(statistics.manual_previous_year_applicants_by_date[0].date, '2025-06-20')
-    assert.equal(statistics.manual_previous_year_applicants_by_date[0].quantity, 35)
+    assert.equal(statistics.manual_previous_year_applicants_by_date[0].quantity, 49)
     assert.equal(statistics.manual_previous_year_applicants_by_date[1].date, '2025-06-22')
-    assert.equal(statistics.manual_previous_year_applicants_by_date[1].quantity, 42)
+    assert.equal(statistics.manual_previous_year_applicants_by_date[1].quantity, 34)
     assert.equal(statistics.manual_previous_year_applicants_by_date[11].date, '2025-07-03')
-    assert.equal(statistics.manual_previous_year_applicants_by_date[11].quantity, 256)
+    assert.equal(statistics.manual_previous_year_applicants_by_date[11].quantity, 252)
     assert.equal(statistics.manual_previous_year_applicants_by_date.at(-1).date, '2025-07-07')
-    assert.equal(statistics.manual_previous_year_applicants_by_date.at(-1).quantity, 15)
+    assert.equal(statistics.manual_previous_year_applicants_by_date.at(-1).quantity, 27)
     assert.equal(statistics.manual_previous_year_funding_by_date.length, 18)
-    assert.equal(statistics.manual_previous_year_funding_by_date[0].categories[0].quantity, 138)
-    assert.equal(statistics.manual_previous_year_funding_by_date[0].categories[1].quantity, 4)
+    assert.equal(sumCategoryByName(statistics.manual_previous_year_funding_by_date, 'Бюджетная основа'), 2342)
+    assert.equal(sumCategoryByName(statistics.manual_previous_year_funding_by_date, 'Платное обучение'), 79)
+    assert.equal(sumCategoryByName(statistics.manual_previous_year_funding_by_date, 'Целевая квота'), 10)
+    assert.equal(sumCategoryByName(statistics.manual_previous_year_funding_by_date, 'Отдельная квота'), 7)
+    assert.equal(sumCategoryByName(statistics.manual_previous_year_funding_by_date, 'Особая квота'), 15)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date[0], 'Бюджетная основа'), 139)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date[0], 'Платное обучение'), 6)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date[0], 'Особая квота'), 1)
     assert.equal(statistics.manual_previous_year_funding_by_date.at(-1).date, '2025-07-07')
-    assert.equal(statistics.manual_previous_year_funding_by_date.at(-1).categories[0].quantity, 37)
-    assert.equal(statistics.manual_previous_year_funding_by_date.at(-1).categories[1].quantity, 1)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date.at(-1), 'Бюджетная основа'), 221)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date.at(-1), 'Платное обучение'), 2)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date.at(-1), 'Отдельная квота'), 1)
+    assert.equal(getCategoryQuantity(statistics.manual_previous_year_funding_by_date.at(-1), 'Особая квота'), 1)
   })
 
   it('returns report data and a normalized api 404 response', async () => {

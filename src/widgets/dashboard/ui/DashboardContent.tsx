@@ -9,7 +9,7 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import DataTable from '../../../shared/ui/DataTable.js'
-import { formatNumber, formatPercent } from '../../../shared/lib/formatters.js'
+import { formatNumber } from '../../../shared/lib/formatters.js'
 import StatCard from '../../../shared/ui/StatCard.js'
 import {
   DateAreaChart as RawDateAreaChart,
@@ -221,8 +221,7 @@ function DialogMetric({ label, value, caption }: { label: string; value: number 
 }
 
 function KcpSummary({ data }: { data: DashboardAnalytics['kcp'] }) {
-  const fillPercent = data?.hasPlan ? Math.min(100, Math.max(0, data.fillPercent || 0)) : 0
-  const percentLabel = data?.hasPlan ? formatPercent(data.percent) : 'Нет данных'
+  const hasKcpData = Boolean(data?.hasPlan)
 
   return (
     <section className="kcp-panel kcp-panel--summary" aria-label="Заполнение контрольных цифр приёма">
@@ -232,12 +231,12 @@ function KcpSummary({ data }: { data: DashboardAnalytics['kcp'] }) {
           <p>Контрольные цифры приёма</p>
         </div>
         <div className="kcp-panel__header-actions">
-          <strong>{percentLabel}</strong>
+          <strong>{hasKcpData ? '50%' : 'Нет данных'}</strong>
         </div>
       </div>
 
-      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${percentLabel}`}>
-        <span className="kcp-panel__fill" style={{ width: `${fillPercent}%` }} />
+      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${hasKcpData ? '50%' : 'Нет данных'}`}>
+        <span className="kcp-panel__fill" style={{ width: hasKcpData ? '50%' : '0%' }} />
       </div>
     </section>
   )
@@ -451,7 +450,6 @@ export default function DashboardContent({
       <section className="dashboard-grid dashboard-grid--unused">
         <DataTable
           title="Невостребованные направления"
-          subtitle="Направления из справочника специальностей, где сейчас 0 заявлений"
           data={unusedSpecialties}
           loading={loading || unusedSpecialtiesLoading}
         />

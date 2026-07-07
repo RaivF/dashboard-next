@@ -3,7 +3,7 @@ import { normalizeSpecialty } from './grouping.js'
 import type { AdmissionControlNumbers, AdmissionDirectionPlan, AdmissionDirectionStats, AnalyticsRecord, ApplicantStatistic, QuantityItem } from './types.js'
 import { isAnalyticsRecord } from './types.js'
 
-const DEFAULT_KCP_PERCENT = 20
+const DEFAULT_KCP_PERCENT = 50
 
 function readArray(source: AnalyticsRecord, keys: string[]): unknown[] {
   for (const key of keys) {
@@ -135,7 +135,9 @@ export function normalizeAdmissionControlNumbers(
   const directionPlans = normalizeAdmissionDirectionPlans(source)
   const directions = buildAdmissionDirectionStats(directionPlans, allItems)
   const explicitPlan = total || directionPlans.reduce((sum, item) => sum + item.plan, 0) || categories.reduce((sum, item) => sum + item.quantity, 0)
-  const plan = explicitPlan || (current > 0 ? current * 100 / DEFAULT_KCP_PERCENT : 0)
+  const plan = current > 0
+    ? current * 100 / DEFAULT_KCP_PERCENT
+    : explicitPlan
   const percent = plan ? (current / plan) * 100 : 0
   const delta = current - plan
 
