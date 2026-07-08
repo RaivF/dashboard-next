@@ -23,6 +23,17 @@ function columnName(index) {
   return name
 }
 
+function shiftDateString(value, days) {
+  const [day, month, year] = String(value).split('.').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day + days))
+
+  return [
+    String(date.getUTCDate()).padStart(2, '0'),
+    String(date.getUTCMonth() + 1).padStart(2, '0'),
+    String(date.getUTCFullYear()),
+  ].join('.')
+}
+
 function cellXml(value, rowIndex, columnIndex) {
   if (value === '') return ''
 
@@ -114,8 +125,36 @@ const currentPeopleDates = [
   '07.07.2026',
 ]
 const currentPeople = [132, 141, 119, 176, 118, 125, 88, 200, 236, 211, 216, 360, 134, 241, 197]
-const previousPeopleDates = currentPeopleDates.map((date) => date.replace('2026', '2025'))
-const previousPeople = [49, 34, 58, 64, 19, 51, 12, 137, 91, 129, 74, 252, 43, 118, 27]
+const previousPeopleSource = [
+  ['20.06.2025', 196],
+  ['21.06.2025', 67],
+  ['23.06.2025', 145],
+  ['24.06.2025', 221],
+  ['25.06.2025', 181],
+  ['26.06.2025', 189],
+  ['27.06.2025', 189],
+  ['28.06.2025', 109],
+  ['30.06.2025', 308],
+  ['01.07.2025', 296],
+  ['02.07.2025', 206],
+  ['03.07.2025', 286],
+  ['04.07.2025', 235],
+  ['05.07.2025', 125],
+  ['07.07.2025', 253],
+  ['08.07.2025', 244],
+  ['09.07.2025', 217],
+  ['10.07.2025', 211],
+  ['11.07.2025', 241],
+  ['12.07.2025', 101],
+  ['14.07.2025', 284],
+  ['15.07.2025', 206],
+  ['16.07.2025', 240],
+  ['17.07.2025', 258],
+  ['18.07.2025', 153],
+  ['19.07.2025', 135],
+]
+const previousPeopleDates = previousPeopleSource.map(([date]) => shiftDateString(date, -1))
+const previousPeople = previousPeopleSource.map(([, quantity]) => quantity)
 
 const fundingDates = ['20.06.2026', '21.06.2026', '22.06.2026', '23.06.2026', '24.06.2026', '25.06.2026', '26.06.2026', '27.06.2026', '28.06.2026', '29.06.2026', '30.06.2026', '01.07.2026', '02.07.2026', '03.07.2026', '04.07.2026', '05.07.2026', '06.07.2026', '07.07.2026']
 const previousFundingDates = fundingDates.map((date) => date.replace('2026', '2025'))
