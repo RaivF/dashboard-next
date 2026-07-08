@@ -172,7 +172,7 @@ describe('server', () => {
     assert.equal(statistics.manual_applicants_by_date[1].date, '2026-06-22')
     assert.equal(statistics.manual_applicants_by_date[1].quantity, 141)
     assert.equal(statistics.manual_applicants_by_date.at(-1).date, '2026-07-07')
-    assert.equal(statistics.manual_applicants_by_date.at(-1).quantity, 100)
+    assert.equal(statistics.manual_applicants_by_date.at(-1).quantity, 197)
     assert.equal(statistics.manual_funding_by_date.length, 18)
     assert.equal(statistics.manual_funding_by_date[0].categories[0].name, 'Бюджетная основа')
     assert.equal(statistics.manual_funding_by_date[0].categories[0].quantity, 457)

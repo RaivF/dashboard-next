@@ -113,7 +113,7 @@ const currentPeopleDates = [
   '06.07.2026',
   '07.07.2026',
 ]
-const currentPeople = [132, 141, 119, 176, 118, 125, 88, 200, 236, 211, 216, 360, 134, 241, 100]
+const currentPeople = [132, 141, 119, 176, 118, 125, 88, 200, 236, 211, 216, 360, 134, 241, 197]
 const previousPeopleDates = currentPeopleDates.map((date) => date.replace('2026', '2025'))
 const previousPeople = [49, 34, 58, 64, 19, 51, 12, 137, 91, 129, 74, 252, 43, 118, 27]
 
