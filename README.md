@@ -145,6 +145,7 @@ The test suite covers:
 
 - `.github/workflows/ci.yml` runs `npm run check` on pull requests and pushes.
 - `.github/workflows/deploy.yml` deploys pushes to `main` to the VDS through Docker Compose.
+- The deployment workflow waits for the `university-dashboard` container to become healthy before it finishes.
 
 Before merging behavior changes to `main`, run:
 
