@@ -86,8 +86,9 @@ export function buildAnalytics(
   const total = uniqueApplicants
   const applicationsPerApplicant = !hasManualPeopleData && uniqueApplicants ? applicationTotal / uniqueApplicants : 0
   const admissionCampaignTotal = countUniqueApplicants(allItems)
+  const kcpCurrent = hasManualPeopleData ? manualPeopleTotal : admissionCampaignTotal
   // КЦП относится ко всей приёмной кампании, поэтому этот блок не должен зависеть от выбранного периода.
-  const kcp = normalizeAdmissionControlNumbers(response, admissionCampaignTotal, allItems)
+  const kcp = normalizeAdmissionControlNumbers(response, kcpCurrent, allItems)
   const previousYearComparison = buildPreviousYearComparison(response, rangeWindow)
   previousYearComparison.current = total
   previousYearComparison.delta = total - previousYearComparison.previous

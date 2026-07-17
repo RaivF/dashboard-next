@@ -9,7 +9,7 @@
 import { useEffect, useState, type ComponentType } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import DataTable from '../../../shared/ui/DataTable.js'
-import { formatNumber } from '../../../shared/lib/formatters.js'
+import { formatNumber, formatPercent } from '../../../shared/lib/formatters.js'
 import StatCard from '../../../shared/ui/StatCard.js'
 import {
   DateAreaChart as RawDateAreaChart,
@@ -232,6 +232,9 @@ function DialogMetric({ label, value, caption }: { label: string; value: number 
 
 function KcpSummary({ data }: { data: DashboardAnalytics['kcp'] }) {
   const hasKcpData = Boolean(data?.hasPlan)
+  const percent = Number(data?.percent ?? 0)
+  const fillPercent = hasKcpData ? Math.min(100, Math.max(0, Number(data?.fillPercent ?? percent))) : 0
+  const percentage = hasKcpData ? formatPercent(percent) : 'Нет данных'
 
   return (
     <section className="kcp-panel kcp-panel--summary" aria-label="Заполнение контрольных цифр приёма">
@@ -241,12 +244,12 @@ function KcpSummary({ data }: { data: DashboardAnalytics['kcp'] }) {
           <p>Контрольные цифры приёма</p>
         </div>
         <div className="kcp-panel__header-actions">
-          <strong>{hasKcpData ? '48%' : 'Нет данных'}</strong>
+          <strong>{percentage}</strong>
         </div>
       </div>
 
-      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${hasKcpData ? '48%' : 'Нет данных'}`}>
-        <span className="kcp-panel__fill" style={{ width: hasKcpData ? '48%' : '0%' }} />
+      <div className="kcp-panel__track" aria-label={`КЦП заполнено на ${percentage}`}>
+        <span className="kcp-panel__fill" style={{ width: `${fillPercent}%` }} />
       </div>
     </section>
   )
