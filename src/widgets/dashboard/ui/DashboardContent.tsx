@@ -466,9 +466,9 @@ export default function DashboardContent({
           title="Невостребованные направления"
           data={unusedSpecialties}
           loading={loading || unusedSpecialtiesLoading}
+          emptyMessage={'\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u044e\u0442 \u043d\u0435\u0432\u043e\u0441\u0442\u0440\u0435\u0431\u043e\u0432\u0430\u043d\u043d\u044b\u0435 \u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f'}
         />
       </section>
     </>
   )
 }
-

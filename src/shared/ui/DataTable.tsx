@@ -12,6 +12,7 @@ type DataTableProps = {
   subtitle?: string
   data?: DataTableRow[] | null
   loading?: boolean
+  emptyMessage?: string
 }
 
 function TableSkeleton() {
@@ -31,7 +32,13 @@ function TableSkeleton() {
   )
 }
 
-export default function DataTable({ title, subtitle, data, loading = false }: DataTableProps) {
+export default function DataTable({
+  title,
+  subtitle,
+  data,
+  loading = false,
+  emptyMessage = '\u041f\u0443\u0441\u0442\u043e',
+}: DataTableProps) {
   const rows = Array.isArray(data) ? data : []
 
   return (
@@ -40,7 +47,7 @@ export default function DataTable({ title, subtitle, data, loading = false }: Da
         <TableSkeleton />
       ) : (
         <div className="table-list">
-          {rows.length === 0 && <div className="table-list__empty">Пусто</div>}
+          {rows.length === 0 && <div className="table-list__empty">{emptyMessage}</div>}
 
           {rows.map((item, index) => (
             <div className="table-list__row" key={`${item.name}-${item.caption || ''}`}>

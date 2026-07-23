@@ -4,7 +4,7 @@ import { SPECIALTY_LEVEL_OPTIONS } from '../../../entities/specialties/lib/speci
 import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
 
 const ALL_LEVELS_LABEL = SPECIALTY_LEVEL_OPTIONS[0]
-const TOTAL_SPECIALTIES_DISPLAY = 177
+const HIDDEN_SUMMARY_LEVELS = new Set(['Магистратура', 'Не определено'])
 
 export default function SpecialtiesPage() {
   const { rows, loading } = useSpecialties()
@@ -62,10 +62,12 @@ export default function SpecialtiesPage() {
 
       <div className="specialties-summary" aria-label="Сводка по специальностям">
         <span>
-          <strong>{TOTAL_SPECIALTIES_DISPLAY}</strong>
+          <strong>{rows.length}</strong>
           Всего
         </span>
-        {SPECIALTY_LEVEL_OPTIONS.filter((option) => option !== ALL_LEVELS_LABEL).map((option) => (
+        {SPECIALTY_LEVEL_OPTIONS.filter(
+          (option) => option !== ALL_LEVELS_LABEL && !HIDDEN_SUMMARY_LEVELS.has(option),
+        ).map((option) => (
           <span key={option}>
             <strong>{levelCounts.get(option) || 0}</strong>
             {option}

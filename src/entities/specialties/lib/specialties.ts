@@ -50,7 +50,7 @@ export function parseSpecialtiesMxl(input: ArrayBuffer | Uint8Array | string): S
     })
   }
 
-  return Array.from(new Map(rows.map((item) => [`${item.code}::${item.name}`, item])).values())
+  return rows
 }
 
 export const SPECIALTY_LEVEL_OPTIONS = [

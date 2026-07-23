@@ -30,7 +30,7 @@ describe('analytics', () => {
       response.admission_control_numbers.directions.reduce((sum, item) => sum + item.quantity, 0),
       response.admission_control_numbers.total,
     )
-    assert.equal(response.admission_control_numbers.directions.length, 151)
+    assert.equal(response.admission_control_numbers.directions.length, 186)
     assert.equal(analytics.kcp.directions.length, response.admission_control_numbers.directions.length)
     assert.ok(analytics.byFunding.some((item) => item.name === 'Отдельная квота (СВО)'))
     assert.ok(analytics.byFunding.some((item) => item.name === 'Особая квота'))
