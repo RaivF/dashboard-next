@@ -352,6 +352,64 @@
   align-content: center;
 }
 
+.kcp-panel__summary-trigger {
+  display: grid;
+  gap: 16px;
+  margin: -8px -10px;
+  padding: 8px 10px;
+  border-radius: 22px;
+  cursor: pointer;
+  outline: none;
+  transition: background 160ms ease;
+}
+
+.kcp-panel__summary-trigger:hover,
+.kcp-panel__summary-trigger:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.kcp-panel__summary-trigger:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 52%, transparent);
+}
+
+.kcp-panel__summary-trigger--disabled {
+  cursor: default;
+}
+
+.kcp-panel__summary-icon {
+  color: var(--muted-strong);
+  transition: transform 0.18s ease;
+}
+
+.kcp-panel--expanded .kcp-panel__summary-icon {
+  transform: rotate(180deg);
+}
+
+.kcp-panel__error,
+.kcp-panel__snapshot,
+.kcp-panel__description {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.kcp-panel__error {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, #f59e0b 38%, var(--card-border));
+  border-radius: 14px;
+  color: color-mix(in srgb, #fbbf24 78%, var(--muted-strong));
+  background: color-mix(in srgb, #f59e0b 9%, transparent);
+}
+
+.kcp-panel__description {
+  padding: 10px 12px;
+  border-left: 3px solid color-mix(in srgb, var(--green) 70%, var(--blue));
+  border-radius: 0 12px 12px 0;
+  background: color-mix(in srgb, var(--green) 8%, transparent);
+}
+
 .kcp-panel__meta {
   display: flex;
   align-items: end;

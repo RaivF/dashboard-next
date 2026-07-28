@@ -10,10 +10,10 @@ export type KcpDirection = {
 }
 
 export const KCP_SORT_OPTIONS: { value: KcpSortMode; label: string }[] = [
-  { value: 'fillAsc', label: 'Р—Р°РїРѕР»РЅРµРЅРЅРѕСЃС‚СЊ в†‘' },
-  { value: 'fillDesc', label: 'Р—Р°РїРѕР»РЅРµРЅРЅРѕСЃС‚СЊ в†“' },
-  { value: 'nameAsc', label: 'Рђ-РЇ' },
-  { value: 'planDesc', label: 'РљР¦Рџ в†“' },
+  { value: 'fillAsc', label: 'Заполненность ↑' },
+  { value: 'fillDesc', label: 'Заполненность ↓' },
+  { value: 'nameAsc', label: 'А–Я' },
+  { value: 'planDesc', label: 'КЦП ↓' },
 ]
 
 export function buildKcpRulerTicks(plan: unknown) {

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { createApplicantsStatisticsController } from '../controllers/applicantsStatisticsController.js'
+import { createCompetitionGroupsDemandController } from '../controllers/competitionGroupsDemandController.js'
 import { getHealth } from '../controllers/healthController.js'
 import { createManualEditsGetController, createManualEditsPutController } from '../controllers/manualEditsController.js'
 import { getReport } from '../controllers/reportController.js'
@@ -11,6 +12,7 @@ export function createApiRouter(env: ServerEnvironment): Router {
   router.get('/health', getHealth)
   router.get('/report-2025-2026', getReport)
   router.get('/applicants-statistics', createApplicantsStatisticsController(env))
+  router.get('/competition-groups-demand', createCompetitionGroupsDemandController(env))
   router.get('/manual-edits', createManualEditsGetController(env))
   router.put('/manual-edits', createManualEditsPutController(env))
 

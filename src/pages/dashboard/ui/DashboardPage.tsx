@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useApplicantsStatistics } from '../../../entities/applicants/model/useApplicantsStatistics.js'
+import { useCompetitionGroupsDemand } from '../../../entities/competition-groups/index.js'
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
 import { buildUnusedSpecialties } from '../../../entities/applicants/lib/analytics/unusedSpecialties.js'
 import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
@@ -26,6 +27,11 @@ export default function DashboardPage() {
     loading,
     refresh,
   } = useApplicantsStatistics(period)
+  const {
+    data: competitionGroupsDemand,
+    loading: competitionGroupsDemandLoading,
+    error: competitionGroupsDemandError,
+  } = useCompetitionGroupsDemand(campaignYear)
   const {
     rows: specialties,
     loading: specialtiesLoading,
@@ -57,6 +63,9 @@ export default function DashboardPage() {
       <DashboardContent
         analytics={analytics}
         campaignYear={campaignYear}
+        competitionGroupsDemand={competitionGroupsDemand}
+        competitionGroupsDemandError={competitionGroupsDemandError}
+        competitionGroupsDemandLoading={competitionGroupsDemandLoading}
         loading={loading}
         selectedRange={selectedRange}
         unusedSpecialties={unusedSpecialties}

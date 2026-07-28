@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { formatNumber, formatPercentDecimal } from '../../../shared/lib/formatters.js'
-import { KCP_SORT_OPTIONS, buildKcpRulerTicks, sortKcpDirections } from '../lib/kcpProgress.js'
+import { KCP_SORT_OPTIONS, sortKcpDirections } from '../lib/kcpProgress.js'
 import type { KcpSortMode } from '../lib/kcpProgress.js'
 
 type KcpProgressDirection = {
@@ -23,25 +23,25 @@ type KcpProgressData = {
   current?: number
   remaining?: number
   overflow?: number
+  snapshotAt?: string | null
   directions?: KcpProgressDirection[]
 }
 
 type KcpProgressProps = {
   data?: KcpProgressData | null
+  error?: string | null
   loading: boolean
 }
 
-export default function KcpProgress({ data, loading }: KcpProgressProps) {
+export default function KcpProgress({ data, error, loading }: KcpProgressProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [sortMode, setSortMode] = useState<KcpSortMode>('fillAsc')
   const [searchValue, setSearchValue] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const hasPlan = data?.hasPlan
   const fillPercent = hasPlan ? (data?.fillPercent ?? 0) : 0
-  const markerPercent = Math.min(100, Math.max(8, fillPercent))
   const directions = useMemo(() => data?.directions || [], [data?.directions])
   const hasDirections = directions.length > 0
-  const rulerTicks = useMemo(() => buildKcpRulerTicks(data?.plan), [data?.plan])
   const searchQuery = searchValue.trim().toLowerCase()
   const filteredDirections = useMemo(() => {
     if (!searchQuery) return directions
@@ -65,68 +65,64 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
     }
   }, [isExpanded, sortMode, searchQuery])
 
+  const toggleDetails = () => {
+    if (hasDirections) setIsExpanded((value) => !value)
+  }
+
+  const handleSummaryKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (!hasDirections || (event.key !== 'Enter' && event.key !== ' ')) return
+
+    event.preventDefault()
+    toggleDetails()
+  }
+
+  const percentage = hasPlan ? formatPercentDecimal(data?.percent) : (loading ? 'Загрузка…' : 'Нет данных')
+
   return (
     <section className={`kcp-panel${isExpanded ? ' kcp-panel--expanded' : ''}`} aria-busy={loading}>
-      <div className="kcp-panel__header">
+      <div
+        className={`kcp-panel__summary-trigger${hasDirections ? '' : ' kcp-panel__summary-trigger--disabled'}`}
+        role="button"
+        tabIndex={hasDirections ? 0 : undefined}
+        aria-expanded={hasDirections ? isExpanded : undefined}
+        aria-controls="kcp-directions-details"
+        onClick={toggleDetails}
+        onKeyDown={handleSummaryKeyDown}
+      >
+        <div className="kcp-panel__header">
         <div>
           <h2>КЦП</h2>
-          <p>Контрольные цифры приёма</p>
+          <p>Люди с первым приоритетом и согласием</p>
         </div>
         <div className="kcp-panel__header-actions">
-          <button
-            className="kcp-panel__toggle"
-            type="button"
-            aria-expanded={isExpanded}
-            disabled={!hasDirections}
-            onClick={() => setIsExpanded((value) => !value)}
-          >
-            <ChevronDown size={18} aria-hidden="true" />
-            Детализация
-          </button>
-          <strong>{hasPlan ? formatPercentDecimal(data.percent) : 'Нет данных'}</strong>
+          <strong>{percentage}</strong>
+          {hasDirections ? <ChevronDown className="kcp-panel__summary-icon" size={25} aria-hidden="true" /> : null}
         </div>
       </div>
 
       <div className="kcp-panel__track" aria-label="Заполнение контрольных цифр приёма">
         <span className="kcp-panel__fill" style={{ width: `${fillPercent}%` }} />
-        {hasPlan ? (
-          <span className="kcp-panel__current-marker" style={{ left: `${markerPercent}%` }}>
-            {formatNumber(data?.current || 0)}
-          </span>
-        ) : null}
       </div>
-      {rulerTicks.length ? (
-        <div className="kcp-panel__ruler" aria-label="Линейка контрольных цифр приёма с шагом 1000">
-          {rulerTicks.map((tick) => (
-            <span
-              className="kcp-panel__ruler-mark"
-              key={tick.value}
-              style={{ left: `${tick.percent}%` }}
-            >
-              <i aria-hidden="true" />
-              <b>{tick.label}</b>
-            </span>
-          ))}
-        </div>
-      ) : null}
+      </div>
 
-      <div className="kcp-panel__meta">
-        <span>
-          <strong>{formatNumber(data?.current || 0)}</strong>
-          подано
-        </span>
-        <span>
-          <strong>{hasPlan ? formatNumber(data.plan) : '—'}</strong>
-          КЦП
-        </span>
-        <span>
-          <strong>{hasPlan ? deltaLabel : 'нет плана'}</strong>
-          остаток
-        </span>
-      </div>
+      {error ? <p className="kcp-panel__error">Данные КЦП временно недоступны. Повторяем загрузку автоматически.</p> : null}
 
       {isExpanded && hasDirections ? (
-        <div className="kcp-panel__details">
+        <div className="kcp-panel__details" id="kcp-directions-details">
+          <div className="kcp-panel__meta">
+            <span>
+              <strong>{formatNumber(data?.current || 0)}</strong>
+              Ч. с 1-м приоритетом и согласием
+            </span>
+            <span>
+              <strong>{hasPlan ? formatNumber(data.plan) : '—'}</strong>
+              КЦП
+            </span>
+            <span>
+              <strong>{hasPlan ? deltaLabel : 'нет плана'}</strong>
+              остаток
+            </span>
+          </div>
           <div className="kcp-panel__details-toolbar">
             <span>{formatNumber(sortedDirections.length)} из {formatNumber(directions.length)} направлений</span>
             <label className="kcp-panel__search">
@@ -151,6 +147,9 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
               ))}
             </div>
           </div>
+          <p className="kcp-panel__description">
+            Рассчитано на основе первого приоритета и поданного согласия.
+          </p>
 
           <div className="kcp-panel__direction-list" ref={listRef}>
             {sortedDirections.length ? sortedDirections.map((item) => {
@@ -173,7 +172,7 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
                   <div className="kcp-panel__direction-numbers">
                     <span>
                       <strong>{formatNumber(item.current)}</strong>
-                      подано
+                      Ч. с 1-м приоритетом и согласием
                     </span>
                     <span>
                       <strong>{formatNumber(item.plan)}</strong>
@@ -192,6 +191,7 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
               </div>
             )}
           </div>
+          {data?.snapshotAt ? <p className="kcp-panel__snapshot">Данные актуальны на {new Date(data.snapshotAt).toLocaleString('ru-RU')}</p> : null}
         </div>
       ) : null}
     </section>
