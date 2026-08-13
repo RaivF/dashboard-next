@@ -42,7 +42,7 @@ describe('competition groups demand', () => {
       ],
     }, 2026)
 
-    assert.equal(demand.plan, 5413)
+    assert.equal(demand.plan, 3128)
     assert.equal(demand.current, 4)
     assert.equal(demand.snapshotAt, '2026-07-28T08:31:59.023496Z')
     assert.equal(demand.directions.length, 1)
@@ -62,6 +62,6 @@ describe('competition groups demand', () => {
       remaining: 1,
       overflow: 0,
     })
-    assert.equal(demand.percent, 4 / 5413 * 100)
+    assert.equal(demand.percent, 4 / 3128 * 100)
   })
 })

@@ -279,7 +279,6 @@ type DashboardContentProps = {
   analytics: DashboardAnalytics
   campaignYear: number
   competitionGroupsDemand: CompetitionGroupsDemand | null
-  competitionGroupsDemandError: string | null
   competitionGroupsDemandLoading: boolean
   loading: boolean
   selectedRange: string
@@ -295,7 +294,6 @@ export default function DashboardContent({
   analytics,
   campaignYear,
   competitionGroupsDemand,
-  competitionGroupsDemandError,
   competitionGroupsDemandLoading,
   loading,
   selectedRange,
@@ -356,7 +354,6 @@ export default function DashboardContent({
 
       <KcpProgress
         data={competitionGroupsDemand}
-        error={competitionGroupsDemandError}
         loading={competitionGroupsDemandLoading}
       />
 

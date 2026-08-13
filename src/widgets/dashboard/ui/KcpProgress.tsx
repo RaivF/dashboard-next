@@ -29,11 +29,10 @@ type KcpProgressData = {
 
 type KcpProgressProps = {
   data?: KcpProgressData | null
-  error?: string | null
   loading: boolean
 }
 
-export default function KcpProgress({ data, error, loading }: KcpProgressProps) {
+export default function KcpProgress({ data, loading }: KcpProgressProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [sortMode, setSortMode] = useState<KcpSortMode>('fillAsc')
   const [searchValue, setSearchValue] = useState('')
@@ -104,8 +103,6 @@ export default function KcpProgress({ data, error, loading }: KcpProgressProps) 
         <span className="kcp-panel__fill" style={{ width: `${fillPercent}%` }} />
       </div>
       </div>
-
-      {error ? <p className="kcp-panel__error">Данные КЦП временно недоступны. Повторяем загрузку автоматически.</p> : null}
 
       {isExpanded && hasDirections ? (
         <div className="kcp-panel__details" id="kcp-directions-details">

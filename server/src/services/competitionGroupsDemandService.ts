@@ -3,7 +3,7 @@ import { AppError } from '../middlewares/errorHandler.js'
 import type { ServerEnvironment } from '../types/environment.js'
 
 const DEMAND_API_URL = 'https://lk-abit.melsu.ru/api/v1/integrations/competition-groups/demand'
-const MELSU_KCP_PLAN = 5413
+const MELSU_KCP_PLAN = 3128
 const CACHE_TTL_MS = 60_000
 
 type CompetitionGroupDemandItem = {

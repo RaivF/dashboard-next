@@ -30,7 +30,6 @@ export default function DashboardPage() {
   const {
     data: competitionGroupsDemand,
     loading: competitionGroupsDemandLoading,
-    error: competitionGroupsDemandError,
   } = useCompetitionGroupsDemand(campaignYear)
   const {
     rows: specialties,
@@ -64,7 +63,6 @@ export default function DashboardPage() {
         analytics={analytics}
         campaignYear={campaignYear}
         competitionGroupsDemand={competitionGroupsDemand}
-        competitionGroupsDemandError={competitionGroupsDemandError}
         competitionGroupsDemandLoading={competitionGroupsDemandLoading}
         loading={loading}
         selectedRange={selectedRange}
