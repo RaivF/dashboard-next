@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
-import { getSpecialtyLevel, parseSpecialtiesMxl } from '../src/entities/specialties/lib/specialties.js'
+import {
+  getSpecialtyLevel,
+  matchesSpecialtySearch,
+  parseSpecialtiesMxl,
+} from '../src/entities/specialties/lib/specialties.js'
 
 describe('specialties mxl parser', () => {
   it('extracts all directions from the public reference file', () => {
@@ -18,5 +22,19 @@ describe('specialties mxl parser', () => {
   it('maps specialty level from the middle code segment', () => {
     assert.notEqual(getSpecialtyLevel('35.03.04'), getSpecialtyLevel('35.04.04'))
     assert.notEqual(getSpecialtyLevel('35.04.04'), getSpecialtyLevel('38.05.01'))
+  })
+
+  it('finds specialties despite punctuation, word order, and Russian letter variants', () => {
+    const specialty = {
+      code: '15.03.06',
+      name: 'Мехатроника и робототехника (Мехатронные роботизированные системы)',
+      level: 'Бакалавриат',
+    }
+
+    assert.equal(matchesSpecialtySearch(specialty, '150306'), true)
+    assert.equal(matchesSpecialtySearch(specialty, '15 03 06'), true)
+    assert.equal(matchesSpecialtySearch(specialty, 'роботизированные мехатроника'), true)
+    assert.equal(matchesSpecialtySearch({ ...specialty, name: 'Почвоведение' }, 'почвовёдение'), true)
+    assert.equal(matchesSpecialtySearch(specialty, 'почвоведение'), false)
   })
 })

@@ -31,6 +31,29 @@ export function getSpecialtyLevel(code: unknown): string {
   return SPECIALTY_LEVELS.get(levelCode) || 'Не определено'
 }
 
+function normalizeSpecialtySearchText(value: unknown): string {
+  return String(value || '')
+    .toLocaleLowerCase('ru-RU')
+    .replace(/ё/g, 'е')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+}
+
+export function matchesSpecialtySearch(specialty: SpecialtyRow, query: string): boolean {
+  const normalizedQuery = normalizeSpecialtySearchText(query)
+
+  if (!normalizedQuery) return true
+
+  const searchableText = normalizeSpecialtySearchText(`${specialty.code} ${specialty.name}`)
+  const compactQuery = normalizedQuery.replace(/\s/g, '')
+  const compactSearchableText = searchableText.replace(/\s/g, '')
+
+  return (
+    compactSearchableText.includes(compactQuery) ||
+    normalizedQuery.split(' ').every((part) => searchableText.includes(part))
+  )
+}
+
 export function parseSpecialtiesMxl(input: ArrayBuffer | Uint8Array | string): SpecialtyRow[] {
   const strings = extractQuotedStrings(decodeMxlContent(input))
   const rows: SpecialtyRow[] = []

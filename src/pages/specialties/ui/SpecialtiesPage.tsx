@@ -1,6 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { SPECIALTY_LEVEL_OPTIONS } from '../../../entities/specialties/lib/specialties.js'
+import {
+  matchesSpecialtySearch,
+  SPECIALTY_LEVEL_OPTIONS,
+} from '../../../entities/specialties/lib/specialties.js'
 import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
 
 const ALL_LEVELS_LABEL = SPECIALTY_LEVEL_OPTIONS[0]
@@ -12,14 +15,9 @@ export default function SpecialtiesPage() {
   const [level, setLevel] = useState(ALL_LEVELS_LABEL)
 
   const filteredRows = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-
     return rows.filter((item) => {
       const matchesLevel = level === ALL_LEVELS_LABEL || item.level === level
-      const matchesQuery =
-        !normalizedQuery ||
-        item.code.toLowerCase().includes(normalizedQuery) ||
-        item.name.toLowerCase().includes(normalizedQuery)
+      const matchesQuery = matchesSpecialtySearch(item, query)
 
       return matchesLevel && matchesQuery
     })

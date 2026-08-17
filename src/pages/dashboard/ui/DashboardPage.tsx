@@ -3,7 +3,10 @@ import { RefreshCw } from 'lucide-react'
 import { useApplicantsStatistics } from '../../../entities/applicants/model/useApplicantsStatistics.js'
 import { useCompetitionGroupsDemand } from '../../../entities/competition-groups/index.js'
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
-import { buildUnusedSpecialties } from '../../../entities/applicants/lib/analytics/unusedSpecialties.js'
+import {
+  buildUnusedSpecialties,
+  PINNED_UNUSED_SPECIALTIES,
+} from '../../../entities/applicants/lib/analytics/unusedSpecialties.js'
 import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
@@ -37,7 +40,7 @@ export default function DashboardPage() {
   } = useSpecialties()
   const analytics = useMemo(() => buildAnalytics(response, range, selectedDate), [response, range, selectedDate])
   const unusedSpecialties = useMemo(
-    () => buildUnusedSpecialties(specialties, analytics.allItems),
+    () => buildUnusedSpecialties(specialties, analytics.allItems, PINNED_UNUSED_SPECIALTIES),
     [analytics.allItems, specialties],
   )
   const selectedRange = getRangeLabel(range)

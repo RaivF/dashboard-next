@@ -484,4 +484,29 @@ describe('analytics', () => {
       },
     ])
   })
+
+  it('keeps pinned zero-application specialties at the start without duplicates', () => {
+    const specialties = [
+      { code: '15.03.06', name: 'Мехатроника и робототехника', level: 'Бакалавриат' },
+      { code: '35.04.01', name: 'Лесное дело', level: 'Магистратура' },
+    ]
+    const pinned = [
+      {
+        code: '15.03.06',
+        name: 'Мехатроника и робототехника (Мехатронные и роботизированные технологические системы и комплексы)',
+        caption: 'Код: 15.03.06 • Бакалавриат',
+        quantity: 0,
+      },
+    ]
+
+    assert.deepEqual(buildUnusedSpecialties(specialties, [], pinned), [
+      pinned[0],
+      {
+        code: '35.04.01',
+        name: 'Лесное дело',
+        caption: 'Код: 35.04.01 • Магистратура',
+        quantity: 0,
+      },
+    ])
+  })
 })
