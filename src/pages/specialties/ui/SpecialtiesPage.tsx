@@ -107,8 +107,8 @@ export default function SpecialtiesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredRows.map((item) => (
-                  <tr key={`${item.code}-${item.name}`}>
+                {filteredRows.map((item, index) => (
+                  <tr key={`${item.code}-${item.name}-${index}`}>
                     <td>{item.code}</td>
                     <td>{item.name}</td>
                     <td>{item.level}</td>
