@@ -39,13 +39,20 @@ describe('competition groups demand', () => {
           applications_total: 100,
           department_label: 'Энергодарский филиал',
         },
+        {
+          speciality_code: '01.04.05',
+          speciality_name: 'Магистратура статистики',
+          kcp: 10,
+          applications_primary_consent: 9,
+          department_label: null,
+        },
       ],
     }, 2026)
 
     assert.equal(demand.plan, 3128)
     assert.equal(demand.current, 4)
     assert.equal(demand.snapshotAt, '2026-07-28T08:31:59.023496Z')
-    assert.equal(demand.directions.length, 1)
+    assert.equal(demand.directions.length, 2)
     assert.deepEqual(demand.directions[0], {
       code: '01.03.05',
       name: 'Статистика',
@@ -63,5 +70,6 @@ describe('competition groups demand', () => {
       overflow: 0,
     })
     assert.equal(demand.percent, 4 / 3128 * 100)
+    assert.equal(demand.directions[1].current, 9)
   })
 })

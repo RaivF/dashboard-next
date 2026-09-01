@@ -11,6 +11,7 @@ import { useSpecialties } from '../../../entities/specialties/model/useSpecialti
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
 import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.js'
+import CampaignResults2026 from '../../../widgets/dashboard/ui/CampaignResults2026.js'
 import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.js'
 
 export default function DashboardPage() {
@@ -47,35 +48,47 @@ export default function DashboardPage() {
 
   return (
     <>
-      <section className="dashboard-actions" aria-label="Действия дашборда">
-        <button className="refresh-button" type="button" onClick={refresh} disabled={loading}>
-          <RefreshCw size={24} className={loading ? 'spin' : ''} />
-          {loading ? 'Загрузка' : 'Обновить'}
-        </button>
-      </section>
+      <CampaignResults2026 />
 
-      <PeriodControls
-        analytics={analytics}
-        campaignYear={campaignYear}
-        loading={loading}
-        selectedRange={selectedRange}
-        setCampaignYear={setCampaignYear}
-      />
+      <details className="operational-dashboard">
+        <summary>
+          <span>Оперативный срез заявлений</span>
+          <small>
+            Рабочая выгрузка {analytics.rangeText ? `за период ${analytics.rangeText}` : 'загружается'}
+          </small>
+        </summary>
+        <div className="operational-dashboard__content">
+          <section className="dashboard-actions" aria-label="Действия оперативного дашборда">
+            <button className="refresh-button" type="button" onClick={refresh} disabled={loading}>
+              <RefreshCw size={24} className={loading ? 'spin' : ''} />
+              {loading ? 'Загрузка' : 'Обновить'}
+            </button>
+          </section>
 
-      <DashboardContent
-        analytics={analytics}
-        campaignYear={campaignYear}
-        competitionGroupsDemand={competitionGroupsDemand}
-        competitionGroupsDemandLoading={competitionGroupsDemandLoading}
-        loading={loading}
-        selectedRange={selectedRange}
-        unusedSpecialties={unusedSpecialties}
-        unusedSpecialtiesLoading={specialtiesLoading}
-        showPreviousYearOverlay={showPreviousYearOverlay}
-        setShowPreviousYearOverlay={setShowPreviousYearOverlay}
-        showPreviousYearFunding={showPreviousYearFunding}
-        setShowPreviousYearFunding={setShowPreviousYearFunding}
-      />
+          <PeriodControls
+            analytics={analytics}
+            campaignYear={campaignYear}
+            loading={loading}
+            selectedRange={selectedRange}
+            setCampaignYear={setCampaignYear}
+          />
+
+          <DashboardContent
+            analytics={analytics}
+            campaignYear={campaignYear}
+            competitionGroupsDemand={competitionGroupsDemand}
+            competitionGroupsDemandLoading={competitionGroupsDemandLoading}
+            loading={loading}
+            selectedRange={selectedRange}
+            unusedSpecialties={unusedSpecialties}
+            unusedSpecialtiesLoading={specialtiesLoading}
+            showPreviousYearOverlay={showPreviousYearOverlay}
+            setShowPreviousYearOverlay={setShowPreviousYearOverlay}
+            showPreviousYearFunding={showPreviousYearFunding}
+            setShowPreviousYearFunding={setShowPreviousYearFunding}
+          />
+        </div>
+      </details>
     </>
   )
 }

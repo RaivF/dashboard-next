@@ -3,7 +3,9 @@ import { AppError } from '../middlewares/errorHandler.js'
 import type { ServerEnvironment } from '../types/environment.js'
 
 const DEMAND_API_URL = 'https://lk-abit.melsu.ru/api/v1/integrations/competition-groups/demand'
-const MELSU_KCP_PLAN = 3128
+// КЦП 3 128 в итоговой презентации относится только к бакалавриату и специалитету
+// (2 858 + 270). Поэтому и оперативный числитель должен иметь тот же охват.
+const MELSU_BACHELOR_SPECIALIST_KCP_PLAN = 3128
 const CACHE_TTL_MS = 60_000
 
 type CompetitionGroupDemandItem = {
@@ -76,6 +78,10 @@ function isMainUniversityItem(item: CompetitionGroupDemandItem): boolean {
   return !textValue(item.department_label)
 }
 
+function isBachelorOrSpecialistDirection(item: CompetitionGroupsDemandDirection): boolean {
+  return /^\d{2}\.(?:03|05)\./.test(item.code)
+}
+
 export function normalizeCompetitionGroupsDemand(
   source: CompetitionGroupsDemandApiResponse,
   requestedCampaignYear: number,
@@ -132,18 +138,20 @@ export function normalizeCompetitionGroupsDemand(
       }
     })
     .sort((a, b) => a.code.localeCompare(b.code, 'ru') || a.name.localeCompare(b.name, 'ru'))
-  const current = directions.reduce((sum, item) => sum + item.current, 0)
-  const percent = (current / MELSU_KCP_PLAN) * 100
+  const current = directions
+    .filter(isBachelorOrSpecialistDirection)
+    .reduce((sum, item) => sum + item.current, 0)
+  const percent = (current / MELSU_BACHELOR_SPECIALIST_KCP_PLAN) * 100
 
   return {
     campaignYear: Number(source.campaign_year) || requestedCampaignYear,
     snapshotAt: textValue(source.snapshot_at) || null,
-    plan: MELSU_KCP_PLAN,
+    plan: MELSU_BACHELOR_SPECIALIST_KCP_PLAN,
     current,
     percent,
     fillPercent: Math.min(100, percent),
-    remaining: Math.max(0, MELSU_KCP_PLAN - current),
-    overflow: Math.max(0, current - MELSU_KCP_PLAN),
+    remaining: Math.max(0, MELSU_BACHELOR_SPECIALIST_KCP_PLAN - current),
+    overflow: Math.max(0, current - MELSU_BACHELOR_SPECIALIST_KCP_PLAN),
     hasPlan: true,
     directions,
   }

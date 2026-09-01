@@ -117,7 +117,11 @@ function applyPageEdits(pageKey: string, store: ManualEditsStore) {
 
   Object.entries(store.pages[pageKey] || {}).forEach(([selector, entry]) => {
     const element = root.querySelector(selector)
-    if (!element || element.textContent === entry.text) return
+    if (
+      !element ||
+      element.closest('[data-manual-edit-ignore="true"]') ||
+      element.textContent === entry.text
+    ) return
     element.textContent = entry.text
   })
 }

@@ -65,28 +65,33 @@ export function buildAnalytics(
   const manualPreviousYearMethod = getManualPreviousYearMethod(response)
   const manualTopSpecialties = getManualTopSpecialties(response)
   const manualBottomSpecialties = getManualBottomSpecialties(response)
+  const hasApplicantRows = allItems.length > 0
   const hasManualPeopleData = manualPeopleItems.length > 0
   const hasManualFundingData = manualFundingItems.length > 0
   const hasManualPreviousYearFundingData = manualPreviousYearFundingItems.length > 0
-  const peopleSourceItems = hasManualPeopleData ? manualPeopleItems : allItems
+  const peopleSourceItems = hasApplicantRows ? allItems : manualPeopleItems
   const responseRecord = isAnalyticsRecord(response) ? response : {}
   const rangeWindow = getRangeWindow(peopleSourceItems, range, selectedDate)
   const items = filterItemsByRange(allItems, range, selectedDate)
-  const peopleItems = hasManualPeopleData
-    ? filterItemsByRange(manualPeopleItems, range, selectedDate)
-    : items
+  const peopleItems = hasApplicantRows
+    ? items
+    : filterItemsByRange(manualPeopleItems, range, selectedDate)
   const calculatedApplicationTotal = items.reduce((sum, item) => sum + numberValue(item.quantity), 0)
-  const applicationTotal = numberValue(manualSummary.applicationsTotal) || calculatedApplicationTotal
+  const applicationTotal = hasApplicantRows
+    ? calculatedApplicationTotal
+    : numberValue(manualSummary.applicationsTotal) || calculatedApplicationTotal
   const actualByDate = groupApplicantsByDate(peopleItems)
   const byDate = buildChartSeries(peopleSourceItems, rangeWindow.startDate, rangeWindow.endDate, range)
   const manualPeopleTotal = hasManualPeopleData ? sumChartPointQuantities(actualByDate) : 0
-  const uniqueApplicants = hasManualPeopleData
-    ? manualPeopleTotal
-    : countUniqueApplicants(items) || (range === 'all' ? numberValue(responseRecord.applicants_quantity) : 0)
+  const uniqueApplicants = hasApplicantRows
+    ? countUniqueApplicants(items) || (range === 'all' ? numberValue(responseRecord.applicants_quantity) : 0)
+    : manualPeopleTotal
   const total = uniqueApplicants
-  const applicationsPerApplicant = !hasManualPeopleData && uniqueApplicants ? applicationTotal / uniqueApplicants : 0
-  const admissionCampaignTotal = countUniqueApplicants(allItems)
-  const kcpCurrent = hasManualPeopleData ? manualPeopleTotal : admissionCampaignTotal
+  const applicationsPerApplicant = uniqueApplicants ? applicationTotal / uniqueApplicants : 0
+  const admissionCampaignTotal = hasApplicantRows
+    ? countUniqueApplicants(allItems)
+    : manualPeopleItems.reduce((sum, item) => sum + numberValue(item.quantity), 0)
+  const kcpCurrent = admissionCampaignTotal
   // КЦП относится ко всей приёмной кампании, поэтому этот блок не должен зависеть от выбранного периода.
   const kcp = normalizeAdmissionControlNumbers(response, kcpCurrent, allItems)
   const previousYearComparison = buildPreviousYearComparison(response, rangeWindow)
@@ -121,32 +126,39 @@ export function buildAnalytics(
     : previousYearWindowItems
   const byFunding = groupByFunding(fundingItems)
   const previousYearByFunding = groupByFunding(previousYearFundingItems)
-  const applicationFormItems = numberValue(manualSummary.applicationsTotal) ? allItems : items
+  const applicationFormItems = items
   const byApplicationForm = groupByQuantity(applicationFormItems, 'form_of_education')
   const byForm = groupBy(items, 'form_of_education')
   const previousYearByForm = groupBy(previousYearWindowItems, 'form_of_education')
   const byDegree = groupBy(items, 'degree_type')
-  const byMethod = manualMethod.length > 0 ? manualMethod : groupByMethod(items)
+  const byMethod = hasApplicantRows
+    ? groupByMethod(items)
+    : manualMethod.length > 0 ? manualMethod : groupByMethod(items)
   const previousYearByMethod = manualPreviousYearMethod.length > 0
     ? manualPreviousYearMethod
     : groupByMethod(previousYearWindowItems)
   const byPriority = groupPriority(items)
   const bySpecialty = groupBySpecialty(items)
   const rankedSpecialties = bySpecialty.filter(isRankedSpecialty)
-  const topSpecialties = manualTopSpecialties.length > 0
-    ? manualTopSpecialties
-    : [...rankedSpecialties].sort(sortByQuantityDesc).slice(0, 5)
+  const topSpecialties = hasApplicantRows
+    ? [...rankedSpecialties].sort(sortByQuantityDesc).slice(0, 5)
+    : manualTopSpecialties.length > 0
+      ? manualTopSpecialties
+      : [...rankedSpecialties].sort(sortByQuantityDesc).slice(0, 5)
   const firstPrioritySpecialties = groupBySpecialty(items.filter(isFirstPriority))
     .filter(isRankedSpecialty)
     .filter((item) => item.quantity > 0)
     .sort(sortByQuantityDesc)
     .slice(0, 5)
-  const bottomSpecialties = manualBottomSpecialties.length > 0
-    ? manualBottomSpecialties
-    : [...rankedSpecialties]
-      .filter((item) => item.quantity > 0)
-      .sort((a, b) => a.quantity - b.quantity || a.name.localeCompare(b.name, 'ru'))
-      .slice(0, 5)
+  const calculatedBottomSpecialties = [...rankedSpecialties]
+    .filter((item) => item.quantity > 0)
+    .sort((a, b) => a.quantity - b.quantity || a.name.localeCompare(b.name, 'ru'))
+    .slice(0, 5)
+  const bottomSpecialties = hasApplicantRows
+    ? calculatedBottomSpecialties
+    : manualBottomSpecialties.length > 0
+      ? manualBottomSpecialties
+      : calculatedBottomSpecialties
   const latest = actualByDate.at(-1)
   const previous = actualByDate.at(-2)
   const latestDelta = latest && previous ? latest.quantity - previous.quantity : 0
@@ -155,7 +167,9 @@ export function buildAnalytics(
   const paid = byFunding.find((item) => item.name === 'Платное обучение' || item.name === 'Договор на платное обучение')?.quantity || 0
   const target = byFunding.find((item) => item.name === 'Целевая квота' || item.name === 'Целевой прием' || item.name === 'Целевой приём')?.quantity || 0
   const web = byMethod.find((item) => item.name === 'Веб')?.quantity || 0
-  const online = numberValue(manualSummary.onlineChannels) || byMethod.find((item) => item.name === ONLINE_METHOD_LABEL)?.quantity || 0
+  const online = hasApplicantRows
+    ? byMethod.find((item) => item.name === ONLINE_METHOD_LABEL)?.quantity || 0
+    : numberValue(manualSummary.onlineChannels) || byMethod.find((item) => item.name === ONLINE_METHOD_LABEL)?.quantity || 0
   const personal = byMethod.find((item) => item.name === 'Лично')?.quantity || 0
 
   return {

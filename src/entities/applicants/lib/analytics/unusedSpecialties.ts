@@ -53,8 +53,11 @@ export function buildUnusedSpecialties(
     specialtyKeys(specialty.code, specialty.name).forEach((key) => occupiedKeys.add(key))
   })
 
+  const visiblePinnedSpecialties = pinnedSpecialties.filter((specialty) => (
+    specialtyKeys(specialty.code, specialty.name).every((key) => !occupiedKeys.has(key))
+  ))
   const pinnedKeys = new Set(
-    pinnedSpecialties.flatMap((specialty) => specialtyKeys(specialty.code, specialty.name)),
+    visiblePinnedSpecialties.flatMap((specialty) => specialtyKeys(specialty.code, specialty.name)),
   )
   const automaticSpecialties = specialties
     .filter(isAllowedUnusedSpecialtyLevel)
@@ -70,7 +73,7 @@ export function buildUnusedSpecialties(
     }))
 
   return [
-    ...pinnedSpecialties.map((specialty) => ({ ...specialty, quantity: 0 })),
+    ...visiblePinnedSpecialties.map((specialty) => ({ ...specialty, quantity: 0 })),
     ...automaticSpecialties.filter((specialty) => (
       specialtyKeys(specialty.code, specialty.name).every((key) => !pinnedKeys.has(key))
     )),

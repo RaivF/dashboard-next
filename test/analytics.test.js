@@ -91,6 +91,31 @@ describe('analytics', () => {
     assert.equal(analytics.byFunding.find((item) => item.name === 'Budget').quantity, 2)
   })
 
+  it('prefers the newer applicant rows over stale manual people, method and ranking data', () => {
+    const response = {
+      applicants_statistics: [
+        { date: '2026-08-17T10:00:00', applicant_id: '101', application_method: 'Лично', specialty: { code: '09.03.01', name: 'Информатика' }, quantity: 1 },
+        { date: '2026-08-17T10:05:00', applicant_id: '102', application_method: 'ЕПГУ', specialty: { code: '09.03.01', name: 'Информатика' }, quantity: 1 },
+      ],
+      manual_applicants_by_date: [{ date: '2026-08-14', quantity: 99 }],
+      manual_summary: { applicationsTotal: 999, onlineChannels: 999 },
+      manual_method: [{ name: 'Онлайн', quantity: 999 }],
+      manual_top_specialties: [{ name: 'Устаревшее направление', quantity: 999 }],
+      manual_bottom_specialties: [{ name: 'Устаревшее направление', quantity: 1 }],
+      previous_year_statistics: [],
+      meta: { source: 'test' },
+    }
+
+    const analytics = buildAnalytics(response, 'all', null)
+
+    assert.equal(analytics.rangeText, '17 августа 2026 г.')
+    assert.equal(analytics.applicationsTotal, 2)
+    assert.equal(analytics.total, 2)
+    assert.equal(analytics.online, 1)
+    assert.equal(analytics.topSpecialties[0].name, 'Информатика')
+    assert.equal(analytics.bottomSpecialties[0].name, 'Информатика')
+  })
+
   it('keeps funding by people and form by applications in application details', () => {
     const response = {
       applicants_statistics: [
@@ -508,5 +533,20 @@ describe('analytics', () => {
         quantity: 0,
       },
     ])
+  })
+
+  it('does not keep a pinned specialty when applications already occupy it', () => {
+    const pinned = [{
+      code: '15.03.06',
+      name: 'Мехатроника и робототехника',
+      caption: 'Код: 15.03.06 • Бакалавриат',
+      quantity: 0,
+    }]
+    const applications = [{
+      specialty: { code: '15.03.06', name: 'Мехатроника и робототехника' },
+      quantity: 3,
+    }]
+
+    assert.deepEqual(buildUnusedSpecialties([], applications, pinned), [])
   })
 })

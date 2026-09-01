@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { CAMPAIGN_RESULTS_2026 } from '../../../entities/campaign-results/index.js'
 import { useReport20252026 } from '../../../entities/report/model/useReport20252026.js'
 import { formatNumber } from '../../../shared/lib/formatters.js'
 
@@ -179,8 +180,8 @@ type KcpYearKey = 'actual2025' | 'plan2026'
 
 const KCP_SUMMARY_VALUE = '4 167 / 5 413'
 const KCP_2026_SUMMARY_TOTAL = 5413
-const KCP_2026_HIGHER_EDUCATION_TOTAL = 4658
-const KCP_2026_COLLEGE_TOTAL = 650
+const KCP_2026_HIGHER_EDUCATION_TOTAL = CAMPAIGN_RESULTS_2026.higherEducation.plan
+const KCP_2026_COLLEGE_TOTAL = CAMPAIGN_RESULTS_2026.secondaryVocational.plan
 const KCP_2026_POSTGRADUATE_TOTAL = 105
 
 const KCP_COMPARISON_ROWS: KcpComparisonRow[] = [

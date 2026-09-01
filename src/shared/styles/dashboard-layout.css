@@ -606,6 +606,39 @@
   padding-top: 4px;
 }
 
+.kcp-panel__operational-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--card-border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--blue) 8%, transparent);
+}
+
+.kcp-panel__operational-summary > span {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.kcp-panel__operational-summary strong {
+  color: var(--muted-strong);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.kcp-panel__operational-summary > b {
+  color: var(--theme-text, #f8fafc);
+  font-size: clamp(28px, 2vw, 40px);
+  font-weight: 950;
+  white-space: nowrap;
+}
+
 .kcp-panel__details-toolbar {
   display: flex;
   align-items: center;
@@ -3582,6 +3615,11 @@
 
   .kcp-panel__header,
   .kcp-panel__meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .kcp-panel__operational-summary {
     align-items: flex-start;
     flex-direction: column;
   }

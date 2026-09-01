@@ -153,34 +153,21 @@ const TARGET_ADMISSION_PARTNERS: NamedQuantity[] = [
 ]
 
 const TARGET_ADMISSION_OFFERS_TOTAL = TARGET_ADMISSION_PARTNERS.reduce((sum, partner) => sum + partner.quantity, 0)
-const TARGET_FUNDING_QUOTA_NAME = 'Целевая квота'
-
-function withTargetFundingQuota(rows: NamedQuantity[]): NamedQuantity[] {
-  let hasTargetQuota = false
-  const updatedRows = rows.map((row) => {
-    if (row.name !== TARGET_FUNDING_QUOTA_NAME) return row
-
-    hasTargetQuota = true
-    return { ...row, quantity: TARGET_ADMISSION_OFFERS_TOTAL }
-  })
-
-  return hasTargetQuota
-    ? updatedRows
-    : [...updatedRows, { name: TARGET_FUNDING_QUOTA_NAME, quantity: TARGET_ADMISSION_OFFERS_TOTAL }]
-}
 
 const STAT_CARDS: StatCardDefinition[] = [
   {
-    title: 'Всего заявлений',
+    title: 'Записей в выгрузке',
     getValue: (analytics) => (analytics.applicationsTotal > 0 ? analytics.applicationsTotal : 'Пусто'),
-    getCaption: () => 'Суммарное количество',
+    getCaption: () => 'Строк конкурсных групп',
     icon: FileText,
     tone: 'blue',
   },
   {
     title: 'Физических лиц',
     getValue: (analytics) => (analytics.total > 0 ? analytics.total : 'Пусто'),
-    getCaption: () => 'В среднем 3.3 заявления на человека',
+    getCaption: (analytics) => analytics.applicationsPerApplicant > 0
+      ? `В среднем ${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(analytics.applicationsPerApplicant)} записи на человека`
+      : 'Уникальные поступающие',
     icon: Users,
     tone: 'indigo',
   },
@@ -192,14 +179,14 @@ const STAT_CARDS: StatCardDefinition[] = [
     tone: 'cyan',
   },
   {
-    title: 'Бюджетная основа',
+    title: 'Поступающих на бюджет',
     getValue: (analytics) => (analytics.byFunding.length > 0 ? analytics.budget : 'Пусто'),
-    getCaption: () => 'Поступающие на бюджет',
+    getCaption: () => 'Уникальные физлица в категории',
     icon: Award,
     tone: 'green',
   },
   {
-    title: 'Целевые места',
+    title: 'Предложения целевого обучения',
     getValue: () => TARGET_ADMISSION_OFFERS_TOTAL,
     getCaption: () => 'Предложения заказчиков целевого обучения',
     icon: Target,
@@ -212,9 +199,9 @@ const STAT_CARDS: StatCardDefinition[] = [
   },
 ]
 
-function formatAcademicYear(year: unknown): string {
+function formatCampaignYear(year: unknown): string {
   const numericYear = Number(year)
-  return Number.isFinite(numericYear) ? `${numericYear}-${numericYear + 1}` : ''
+  return Number.isFinite(numericYear) ? String(numericYear) : ''
 }
 
 function formatDialogValue(value: number | string) {
@@ -258,12 +245,14 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
   return (
     <div className="dashboard-dialog-report">
       <div className="dashboard-dialog-metrics">
-        <DialogMetric label="Всего заявлений" value={analytics.applicationsTotal} />
+        <DialogMetric label="Записей в выгрузке" value={analytics.applicationsTotal} />
         <DialogMetric label="Физических лиц" value={analytics.total} />
         <DialogMetric
           label="В среднем"
-          value="3.3"
-          caption="заявления на человека"
+          value={analytics.applicationsPerApplicant > 0
+            ? new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(analytics.applicationsPerApplicant)
+            : '—'}
+          caption="записи конкурсных групп на человека"
         />
       </div>
 
@@ -305,11 +294,11 @@ export default function DashboardContent({
   setShowPreviousYearFunding,
 }: DashboardContentProps) {
   const [activeStatDialog, setActiveStatDialog] = useState<StatDialog | null>(null)
-  const currentAcademicYear = formatAcademicYear(campaignYear)
-  const previousAcademicYear = formatAcademicYear(Number(campaignYear) - 1)
+  const currentAcademicYear = formatCampaignYear(campaignYear)
+  const previousAcademicYear = formatCampaignYear(Number(campaignYear) - 1)
   const currentCalendarYearValue = analytics.rangeEnd?.getUTCFullYear?.()
   const currentCalendarYear = currentCalendarYearValue ? String(currentCalendarYearValue) : ''
-  const fundingRows = withTargetFundingQuota(analytics.byFunding)
+  const fundingRows = analytics.byFunding
   const previousCalendarYear = String(
     analytics.previousYearComparison.previousYear ||
       (currentCalendarYearValue ? currentCalendarYearValue - 1 : ''),
@@ -333,7 +322,7 @@ export default function DashboardContent({
 
   return (
     <>
-      <section className="stats-grid">
+      <div className="stats-grid">
         {STAT_CARDS.map((card) => {
           const dialog = card.dialog
 
@@ -350,9 +339,10 @@ export default function DashboardContent({
             />
           )
         })}
-      </section>
+      </div>
 
       <KcpProgress
+        campaignYear={campaignYear}
         data={competitionGroupsDemand}
         loading={competitionGroupsDemandLoading}
       />
@@ -406,18 +396,20 @@ export default function DashboardContent({
           showPreviousYear={showPreviousYearOverlay}
           onTogglePreviousYear={setShowPreviousYearOverlay}
         />
-        <DonutChart
-          title="Основание обучения"
-          subtitle="Бюджет, платное обучение, целевой приём, отдельная и особая квоты"
-          data={fundingRows}
-          loading={loading}
-          previousYearData={analytics.previousYearByFunding}
-          showPreviousYear={showPreviousYearFunding}
-          onTogglePreviousYear={setShowPreviousYearFunding}
-          currentYear={currentCalendarYear}
-          previousYear={previousCalendarYear}
-          comparisonOrder="previous-first"
-        />
+        <div className="dashboard-ignore-wrapper" data-manual-edit-ignore="true">
+          <DonutChart
+            title="Основание обучения"
+            subtitle="Поступающие по категориям; предложения партнёров сюда не подмешиваются"
+            data={fundingRows}
+            loading={loading}
+            previousYearData={analytics.previousYearByFunding}
+            showPreviousYear={showPreviousYearFunding}
+            onTogglePreviousYear={setShowPreviousYearFunding}
+            currentYear={currentCalendarYear}
+            previousYear={previousCalendarYear}
+            comparisonOrder="previous-first"
+          />
+        </div>
       </section>
 
       <section className="dashboard-grid dashboard-grid--middle">
@@ -430,8 +422,8 @@ export default function DashboardContent({
           previousYear={previousAcademicYear}
         />
         <VerticalBarChart
-          title="Способ подачи заявлений"
-          subtitle="Лично, онлайн-каналы, почта"
+          title="Способ подачи в оперативной выгрузке"
+          subtitle="Лично, онлайн-каналы, почта; не итог презентации"
           data={analytics.byMethod}
           loading={loading}
           currentYear={currentAcademicYear}
@@ -440,8 +432,8 @@ export default function DashboardContent({
       </section>
 
       <section className="dashboard-grid dashboard-grid--bottom">
-        <DataTable title="Топ 5 самых популярных направлений" subtitle="Специальности с наибольшим количеством поступающих" data={analytics.topSpecialties} loading={loading} />
-        <DataTable title="Топ 5 направлений с минимальным числом заявлений" subtitle="Специальности, где заявления уже есть, но их меньше всего" data={analytics.bottomSpecialties} loading={loading} />
+        <DataTable title="Топ 5 направлений в оперативной выгрузке" subtitle="По количеству записей конкурсных групп" data={analytics.topSpecialties} loading={loading} />
+        <DataTable title="Минимальное число записей в оперативной выгрузке" subtitle="Направления, где записи уже есть, но их меньше всего" data={analytics.bottomSpecialties} loading={loading} />
       </section>
 
       <section className="dashboard-grid dashboard-grid--unused">

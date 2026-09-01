@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { formatNumber, formatPercentDecimal } from '../../../shared/lib/formatters.js'
+import { CAMPAIGN_RESULTS_2026, getCompletionPercent } from '../../../entities/campaign-results/index.js'
+import { formatNumber, formatPercent, formatPercentDecimal } from '../../../shared/lib/formatters.js'
 import { KCP_SORT_OPTIONS, sortKcpDirections } from '../lib/kcpProgress.js'
 import type { KcpSortMode } from '../lib/kcpProgress.js'
 
@@ -28,17 +29,22 @@ type KcpProgressData = {
 }
 
 type KcpProgressProps = {
+  campaignYear: number
   data?: KcpProgressData | null
   loading: boolean
 }
 
-export default function KcpProgress({ data, loading }: KcpProgressProps) {
+export default function KcpProgress({ campaignYear, data, loading }: KcpProgressProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [sortMode, setSortMode] = useState<KcpSortMode>('fillAsc')
   const [searchValue, setSearchValue] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const hasPlan = data?.hasPlan
-  const fillPercent = hasPlan ? (data?.fillPercent ?? 0) : 0
+  const showOfficialResult = campaignYear === 2026
+  const officialPlan = CAMPAIGN_RESULTS_2026.higherEducation.plan
+  const officialEnrolled = CAMPAIGN_RESULTS_2026.higherEducation.enrolled
+  const officialPercent = getCompletionPercent(officialEnrolled, officialPlan)
+  const fillPercent = showOfficialResult ? Math.min(100, officialPercent) : hasPlan ? (data?.fillPercent ?? 0) : 0
   const directions = useMemo(() => data?.directions || [], [data?.directions])
   const hasDirections = directions.length > 0
   const searchQuery = searchValue.trim().toLowerCase()
@@ -75,10 +81,17 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
     toggleDetails()
   }
 
-  const percentage = hasPlan ? formatPercentDecimal(data?.percent) : (loading ? 'Загрузка…' : 'Нет данных')
+  const operationalPercentage = hasPlan
+    ? formatPercentDecimal(data?.percent)
+    : loading ? 'Загрузка…' : 'Нет данных'
+  const percentage = showOfficialResult ? formatPercent(officialPercent) : operationalPercentage
 
   return (
-    <section className={`kcp-panel${isExpanded ? ' kcp-panel--expanded' : ''}`} aria-busy={loading}>
+    <section
+      className={`kcp-panel${isExpanded ? ' kcp-panel--expanded' : ''}`}
+      aria-busy={loading}
+      data-manual-edit-ignore="true"
+    >
       <div
         className={`kcp-panel__summary-trigger${hasDirections ? '' : ' kcp-panel__summary-trigger--disabled'}`}
         role="button"
@@ -90,8 +103,12 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
       >
         <div className="kcp-panel__header">
         <div>
-          <h2>КЦП</h2>
-          <p>Люди с первым приоритетом и согласием</p>
+          <h2>{showOfficialResult ? 'Выполнение КЦП по ВО' : 'Оперативный спрос по КЦП'}</h2>
+          <p>
+            {showOfficialResult
+              ? `Итог зачисления: ${formatNumber(officialEnrolled)} из ${formatNumber(officialPlan)}`
+              : 'Первый приоритет и согласие'}
+          </p>
         </div>
         <div className="kcp-panel__header-actions">
           <strong>{percentage}</strong>
@@ -99,17 +116,26 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
         </div>
       </div>
 
-      <div className="kcp-panel__track" aria-label="Заполнение контрольных цифр приёма">
+      <div className="kcp-panel__track" aria-label={showOfficialResult ? 'Итоговое выполнение контрольных цифр приёма' : 'Оперативный спрос по контрольным цифрам приёма'}>
         <span className="kcp-panel__fill" style={{ width: `${fillPercent}%` }} />
       </div>
       </div>
 
       {isExpanded && hasDirections ? (
         <div className="kcp-panel__details" id="kcp-directions-details">
+          {showOfficialResult ? (
+            <div className="kcp-panel__operational-summary">
+              <span>
+                <strong>Оперативный спрос</strong>
+                Первый приоритет и согласие по бакалавриату и специалитету
+              </span>
+              <b>{operationalPercentage}</b>
+            </div>
+          ) : null}
           <div className="kcp-panel__meta">
             <span>
               <strong>{formatNumber(data?.current || 0)}</strong>
-              Ч. с 1-м приоритетом и согласием
+              Ч. с 1-м приоритетом и согласием (бакалавриат и специалитет)
             </span>
             <span>
               <strong>{hasPlan ? formatNumber(data.plan) : '—'}</strong>
@@ -145,7 +171,8 @@ export default function KcpProgress({ data, loading }: KcpProgressProps) {
             </div>
           </div>
           <p className="kcp-panel__description">
-            Рассчитано на основе первого приоритета и поданного согласия.
+            Сводный показатель рассчитан для бакалавриата и специалитета по первому приоритету и поданному согласию.
+            Детализация ниже включает все уровни из оперативного API.
           </p>
 
           <div className="kcp-panel__direction-list" ref={listRef}>
