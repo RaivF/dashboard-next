@@ -90,11 +90,41 @@ function toSpecialtyRows(rows: readonly RankedResult[]): SpecialtySummary[] {
   }))
 }
 
+function synchronizeQuotaRows(rows: QuantityItem[], year: number): QuantityItem[] {
+  const quotas = results.quotas.enrolledByYear.find((item) => item.year === year)
+  if (!quotas || rows.length === 0) return rows
+
+  const quantities = new Map([
+    ['Целевая квота', quotas.target],
+    ['Отдельная квота (СВО)', quotas.separate],
+    ['Особая квота', quotas.special],
+  ])
+  const synchronized = rows.map((row) => ({
+    ...row,
+    quantity: quantities.get(row.name) ?? row.quantity,
+  }))
+  for (const [name, quantity] of quantities) {
+    if (!rows.some((row) => row.name === name)) synchronized.push({ name, quantity })
+  }
+  return synchronized
+}
+
 export function applyCampaignResults2026(
   analytics: AnalyticsResult,
   campaignYear: number,
 ): AnalyticsResult {
-  if (campaignYear !== 2026) return analytics
+  // Quota enrollment must agree with the upper summary for both displayed years.
+  const byFunding = synchronizeQuotaRows(analytics.byFunding, campaignYear)
+  const previousYearByFunding = synchronizeQuotaRows(analytics.previousYearByFunding, campaignYear - 1)
+  const quotaAnalytics = byFunding === analytics.byFunding && previousYearByFunding === analytics.previousYearByFunding
+    ? analytics
+    : {
+      ...analytics,
+      byFunding,
+      previousYearByFunding,
+      target: byFunding.find((row) => row.name === 'Целевая квота')?.quantity ?? analytics.target,
+    }
+  if (campaignYear !== 2026) return quotaAnalytics
 
   const rangeEnd = new Date(`${results.source.snapshotDate}T00:00:00Z`)
   const rangeStart = startOfAdmissionYear(rangeEnd)
@@ -108,7 +138,7 @@ export function applyCampaignResults2026(
   const inPerson = results.applications.methods.find((method) => method.id === 'in-person')?.current || 0
 
   return {
-    ...analytics,
+    ...quotaAnalytics,
     rangeStart,
     rangeEnd,
     rangeText: results.source.periodLabel,

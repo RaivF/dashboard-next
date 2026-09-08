@@ -7,7 +7,7 @@ import { applyCampaignResults2026 } from '../src/widgets/dashboard/lib/applyCamp
 const presentation = CAMPAIGN_RESULTS_2026
 
 describe('dashboard synchronization with the 2026 presentation', () => {
-  it('synchronizes the final snapshot while preserving people, funding and original data', () => {
+  it('synchronizes the final snapshot while preserving people, non-quota funding and original data', () => {
     const analytics = buildAnalytics({
       manual_summary: {
         applicationsTotal: 17_856,
@@ -115,8 +115,8 @@ describe('dashboard synchronization with the 2026 presentation', () => {
       { name: 'Очно-заочная', quantity: 1_696 },
     ])
     assert.equal(synchronized.byApplicationForm.reduce((sum, row) => sum + row.quantity, 0), synchronized.applicationsTotal)
-    assert.deepEqual(synchronized.byFunding, analytics.byFunding)
-    assert.deepEqual(synchronized.previousYearByFunding, analytics.previousYearByFunding)
+    assert.deepEqual(synchronized.byFunding.filter((row) => !row.name.includes('квота')), analytics.byFunding.filter((row) => !row.name.includes('квота')))
+    assert.deepEqual(synchronized.previousYearByFunding.filter((row) => !row.name.includes('квота')), analytics.previousYearByFunding.filter((row) => !row.name.includes('квота')))
     assert.deepEqual(analytics, original)
     assert.deepEqual(applyCampaignResults2026(synchronized, 2026), synchronized)
   })
@@ -168,4 +168,44 @@ describe('dashboard synchronization with the 2026 presentation', () => {
 
     assert.equal(applyCampaignResults2026(analytics, 2025), analytics)
   })
+
+  for (const campaignYear of [2025, 2026]) {
+    it(`uses the upper quota summary in both funding columns for campaign ${campaignYear}`, () => {
+      const analytics = buildAnalytics(null, 'actual')
+      analytics.byFunding = [
+        { name: 'Бюджетная основа', quantity: 5_198 },
+        { name: 'Платное обучение', quantity: 535 },
+        { name: 'Целевая квота', quantity: 0 },
+        { name: 'Отдельная квота (СВО)', quantity: 189 },
+        { name: 'Особая квота', quantity: 158 },
+      ]
+      analytics.previousYearByFunding = [
+        { name: 'Бюджетная основа', quantity: 2_342 },
+        { name: 'Платное обучение', quantity: 79 },
+        { name: 'Целевая квота', quantity: 10 },
+        { name: 'Отдельная квота (СВО)', quantity: 7 },
+        { name: 'Особая квота', quantity: 15 },
+      ]
+      const original = structuredClone(analytics)
+      const synchronized = applyCampaignResults2026(analytics, campaignYear)
+
+      for (const [rows, year, sourceRows] of [
+        [synchronized.byFunding, campaignYear, analytics.byFunding],
+        [synchronized.previousYearByFunding, campaignYear - 1, analytics.previousYearByFunding],
+      ] as const) {
+        const summary = presentation.quotas.enrolledByYear.find((item) => item.year === year)!
+        assert.deepEqual(rows.slice(0, 2), sourceRows.slice(0, 2))
+        assert.deepEqual(rows.slice(2), [
+          { name: 'Целевая квота', quantity: summary.target },
+          { name: 'Отдельная квота (СВО)', quantity: summary.separate },
+          { name: 'Особая квота', quantity: summary.special },
+        ])
+      }
+      assert.equal(synchronized.target, synchronized.byFunding[2].quantity)
+      assert.equal(synchronized.budget, analytics.budget)
+      assert.equal(synchronized.paid, analytics.paid)
+      assert.deepEqual(analytics, original)
+      assert.deepEqual(applyCampaignResults2026(synchronized, campaignYear), synchronized)
+    })
+  }
 })

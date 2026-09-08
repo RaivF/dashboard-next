@@ -395,7 +395,7 @@ export default function DashboardContent({
         <div className="dashboard-ignore-wrapper" data-manual-edit-ignore="true">
           <DonutChart
             title="Основание обучения"
-            subtitle="Поступающие по категориям; предложения партнёров сюда не подмешиваются"
+            subtitle="Бюджет и платное — поступающие; квоты — зачисленные"
             data={fundingRows}
             loading={loading}
             previousYearData={analytics.previousYearByFunding}
