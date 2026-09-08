@@ -3,14 +3,10 @@ import { RefreshCw } from 'lucide-react'
 import { useApplicantsStatistics } from '../../../entities/applicants/model/useApplicantsStatistics.js'
 import { useCompetitionGroupsDemand } from '../../../entities/competition-groups/index.js'
 import { buildAnalytics } from '../../../entities/applicants/lib/analytics.js'
-import {
-  buildUnusedSpecialties,
-  PINNED_UNUSED_SPECIALTIES,
-} from '../../../entities/applicants/lib/analytics/unusedSpecialties.js'
-import { useSpecialties } from '../../../entities/specialties/model/useSpecialties.js'
 import { useDashboardSettings } from '../../../features/dashboard-settings/model/useDashboardSettings.js'
 import { getRangeLabel } from '../../../features/dashboard-settings/model/periodConfig.js'
 import PeriodControls from '../../../features/dashboard-settings/ui/PeriodControls.js'
+import { applyCampaignResults2026 } from '../../../widgets/dashboard/lib/applyCampaignResults2026.js'
 import CampaignResults2026 from '../../../widgets/dashboard/ui/CampaignResults2026.js'
 import DashboardContent from '../../../widgets/dashboard/ui/DashboardContent.js'
 
@@ -35,14 +31,10 @@ export default function DashboardPage() {
     data: competitionGroupsDemand,
     loading: competitionGroupsDemandLoading,
   } = useCompetitionGroupsDemand(campaignYear)
-  const {
-    rows: specialties,
-    loading: specialtiesLoading,
-  } = useSpecialties()
   const analytics = useMemo(() => buildAnalytics(response, range, selectedDate), [response, range, selectedDate])
-  const unusedSpecialties = useMemo(
-    () => buildUnusedSpecialties(specialties, analytics.allItems, PINNED_UNUSED_SPECIALTIES),
-    [analytics.allItems, specialties],
+  const synchronizedAnalytics = useMemo(
+    () => applyCampaignResults2026(analytics, campaignYear),
+    [analytics, campaignYear],
   )
   const selectedRange = getRangeLabel(range)
 
@@ -52,9 +44,9 @@ export default function DashboardPage() {
 
       <details className="operational-dashboard">
         <summary>
-          <span>Оперативный срез заявлений</span>
+          <span>{campaignYear === 2026 ? 'Сведения о заявлениях' : 'Оперативный срез заявлений'}</span>
           <small>
-            Рабочая выгрузка {analytics.rangeText ? `за период ${analytics.rangeText}` : 'загружается'}
+            Данные {synchronizedAnalytics.rangeText ? `за период ${synchronizedAnalytics.rangeText}` : 'загружаются'}
           </small>
         </summary>
         <div className="operational-dashboard__content">
@@ -66,7 +58,7 @@ export default function DashboardPage() {
           </section>
 
           <PeriodControls
-            analytics={analytics}
+            analytics={synchronizedAnalytics}
             campaignYear={campaignYear}
             loading={loading}
             selectedRange={selectedRange}
@@ -74,14 +66,12 @@ export default function DashboardPage() {
           />
 
           <DashboardContent
-            analytics={analytics}
+            analytics={synchronizedAnalytics}
             campaignYear={campaignYear}
             competitionGroupsDemand={competitionGroupsDemand}
             competitionGroupsDemandLoading={competitionGroupsDemandLoading}
             loading={loading}
             selectedRange={selectedRange}
-            unusedSpecialties={unusedSpecialties}
-            unusedSpecialtiesLoading={specialtiesLoading}
             showPreviousYearOverlay={showPreviousYearOverlay}
             setShowPreviousYearOverlay={setShowPreviousYearOverlay}
             showPreviousYearFunding={showPreviousYearFunding}

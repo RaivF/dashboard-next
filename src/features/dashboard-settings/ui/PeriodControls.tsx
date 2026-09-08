@@ -31,6 +31,8 @@ export default function PeriodControls({
 }: PeriodControlsProps) {
   const periodMenuRef = useRef<HTMLDivElement | null>(null)
   const [periodMenuOpen, setPeriodMenuOpen] = useState(false)
+  const isFixedSnapshot = campaignYear === 2026
+  const displayRange = isFixedSnapshot ? 'Зафиксированные' : selectedRange
 
   useEffect(() => {
     if (!periodMenuOpen) return undefined
@@ -63,7 +65,7 @@ export default function PeriodControls({
       <div className="range-panel__summary">
         <div>
           <span>Отображение данных</span>
-          <strong>{selectedRange}</strong>
+          <strong>{displayRange}</strong>
         </div>
         <div className="range-panel__dates">
           <span>Период выборки</span>
@@ -90,7 +92,7 @@ export default function PeriodControls({
             <div className="period-menu__header">
               <div>
                 <span>Настройки периода</span>
-                <strong>{selectedRange}</strong>
+                <strong>{displayRange}</strong>
               </div>
               <button className="period-menu__close" type="button" onClick={() => setPeriodMenuOpen(false)}>
                 Закрыть
@@ -131,10 +133,10 @@ export default function PeriodControls({
 
             <div className="calendar-control calendar-control--static">
               <div className="calendar-control__topline">
-                <span>{CALENDAR_LABELS.actual}</span>
+                <span>{isFixedSnapshot ? 'Дата среза' : CALENDAR_LABELS.actual}</span>
               </div>
               <strong>{analytics.latestDate}</strong>
-              <small>{CALENDAR_HINTS.actual}</small>
+              <small>{isFixedSnapshot ? 'Показатели зафиксированы на конец приёмной кампании.' : CALENDAR_HINTS.actual}</small>
             </div>
           </div>
         )}

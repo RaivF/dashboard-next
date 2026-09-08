@@ -156,9 +156,9 @@ const TARGET_ADMISSION_OFFERS_TOTAL = TARGET_ADMISSION_PARTNERS.reduce((sum, par
 
 const STAT_CARDS: StatCardDefinition[] = [
   {
-    title: 'Записей в выгрузке',
+    title: 'Подано заявлений',
     getValue: (analytics) => (analytics.applicationsTotal > 0 ? analytics.applicationsTotal : 'Пусто'),
-    getCaption: () => 'Строк конкурсных групп',
+    getCaption: () => 'Итог по способам подачи',
     icon: FileText,
     tone: 'blue',
   },
@@ -166,7 +166,7 @@ const STAT_CARDS: StatCardDefinition[] = [
     title: 'Физических лиц',
     getValue: (analytics) => (analytics.total > 0 ? analytics.total : 'Пусто'),
     getCaption: (analytics) => analytics.applicationsPerApplicant > 0
-      ? `В среднем ${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(analytics.applicationsPerApplicant)} записи на человека`
+      ? `В среднем ${new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(analytics.applicationsPerApplicant)} заявления на человека`
       : 'Уникальные поступающие',
     icon: Users,
     tone: 'indigo',
@@ -174,7 +174,7 @@ const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Онлайн-каналы',
     getValue: (analytics) => (analytics.byMethod.length > 0 ? analytics.web + analytics.online : 'Пусто'),
-    getCaption: () => 'СУПЕРСЕРВИС',
+    getCaption: () => 'ЕПГУ и личный кабинет',
     icon: MousePointerClick,
     tone: 'cyan',
   },
@@ -245,14 +245,14 @@ function ApplicationsDialogContent({ analytics }: { analytics: DashboardAnalytic
   return (
     <div className="dashboard-dialog-report">
       <div className="dashboard-dialog-metrics">
-        <DialogMetric label="Записей в выгрузке" value={analytics.applicationsTotal} />
+        <DialogMetric label="Подано заявлений" value={analytics.applicationsTotal} />
         <DialogMetric label="Физических лиц" value={analytics.total} />
         <DialogMetric
           label="В среднем"
           value={analytics.applicationsPerApplicant > 0
-            ? new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(analytics.applicationsPerApplicant)
+            ? new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(analytics.applicationsPerApplicant)
             : '—'}
-          caption="записи конкурсных групп на человека"
+          caption="заявления на человека"
         />
       </div>
 
@@ -271,8 +271,6 @@ type DashboardContentProps = {
   competitionGroupsDemandLoading: boolean
   loading: boolean
   selectedRange: string
-  unusedSpecialties: NamedQuantity[]
-  unusedSpecialtiesLoading: boolean
   showPreviousYearOverlay: boolean
   setShowPreviousYearOverlay: (value: boolean) => void
   showPreviousYearFunding: boolean
@@ -286,8 +284,6 @@ export default function DashboardContent({
   competitionGroupsDemandLoading,
   loading,
   selectedRange,
-  unusedSpecialties,
-  unusedSpecialtiesLoading,
   showPreviousYearOverlay,
   setShowPreviousYearOverlay,
   showPreviousYearFunding,
@@ -415,15 +411,17 @@ export default function DashboardContent({
       <section className="dashboard-grid dashboard-grid--middle">
         <VerticalBarChart
           title="Форма обучения по заявлениям"
-          subtitle="Очная, заочная, очно-заочная"
+          subtitle={campaignYear === 2026
+            ? `Расчётное распределение · ${formatNumber(analytics.applicationsTotal)} заявлений`
+            : 'Очная, заочная, очно-заочная'}
           data={analytics.byApplicationForm.length > 0 ? analytics.byApplicationForm : MANUAL_FORM_DATA}
           loading={loading}
           currentYear={currentAcademicYear}
           previousYear={previousAcademicYear}
         />
         <VerticalBarChart
-          title="Способ подачи в оперативной выгрузке"
-          subtitle="Лично, онлайн-каналы, почта; не итог презентации"
+          title="Способ подачи заявлений"
+          subtitle="ЕПГУ, личный кабинет, лично"
           data={analytics.byMethod}
           loading={loading}
           currentYear={currentAcademicYear}
@@ -432,18 +430,10 @@ export default function DashboardContent({
       </section>
 
       <section className="dashboard-grid dashboard-grid--bottom">
-        <DataTable title="Топ 5 направлений в оперативной выгрузке" subtitle="По количеству записей конкурсных групп" data={analytics.topSpecialties} loading={loading} />
-        <DataTable title="Минимальное число записей в оперативной выгрузке" subtitle="Направления, где записи уже есть, но их меньше всего" data={analytics.bottomSpecialties} loading={loading} />
+        <DataTable title="Топ 5 направлений по числу заявлений" subtitle="Профили с наибольшим числом заявлений" data={analytics.topSpecialties} loading={loading} />
+        <DataTable title="Наименее востребованные направления" subtitle="Профили с наименьшим числом заявлений" data={analytics.bottomSpecialties} loading={loading} />
       </section>
 
-      <section className="dashboard-grid dashboard-grid--unused">
-        <DataTable
-          title="Невостребованные направления"
-          data={unusedSpecialties}
-          loading={loading || unusedSpecialtiesLoading}
-          emptyMessage={'\u041e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u044e\u0442 \u043d\u0435\u0432\u043e\u0441\u0442\u0440\u0435\u0431\u043e\u0432\u0430\u043d\u043d\u044b\u0435 \u043d\u0430\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f'}
-        />
-      </section>
     </>
   )
 }

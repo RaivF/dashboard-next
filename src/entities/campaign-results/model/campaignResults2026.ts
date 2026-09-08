@@ -25,10 +25,18 @@ export const CAMPAIGN_RESULTS_2026 = {
     title: 'Приёмная кампания 2026',
     snapshotDate: '2026-08-31',
     snapshotLabel: '31 августа 2026 года',
+    periodLabel: '20 июня 2026 г. — 31 августа 2026 г.',
     slides: '2–16',
   },
   applications: {
     total: 16_910,
+    // The deck has no form breakdown. Preserve the export's proportions
+    // (13,719 / 2,346 / 1,791) and reconcile them to 16,910 using largest remainders.
+    estimatedForms: [
+      { id: 'full-time', name: 'Очная', value: 12_992 },
+      { id: 'part-time', name: 'Заочная', value: 2_222 },
+      { id: 'mixed', name: 'Очно-заочная', value: 1_696 },
+    ] satisfies RankedResult[],
     methods: [
       { id: 'epgu', name: 'ЕПГУ', previous: 1_116, current: 2_742 },
       { id: 'personal-account', name: 'Личный кабинет', previous: 479, current: 0 },
@@ -88,11 +96,11 @@ export const CAMPAIGN_RESULTS_2026 = {
     ],
     byFaculty: [
       { id: 'law', name: 'Юридический факультет', value: 22.4 },
-      { id: 'technology', name: 'Технологический факультет', value: 25.1 },
+      { id: 'technology', name: 'Факультет технических наук', value: 25.1 },
       { id: 'tourism-service', name: 'Факультет туризма и сервиса', value: 26.9 },
       { id: 'economics', name: 'Экономический факультет', value: 27 },
       { id: 'innovative-pedagogy', name: 'Факультет инновационной педагогики', value: 28 },
-      { id: 'energy', name: 'Энергетический факультет', value: 29.1 },
+      { id: 'energy', name: 'Факультет энергетики', value: 29.1 },
       { id: 'social-humanities', name: 'Социально-гуманитарный факультет', value: 29.4 },
       { id: 'natural-sciences', name: 'Факультет естественных наук', value: 29.5 },
       { id: 'agrotechnology', name: 'Агротехнологический факультет', value: 29.7 },
@@ -114,10 +122,10 @@ export const CAMPAIGN_RESULTS_2026 = {
     ] satisfies RankedResult[],
     lowestApplications: [
       { id: 'music', code: '44.03.01', name: 'Педагогическое образование', caption: 'Музыка', value: 19 },
-      { id: 'geography', code: '05.03.02', name: 'География', caption: 'Физическая и социальная география', value: 29 },
-      { id: 'history-orthodox', code: '44.03.05', name: 'Педагогическое образование (с двумя профилями)', caption: 'История и православная культура', value: 30 },
-      { id: 'soil-science', code: '06.03.02', name: 'Почвоведение', caption: 'Оценка качества почв и биотехнологический контроль', value: 31 },
-      { id: 'primary-foreign', code: '44.03.05', name: 'Педагогическое образование (с двумя профилями)', caption: 'Начальное образование и иностранный язык', value: 33 },
+      { id: 'geography', code: '05.03.02', name: 'География', caption: 'Физическая и общественная география', value: 29 },
+      { id: 'history-orthodox', code: '44.03.05', name: 'Педагогическое образование (с двумя профилями подготовки)', caption: 'История. Основы православной культуры', value: 30 },
+      { id: 'soil-science', code: '06.03.02', name: 'Почвоведение', caption: 'Управление качеством почв и биотехнологии', value: 31 },
+      { id: 'primary-foreign', code: '44.03.05', name: 'Педагогическое образование (с двумя профилями подготовки)', caption: 'Начальное образование. Иностранный язык', value: 33 },
     ] satisfies RankedResult[],
     peoplePerPlace: [
       { id: 'construction', code: '08.03.01', name: 'Строительство', caption: 'Промышленное и гражданское строительство', value: 2.3 },

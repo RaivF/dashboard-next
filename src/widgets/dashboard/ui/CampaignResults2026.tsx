@@ -81,7 +81,6 @@ function RankedList({
 
 export default function CampaignResults2026() {
   const priorityTotal = sumValues(results.applications.priorities)
-  const missingPriorities = results.applications.total - priorityTotal
   const maxPriority = Math.max(...results.applications.priorities.map((item) => item.value))
 
   return (
@@ -92,7 +91,7 @@ export default function CampaignResults2026() {
     >
       <header className="campaign-results__header">
         <div>
-          <span className="campaign-results__eyebrow">Официальный итог</span>
+          <span className="campaign-results__eyebrow">Предварительные итоги</span>
           <h2 id="campaign-results-title">Приёмная кампания 2026</h2>
           <p>
             Данные зафиксированы на{' '}
@@ -109,7 +108,7 @@ export default function CampaignResults2026() {
           icon={GraduationCap}
         />
         <ResultMetric
-          title="Зачислено на СПО"
+          title="Зачислено на СПО (бюджет)"
           value={results.secondaryVocational.enrolled}
           caption={<>КЦП {formatNumber(results.secondaryVocational.plan)} · <b>{formatCompletion(results.secondaryVocational.enrolled, results.secondaryVocational.plan)}</b></>}
           icon={School}
@@ -224,11 +223,10 @@ export default function CampaignResults2026() {
       </div>
 
       <details className="campaign-results__details">
-        <summary>Открыть остальные показатели презентации</summary>
+        <summary>показать больше сведений</summary>
         <div className="campaign-results__details-content">
           <div className="campaign-results__detail-heading">
             <h3>Конкурс и востребованность</h3>
-            <p>Рейтинги приведены по образовательным профилям, как в презентации.</p>
           </div>
           <div className="campaign-results__ranked-grid">
             <RankedList title="Больше всего заявлений" rows={results.demand.topApplications} />
@@ -289,10 +287,6 @@ export default function CampaignResults2026() {
                   </div>
                 ))}
               </div>
-              <p className="campaign-results__note">
-                В презентации приоритет указан у {formatNumber(priorityTotal)} из {formatNumber(results.applications.total)} заявлений;
-                без указанного приоритета — {formatNumber(missingPriorities)}.
-              </p>
             </div>
 
             <div className="campaign-results__panel">
@@ -300,6 +294,7 @@ export default function CampaignResults2026() {
                 <h3>География зачисленных на ВО</h3>
                 <span>{formatNumber(results.geography.regionsTotal)} регионов</span>
               </div>
+              <p className="campaign-results__note">В том числе</p>
               <div className="campaign-results__region-list">
                 {results.geography.selectedRegions.map((region) => (
                   <div key={region.id}>
@@ -308,7 +303,6 @@ export default function CampaignResults2026() {
                   </div>
                 ))}
               </div>
-              <p className="campaign-results__note">В презентации отдельно подписаны перечисленные территории; общее число регионов — 47.</p>
             </div>
 
             <div className="campaign-results__panel">

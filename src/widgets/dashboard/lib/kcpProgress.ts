@@ -1,4 +1,8 @@
 import { formatNumber } from '../../../shared/lib/formatters.js'
+import {
+  CAMPAIGN_RESULTS_2026,
+  getCompletionPercent,
+} from '../../../entities/campaign-results/index.js'
 
 export type KcpSortMode = 'fillAsc' | 'fillDesc' | 'nameAsc' | 'planDesc'
 
@@ -15,6 +19,22 @@ export const KCP_SORT_OPTIONS: { value: KcpSortMode; label: string }[] = [
   { value: 'nameAsc', label: 'А–Я' },
   { value: 'planDesc', label: 'КЦП ↓' },
 ]
+
+export const KCP_DEFAULT_SORT_MODE: KcpSortMode = 'fillDesc'
+
+export const KCP_OFFICIAL_SUMMARY_2026 = {
+  enrolled: CAMPAIGN_RESULTS_2026.higherEducation.enrolled,
+  plan: CAMPAIGN_RESULTS_2026.higherEducation.plan,
+  percent: getCompletionPercent(
+    CAMPAIGN_RESULTS_2026.higherEducation.enrolled,
+    CAMPAIGN_RESULTS_2026.higherEducation.plan,
+  ),
+} as const
+
+export const KCP_OFFICIAL_LEVELS_2026 = CAMPAIGN_RESULTS_2026.higherEducation.levels.map((level) => ({
+  ...level,
+  percent: getCompletionPercent(level.enrolled, level.plan),
+}))
 
 export function buildKcpRulerTicks(plan: unknown) {
   const numericPlan = Number(plan)

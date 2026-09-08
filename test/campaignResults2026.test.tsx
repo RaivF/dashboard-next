@@ -21,6 +21,7 @@ function assertUniqueIds(rows: readonly { id: string }[]) {
 describe('campaign results 2026 presentation snapshot', () => {
   it('keeps the presentation snapshot and education totals internally consistent', () => {
     assert.equal(results.source.snapshotDate, '2026-08-31')
+    assert.equal(results.source.periodLabel, '20 июня 2026 г. — 31 августа 2026 г.')
     assert.equal(results.higherEducation.plan, 4_658)
     assert.equal(results.higherEducation.enrolled, 4_658)
     assert.equal(sum(results.higherEducation.levels, (row) => row.plan), 4_658)
@@ -33,6 +34,7 @@ describe('campaign results 2026 presentation snapshot', () => {
 
   it('reconciles applications, branches and the documented priority gap', () => {
     assert.equal(sum(results.applications.methods, (row) => row.current), results.applications.total)
+    assert.equal(sumValues(results.applications.estimatedForms), results.applications.total)
     assert.equal(sum(results.branches, (row) => row.planSpo), results.secondaryVocational.plan)
     assert.equal(sum(results.branches, (row) => row.enrolledSpo), results.secondaryVocational.enrolled)
 
@@ -65,8 +67,9 @@ describe('campaign results 2026 presentation snapshot', () => {
     assert.match(html, /id="campaign-results-title"/)
     assert.match(html, /data-manual-edit-ignore="true"/)
     assert.match(html, /dateTime="2026-08-31"/)
-    assert.match(html, /Официальный итог/)
+    assert.match(html, /Предварительные итоги/)
+    assert.match(html, /Зачислено на СПО \(бюджет\)/)
     assert.match(html, /Данные зафиксированы на/)
-    assert.match(html, /Открыть остальные показатели презентации/)
+    assert.match(html, /показать больше сведений/)
   })
 })

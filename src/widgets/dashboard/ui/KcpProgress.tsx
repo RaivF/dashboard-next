@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { CAMPAIGN_RESULTS_2026, getCompletionPercent } from '../../../entities/campaign-results/index.js'
 import { formatNumber, formatPercent, formatPercentDecimal } from '../../../shared/lib/formatters.js'
-import { KCP_SORT_OPTIONS, sortKcpDirections } from '../lib/kcpProgress.js'
+import {
+  KCP_DEFAULT_SORT_MODE,
+  KCP_OFFICIAL_LEVELS_2026,
+  KCP_OFFICIAL_SUMMARY_2026,
+  KCP_SORT_OPTIONS,
+  sortKcpDirections,
+} from '../lib/kcpProgress.js'
 import type { KcpSortMode } from '../lib/kcpProgress.js'
 
 type KcpProgressDirection = {
@@ -36,17 +41,17 @@ type KcpProgressProps = {
 
 export default function KcpProgress({ campaignYear, data, loading }: KcpProgressProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [sortMode, setSortMode] = useState<KcpSortMode>('fillAsc')
+  const [sortMode, setSortMode] = useState<KcpSortMode>(KCP_DEFAULT_SORT_MODE)
   const [searchValue, setSearchValue] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
   const hasPlan = data?.hasPlan
   const showOfficialResult = campaignYear === 2026
-  const officialPlan = CAMPAIGN_RESULTS_2026.higherEducation.plan
-  const officialEnrolled = CAMPAIGN_RESULTS_2026.higherEducation.enrolled
-  const officialPercent = getCompletionPercent(officialEnrolled, officialPlan)
+  const officialPlan = KCP_OFFICIAL_SUMMARY_2026.plan
+  const officialEnrolled = KCP_OFFICIAL_SUMMARY_2026.enrolled
+  const officialPercent = KCP_OFFICIAL_SUMMARY_2026.percent
   const fillPercent = showOfficialResult ? Math.min(100, officialPercent) : hasPlan ? (data?.fillPercent ?? 0) : 0
   const directions = useMemo(() => data?.directions || [], [data?.directions])
-  const hasDirections = directions.length > 0
+  const hasDirections = showOfficialResult || directions.length > 0
   const searchQuery = searchValue.trim().toLowerCase()
   const filteredDirections = useMemo(() => {
     if (!searchQuery) return directions
@@ -89,7 +94,7 @@ export default function KcpProgress({ campaignYear, data, loading }: KcpProgress
   return (
     <section
       className={`kcp-panel${isExpanded ? ' kcp-panel--expanded' : ''}`}
-      aria-busy={loading}
+      aria-busy={!showOfficialResult && loading}
       data-manual-edit-ignore="true"
     >
       <div
@@ -121,101 +126,126 @@ export default function KcpProgress({ campaignYear, data, loading }: KcpProgress
       </div>
       </div>
 
-      {isExpanded && hasDirections ? (
-        <div className="kcp-panel__details" id="kcp-directions-details">
-          {showOfficialResult ? (
-            <div className="kcp-panel__operational-summary">
-              <span>
-                <strong>Оперативный спрос</strong>
-                Первый приоритет и согласие по бакалавриату и специалитету
-              </span>
-              <b>{operationalPercentage}</b>
-            </div>
-          ) : null}
+      {(showOfficialResult || isExpanded) && hasDirections ? (
+        <div
+          className="kcp-panel__details"
+          id="kcp-directions-details"
+          hidden={!isExpanded}
+          style={isExpanded ? undefined : { display: 'none' }}
+        >
           <div className="kcp-panel__meta">
             <span>
-              <strong>{formatNumber(data?.current || 0)}</strong>
-              Ч. с 1-м приоритетом и согласием (бакалавриат и специалитет)
+              <strong>{formatNumber(showOfficialResult ? officialEnrolled : data?.current || 0)}</strong>
+              {showOfficialResult ? 'Зачислено на ВО' : 'Ч. с 1-м приоритетом и согласием (бакалавриат и специалитет)'}
             </span>
             <span>
-              <strong>{hasPlan ? formatNumber(data.plan) : '—'}</strong>
+              <strong>{showOfficialResult ? formatNumber(officialPlan) : hasPlan ? formatNumber(data.plan) : '—'}</strong>
               КЦП
             </span>
             <span>
-              <strong>{hasPlan ? deltaLabel : 'нет плана'}</strong>
-              остаток
+              <strong>{showOfficialResult ? formatPercent(officialPercent) : hasPlan ? deltaLabel : 'нет плана'}</strong>
+              {showOfficialResult ? 'выполнение' : 'остаток'}
             </span>
           </div>
-          <div className="kcp-panel__details-toolbar">
-            <span>{formatNumber(sortedDirections.length)} из {formatNumber(directions.length)} направлений</span>
-            <label className="kcp-panel__search">
-              <input
-                type="search"
-                value={searchValue}
-                onChange={(event) => setSearchValue(event.target.value)}
-                placeholder="Поиск по коду или названию"
-                aria-label="Поиск направления по коду или названию"
-              />
-            </label>
-            <div className="kcp-panel__sort" role="group" aria-label="Сортировка направлений КЦП">
-              {KCP_SORT_OPTIONS.map((option) => (
-                <button
-                  className={`kcp-panel__sort-button${sortMode === option.value ? ' kcp-panel__sort-button--active' : ''}`}
-                  key={option.value}
-                  type="button"
-                  onClick={() => setSortMode(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="kcp-panel__description">
-            Сводный показатель рассчитан для бакалавриата и специалитета по первому приоритету и поданному согласию.
-            Детализация ниже включает все уровни из оперативного API.
-          </p>
-
-          <div className="kcp-panel__direction-list" ref={listRef}>
-            {sortedDirections.length ? sortedDirections.map((item) => {
-              const itemDeltaLabel = item.overflow > 0
-                ? `+${formatNumber(item.overflow)}`
-                : formatNumber(item.remaining)
-
-              return (
-                <article className="kcp-panel__direction" key={`${item.code || ''}::${item.name}`}>
+          {showOfficialResult ? (
+            <div className="kcp-panel__direction-list" aria-label="Выполнение КЦП по уровням высшего образования">
+              {KCP_OFFICIAL_LEVELS_2026.map((level) => (
+                <article className="kcp-panel__direction" key={level.id}>
                   <div className="kcp-panel__direction-main">
-                    <span>{item.name}</span>
-                    <small>{item.code ? `Код: ${item.code}` : 'Направление'}</small>
+                    <span>{level.name}</span>
+                    <small>Уровень образования</small>
                   </div>
                   <div className="kcp-panel__direction-progress">
                     <div className="kcp-panel__direction-track">
-                      <span style={{ width: `${item.fillPercent}%` }} />
+                      <span style={{ width: `${Math.min(100, level.percent)}%` }} />
                     </div>
-                    <strong>{formatPercentDecimal(item.percent)}</strong>
+                    <strong>{formatPercent(level.percent)}</strong>
                   </div>
-                  <div className="kcp-panel__direction-numbers">
+                  <div className="kcp-panel__direction-numbers" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
                     <span>
-                      <strong>{formatNumber(item.current)}</strong>
-                      Ч. с 1-м приоритетом и согласием
+                      <strong>{formatNumber(level.enrolled)}</strong>
+                      Зачислено
                     </span>
                     <span>
-                      <strong>{formatNumber(item.plan)}</strong>
+                      <strong>{formatNumber(level.plan)}</strong>
                       КЦП
-                    </span>
-                    <span>
-                      <strong>{itemDeltaLabel}</strong>
-                      {item.overflow > 0 ? 'сверх' : 'осталось'}
                     </span>
                   </div>
                 </article>
-              )
-            }) : (
-              <div className="kcp-panel__empty">
-                Направления не найдены
+              ))}
+            </div>
+          ) : (
+            <>
+              <div className="kcp-panel__details-toolbar">
+                <span>{formatNumber(sortedDirections.length)} из {formatNumber(directions.length)} направлений</span>
+                <label className="kcp-panel__search">
+                  <input
+                    type="search"
+                    value={searchValue}
+                    onChange={(event) => setSearchValue(event.target.value)}
+                    placeholder="Поиск по коду или названию"
+                    aria-label="Поиск направления по коду или названию"
+                  />
+                </label>
+                <div className="kcp-panel__sort" role="group" aria-label="Сортировка направлений КЦП">
+                  {KCP_SORT_OPTIONS.map((option) => (
+                    <button
+                      className={`kcp-panel__sort-button${sortMode === option.value ? ' kcp-panel__sort-button--active' : ''}`}
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSortMode(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
-          </div>
-          {data?.snapshotAt ? <p className="kcp-panel__snapshot">Данные актуальны на {new Date(data.snapshotAt).toLocaleString('ru-RU')}</p> : null}
+              <p className="kcp-panel__description">
+                Сводный показатель рассчитан для бакалавриата и специалитета по первому приоритету и поданному согласию. Детализация ниже включает все уровни из оперативного API.
+              </p>
+
+              <div className="kcp-panel__direction-list" ref={listRef}>
+                {sortedDirections.length ? sortedDirections.map((item) => {
+                  const itemDeltaLabel = item.overflow > 0
+                    ? `+${formatNumber(item.overflow)}`
+                    : formatNumber(item.remaining)
+
+                  return (
+                    <article className="kcp-panel__direction" key={`${item.code || ''}::${item.name}`}>
+                      <div className="kcp-panel__direction-main">
+                        <span>{item.name}</span>
+                        <small>{item.code ? `Код: ${item.code}` : 'Направление'}</small>
+                      </div>
+                      <div className="kcp-panel__direction-progress">
+                        <div className="kcp-panel__direction-track">
+                          <span style={{ width: `${item.fillPercent}%` }} />
+                        </div>
+                        <strong>{formatPercentDecimal(item.percent)}</strong>
+                      </div>
+                      <div className="kcp-panel__direction-numbers">
+                        <span>
+                          <strong>{formatNumber(item.current)}</strong>
+                          Ч. с 1-м приоритетом и согласием
+                        </span>
+                        <span>
+                          <strong>{formatNumber(item.plan)}</strong>
+                          КЦП
+                        </span>
+                        <span>
+                          <strong>{itemDeltaLabel}</strong>
+                          {item.overflow > 0 ? 'сверх' : 'осталось'}
+                        </span>
+                      </div>
+                    </article>
+                  )
+                }) : (
+                  <div className="kcp-panel__empty">
+                    Направления не найдены
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
       ) : null}
     </section>
