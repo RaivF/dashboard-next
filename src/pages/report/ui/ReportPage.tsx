@@ -11,6 +11,7 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { CAMPAIGN_RESULTS_2026 } from '../../../entities/campaign-results/index.js'
 import { useReport20252026 } from '../../../entities/report/model/useReport20252026.js'
+import { ADMISSION_RESULTS_2025 } from '../../../entities/report/model/admissionResults2025.js'
 import { formatNumber } from '../../../shared/lib/formatters.js'
 
 type ReportNamedQuantity = {
@@ -178,7 +179,7 @@ type KcpCollegeRow = {
 
 type KcpYearKey = 'actual2025' | 'plan2026'
 
-const KCP_SUMMARY_VALUE = '4 167 / 5 413'
+const KCP_SUMMARY_VALUE = `${formatNumber(ADMISSION_RESULTS_2025.budget)} / 5 413`
 const KCP_2026_SUMMARY_TOTAL = 5413
 const KCP_2026_HIGHER_EDUCATION_TOTAL = CAMPAIGN_RESULTS_2026.higherEducation.plan
 const KCP_2026_COLLEGE_TOTAL = CAMPAIGN_RESULTS_2026.secondaryVocational.plan
@@ -613,11 +614,11 @@ function KcpComparisonModal({
         <div className="report-kcp-modal__summary" aria-label="Итоги КЦП">
           <div>
             <span>Было КЦП</span>
-            <strong>{formatNumber(4167)}</strong>
+            <strong>{formatNumber(ADMISSION_RESULTS_2025.budget)}</strong>
           </div>
           <div>
             <span>Было принято всего, вместе с контрактом</span>
-            <strong>{formatNumber(6087)}</strong>
+            <strong>{formatNumber(ADMISSION_RESULTS_2025.total)}</strong>
           </div>
         </div>
 

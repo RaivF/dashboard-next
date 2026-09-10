@@ -71,6 +71,7 @@ type StatDialog = 'applications' | 'admissionPlaces'
 
 type StatCardDefinition = {
   title: string
+  getTitle?: (campaignYear: number) => string
   getValue: (analytics: DashboardAnalytics) => number | string
   getCaption: (analytics: DashboardAnalytics, selectedRange: string) => string
   icon: LucideIcon
@@ -174,12 +175,13 @@ const STAT_CARDS: StatCardDefinition[] = [
   {
     title: 'Онлайн-каналы',
     getValue: (analytics) => (analytics.byMethod.length > 0 ? analytics.web + analytics.online : 'Пусто'),
-    getCaption: () => 'ЕПГУ и личный кабинет',
+    getCaption: () => 'Суперсервис',
     icon: MousePointerClick,
     tone: 'cyan',
   },
   {
     title: 'Поступающих на бюджет',
+    getTitle: (campaignYear) => campaignYear === 2025 ? 'Зачислено на бюджет' : 'Поступающих на бюджет',
     getValue: (analytics) => (analytics.byFunding.length > 0 ? analytics.budget : 'Пусто'),
     getCaption: () => 'Уникальные физлица в категории',
     icon: Award,
@@ -325,7 +327,7 @@ export default function DashboardContent({
           return (
             <StatCard
               key={card.title}
-              title={card.title}
+              title={card.getTitle?.(campaignYear) ?? card.title}
               value={card.getValue(analytics)}
               caption={card.getCaption(analytics, selectedRange)}
               icon={card.icon}
@@ -395,7 +397,9 @@ export default function DashboardContent({
         <div className="dashboard-ignore-wrapper" data-manual-edit-ignore="true">
           <DonutChart
             title="Основание обучения"
-            subtitle="Бюджет и платное — поступающие; квоты — зачисленные"
+            subtitle={campaignYear === 2026
+              ? '2025 — зачисленные; 2026 — поступающие. Квоты — зачисленные в обоих годах.'
+              : '2025 — зачисленные по итогам приёма'}
             data={fundingRows}
             loading={loading}
             previousYearData={analytics.previousYearByFunding}
@@ -421,8 +425,8 @@ export default function DashboardContent({
         />
         <VerticalBarChart
           title="Способ подачи заявлений"
-          subtitle="ЕПГУ, личный кабинет, лично"
-          data={analytics.byMethod}
+          subtitle="Суперсервис, лично"
+          data={analytics.byMethod.filter((row) => row.name !== 'Личный кабинет')}
           loading={loading}
           currentYear={currentAcademicYear}
           previousYear={previousAcademicYear}
@@ -430,7 +434,7 @@ export default function DashboardContent({
       </section>
 
       <section className="dashboard-grid dashboard-grid--bottom">
-        <DataTable title="Топ 5 направлений по числу заявлений" subtitle="Профили с наибольшим числом заявлений" data={analytics.topSpecialties} loading={loading} />
+        <DataTable title="Наиболее востребованные направления" subtitle="Профили с наибольшим числом заявлений" data={analytics.topSpecialties} loading={loading} />
         <DataTable title="Наименее востребованные направления" subtitle="Профили с наименьшим числом заявлений" data={analytics.bottomSpecialties} loading={loading} />
       </section>
 

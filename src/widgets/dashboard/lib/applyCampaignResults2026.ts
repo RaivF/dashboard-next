@@ -17,6 +17,7 @@ import {
   CAMPAIGN_RESULTS_2026,
   type RankedResult,
 } from '../../../entities/campaign-results/index.js'
+import { ADMISSION_RESULTS_2025 } from '../../../entities/report/model/admissionResults2025.js'
 
 const results = CAMPAIGN_RESULTS_2026
 // The 17 August export and the final 31 August snapshot were confirmed to be identical.
@@ -90,15 +91,19 @@ function toSpecialtyRows(rows: readonly RankedResult[]): SpecialtySummary[] {
   }))
 }
 
-function synchronizeQuotaRows(rows: QuantityItem[], year: number): QuantityItem[] {
+function synchronizeFundingRows(rows: QuantityItem[], year: number): QuantityItem[] {
   const quotas = results.quotas.enrolledByYear.find((item) => item.year === year)
   if (!quotas || rows.length === 0) return rows
 
-  const quantities = new Map([
+  const quantities = new Map<string, number>([
     ['Целевая квота', quotas.target],
     ['Отдельная квота (СВО)', quotas.separate],
     ['Особая квота', quotas.special],
   ])
+  if (year === 2025) {
+    quantities.set('Бюджетная основа', ADMISSION_RESULTS_2025.budget)
+    quantities.set('Платное обучение', ADMISSION_RESULTS_2025.paid)
+  }
   const synchronized = rows.map((row) => ({
     ...row,
     quantity: quantities.get(row.name) ?? row.quantity,
@@ -113,18 +118,24 @@ export function applyCampaignResults2026(
   analytics: AnalyticsResult,
   campaignYear: number,
 ): AnalyticsResult {
-  // Quota enrollment must agree with the upper summary for both displayed years.
-  const byFunding = synchronizeQuotaRows(analytics.byFunding, campaignYear)
-  const previousYearByFunding = synchronizeQuotaRows(analytics.previousYearByFunding, campaignYear - 1)
-  const quotaAnalytics = byFunding === analytics.byFunding && previousYearByFunding === analytics.previousYearByFunding
+  // Match quota enrollment to the campaign summary and 2025 funding to the annual report.
+  const byFunding = synchronizeFundingRows(analytics.byFunding, campaignYear)
+  const previousYearByFunding = synchronizeFundingRows(analytics.previousYearByFunding, campaignYear - 1)
+  const fundingAnalytics = byFunding === analytics.byFunding && previousYearByFunding === analytics.previousYearByFunding
     ? analytics
     : {
       ...analytics,
       byFunding,
       previousYearByFunding,
+      budget: campaignYear === 2025
+        ? byFunding.find((row) => row.name === 'Бюджетная основа')?.quantity ?? analytics.budget
+        : analytics.budget,
+      paid: campaignYear === 2025
+        ? byFunding.find((row) => row.name === 'Платное обучение')?.quantity ?? analytics.paid
+        : analytics.paid,
       target: byFunding.find((row) => row.name === 'Целевая квота')?.quantity ?? analytics.target,
     }
-  if (campaignYear !== 2026) return quotaAnalytics
+  if (campaignYear !== 2026) return fundingAnalytics
 
   const rangeEnd = new Date(`${results.source.snapshotDate}T00:00:00Z`)
   const rangeStart = startOfAdmissionYear(rangeEnd)
@@ -138,7 +149,7 @@ export function applyCampaignResults2026(
   const inPerson = results.applications.methods.find((method) => method.id === 'in-person')?.current || 0
 
   return {
-    ...quotaAnalytics,
+    ...fundingAnalytics,
     rangeStart,
     rangeEnd,
     rangeText: results.source.periodLabel,

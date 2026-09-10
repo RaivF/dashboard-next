@@ -48,7 +48,7 @@ describe('campaign results 2026 presentation snapshot', () => {
       year: 2026,
       special: 120,
       separate: 127,
-      target: 1,
+      target: 15,
     })
 
     assertUniqueIds(results.higherEducation.levels)

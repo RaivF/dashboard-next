@@ -8,12 +8,16 @@ import type { ReactNode } from 'react'
 import {
   CAMPAIGN_RESULTS_2026,
   getCompletionPercent,
-  sumValues,
   type RankedResult,
 } from '../../../entities/campaign-results/index.js'
 import { formatNumber, formatPercentDecimal } from '../../../shared/lib/formatters.js'
 
 const results = CAMPAIGN_RESULTS_2026
+const quotaRows = [
+  { key: 'special', name: 'Особая' },
+  { key: 'separate', name: 'Отдельная' },
+  { key: 'target', name: 'Целевая' },
+] as const
 
 function formatCompletion(enrolled: number, plan: number): string {
   const percent = getCompletionPercent(enrolled, plan)
@@ -80,9 +84,6 @@ function RankedList({
 }
 
 export default function CampaignResults2026() {
-  const priorityTotal = sumValues(results.applications.priorities)
-  const maxPriority = Math.max(...results.applications.priorities.map((item) => item.value))
-
   return (
     <article
       className="campaign-results"
@@ -180,7 +181,7 @@ export default function CampaignResults2026() {
                 </tr>
               </thead>
               <tbody>
-                {results.applications.methods.map((method) => (
+                {results.applications.methods.filter((method) => method.id !== 'personal-account').map((method) => (
                   <tr key={method.id}>
                     <th scope="row">{method.name}</th>
                     <td>{formatNumber(method.previous)}</td>
@@ -201,19 +202,19 @@ export default function CampaignResults2026() {
             <table className="campaign-results__table">
               <thead>
                 <tr>
-                  <th scope="col">Год</th>
-                  <th scope="col">Особая</th>
-                  <th scope="col">Отдельная</th>
-                  <th scope="col">Целевая</th>
+                  <th scope="col">Квота</th>
+                  {results.quotas.enrolledByYear.map((row) => (
+                    <th scope="col" key={row.year}>{row.year}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {results.quotas.enrolledByYear.map((row) => (
-                  <tr key={row.year}>
-                    <th scope="row">{row.year}</th>
-                    <td>{formatNumber(row.special)}</td>
-                    <td>{formatNumber(row.separate)}</td>
-                    <td>{formatNumber(row.target)}</td>
+                {quotaRows.map((quota) => (
+                  <tr key={quota.key}>
+                    <th scope="row">{quota.name}</th>
+                    {results.quotas.enrolledByYear.map((row) => (
+                      <td key={row.year}>{formatNumber(row[quota.key])}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -225,12 +226,9 @@ export default function CampaignResults2026() {
       <details className="campaign-results__details">
         <summary>показать больше сведений</summary>
         <div className="campaign-results__details-content">
-          <div className="campaign-results__detail-heading">
-            <h3>Конкурс и востребованность</h3>
-          </div>
           <div className="campaign-results__ranked-grid">
-            <RankedList title="Больше всего заявлений" rows={results.demand.topApplications} />
-            <RankedList title="Меньше всего заявлений" rows={results.demand.lowestApplications} />
+            <RankedList title="Наиболее востребованные направления" rows={results.demand.topApplications} />
+            <RankedList title="Наименее востребованные направления" rows={results.demand.lowestApplications} />
             <RankedList title="Конкурс, человек на место" rows={results.demand.peoplePerPlace} />
             <RankedList title="Конкурс, заявлений на место" rows={results.demand.applicationsPerPlace} />
           </div>
@@ -273,24 +271,6 @@ export default function CampaignResults2026() {
 
             <div className="campaign-results__panel">
               <div className="campaign-results__panel-heading">
-                <h3>Приоритеты заявлений</h3>
-                <span>{formatNumber(priorityTotal)} с указанным приоритетом</span>
-              </div>
-              <div className="campaign-results__priorities" aria-label="Распределение заявлений по приоритету">
-                {results.applications.priorities.map((priority) => (
-                  <div className="campaign-results__priority" key={priority.id}>
-                    <span>{priority.name}</span>
-                    <span className="campaign-results__priority-track" aria-hidden="true">
-                      <span style={{ width: `${priority.value / maxPriority * 100}%` }} />
-                    </span>
-                    <strong>{formatNumber(priority.value)}</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="campaign-results__panel">
-              <div className="campaign-results__panel-heading">
                 <h3>География зачисленных на ВО</h3>
                 <span>{formatNumber(results.geography.regionsTotal)} регионов</span>
               </div>
@@ -305,7 +285,7 @@ export default function CampaignResults2026() {
               </div>
             </div>
 
-            <div className="campaign-results__panel">
+            <div className="campaign-results__panel campaign-results__panel--ages">
               <div className="campaign-results__panel-heading">
                 <h3>Средний возраст зачисленных</h3>
                 <span>лет</span>

@@ -142,16 +142,14 @@
 }
 
 .campaign-results__panel h3,
-.campaign-results__panel h4,
-.campaign-results__detail-heading h3 {
+.campaign-results__panel h4 {
   margin: 0;
   color: var(--theme-text, #f8fafc);
   font-weight: 920;
   letter-spacing: -0.025em;
 }
 
-.campaign-results__panel h3,
-.campaign-results__detail-heading h3 {
+.campaign-results__panel h3 {
   font-size: clamp(19px, 1.35vw, 26px);
 }
 
@@ -260,11 +258,6 @@
   padding: 18px;
 }
 
-.campaign-results__detail-heading {
-  margin-bottom: 14px;
-}
-
-.campaign-results__detail-heading p,
 .campaign-results__note {
   margin: 6px 0 0;
   color: var(--muted);
@@ -282,6 +275,10 @@
 
 .campaign-results__context-grid {
   margin-top: 12px;
+}
+
+.campaign-results__panel--ages {
+  grid-column: 1 / -1;
 }
 
 .campaign-results__ranked-list {
@@ -335,42 +332,6 @@
   font-size: 18px;
   font-weight: 950;
   white-space: nowrap;
-}
-
-.campaign-results__priorities {
-  display: grid;
-  gap: 7px;
-}
-
-.campaign-results__priority {
-  display: grid;
-  grid-template-columns: 24px minmax(80px, 1fr) 62px;
-  gap: 9px;
-  align-items: center;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 820;
-}
-
-.campaign-results__priority-track {
-  position: relative;
-  overflow: hidden;
-  height: 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--blue) 10%, rgba(8, 20, 39, 0.36));
-}
-
-.campaign-results__priority-track > span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  min-width: 2px;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--blue), var(--green));
-}
-
-.campaign-results__priority strong {
-  color: var(--muted-strong);
-  text-align: right;
 }
 
 .campaign-results__region-list,

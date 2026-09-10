@@ -38,7 +38,7 @@ export const CAMPAIGN_RESULTS_2026 = {
       { id: 'mixed', name: 'Очно-заочная', value: 1_696 },
     ] satisfies RankedResult[],
     methods: [
-      { id: 'epgu', name: 'ЕПГУ', previous: 1_116, current: 2_742 },
+      { id: 'epgu', name: 'Суперсервис', previous: 1_116, current: 2_742 },
       { id: 'personal-account', name: 'Личный кабинет', previous: 479, current: 0 },
       { id: 'in-person', name: 'Лично', previous: 13_716, current: 14_168 },
     ] satisfies YearComparison[],
@@ -146,7 +146,7 @@ export const CAMPAIGN_RESULTS_2026 = {
     enrolledByYear: [
       { year: 2024, special: 75, separate: 66, target: 0 },
       { year: 2025, special: 118, separate: 65, target: 4 },
-      { year: 2026, special: 120, separate: 127, target: 1 },
+      { year: 2026, special: 120, separate: 127, target: 15 },
     ],
     detailed2025: [
       { id: 'orphans', name: 'Дети-сироты', value: 36 },

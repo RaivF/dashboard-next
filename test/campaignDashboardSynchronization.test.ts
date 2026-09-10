@@ -2,12 +2,13 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { buildAnalytics, fullDate, shortDate } from '../src/entities/applicants/lib/analytics.js'
 import { CAMPAIGN_RESULTS_2026 } from '../src/entities/campaign-results/index.js'
+import { ADMISSION_RESULTS_2025 } from '../src/entities/report/model/admissionResults2025.js'
 import { applyCampaignResults2026 } from '../src/widgets/dashboard/lib/applyCampaignResults2026.js'
 
 const presentation = CAMPAIGN_RESULTS_2026
 
 describe('dashboard synchronization with the 2026 presentation', () => {
-  it('synchronizes the final snapshot while preserving people, non-quota funding and original data', () => {
+  it('synchronizes the final snapshot while preserving people, current non-quota funding and original data', () => {
     const analytics = buildAnalytics({
       manual_summary: {
         applicationsTotal: 17_856,
@@ -116,7 +117,10 @@ describe('dashboard synchronization with the 2026 presentation', () => {
     ])
     assert.equal(synchronized.byApplicationForm.reduce((sum, row) => sum + row.quantity, 0), synchronized.applicationsTotal)
     assert.deepEqual(synchronized.byFunding.filter((row) => !row.name.includes('квота')), analytics.byFunding.filter((row) => !row.name.includes('квота')))
-    assert.deepEqual(synchronized.previousYearByFunding.filter((row) => !row.name.includes('квота')), analytics.previousYearByFunding.filter((row) => !row.name.includes('квота')))
+    assert.deepEqual(synchronized.previousYearByFunding.filter((row) => !row.name.includes('квота')), [
+      { name: 'Бюджетная основа', quantity: 4_167 },
+      { name: 'Платное обучение', quantity: 1_920 },
+    ])
     assert.deepEqual(analytics, original)
     assert.deepEqual(applyCampaignResults2026(synchronized, 2026), synchronized)
   })
@@ -170,7 +174,7 @@ describe('dashboard synchronization with the 2026 presentation', () => {
   })
 
   for (const campaignYear of [2025, 2026]) {
-    it(`uses the upper quota summary in both funding columns for campaign ${campaignYear}`, () => {
+    it(`uses the annual report for 2025 funding and the campaign summary for quotas in campaign ${campaignYear}`, () => {
       const analytics = buildAnalytics(null, 'actual')
       analytics.byFunding = [
         { name: 'Бюджетная основа', quantity: 5_198 },
@@ -194,7 +198,18 @@ describe('dashboard synchronization with the 2026 presentation', () => {
         [synchronized.previousYearByFunding, campaignYear - 1, analytics.previousYearByFunding],
       ] as const) {
         const summary = presentation.quotas.enrolledByYear.find((item) => item.year === year)!
-        assert.deepEqual(rows.slice(0, 2), sourceRows.slice(0, 2))
+        if (year === 2025) {
+          assert.deepEqual(rows.slice(0, 2), [
+            { name: 'Бюджетная основа', quantity: 4_167 },
+            { name: 'Платное обучение', quantity: 1_920 },
+          ])
+          assert.equal(rows[0].quantity, ADMISSION_RESULTS_2025.budget)
+          assert.equal(rows[1].quantity, ADMISSION_RESULTS_2025.paid)
+          assert.equal(rows[0].quantity + rows[1].quantity, ADMISSION_RESULTS_2025.total)
+          assert.equal(ADMISSION_RESULTS_2025.total, 6_087)
+        } else {
+          assert.deepEqual(rows.slice(0, 2), sourceRows.slice(0, 2))
+        }
         assert.deepEqual(rows.slice(2), [
           { name: 'Целевая квота', quantity: summary.target },
           { name: 'Отдельная квота (СВО)', quantity: summary.separate },
@@ -202,8 +217,8 @@ describe('dashboard synchronization with the 2026 presentation', () => {
         ])
       }
       assert.equal(synchronized.target, synchronized.byFunding[2].quantity)
-      assert.equal(synchronized.budget, analytics.budget)
-      assert.equal(synchronized.paid, analytics.paid)
+      assert.equal(synchronized.budget, campaignYear === 2025 ? 4_167 : analytics.budget)
+      assert.equal(synchronized.paid, campaignYear === 2025 ? 1_920 : analytics.paid)
       assert.deepEqual(analytics, original)
       assert.deepEqual(applyCampaignResults2026(synchronized, campaignYear), synchronized)
     })
